@@ -1,0 +1,30 @@
+# Entorno virtual
+.venv/
+venv/
+env/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Django
+db.sqlite3
+*.log
+local_settings.py
+
+# VS Code
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Static/media (si las usas)
+staticfiles/
+media/
+
+# Migrations (opcional: si quieres subirlas, borra estas 2 líneas)
+**/migrations/__pycache__/
+**/migrations/*.pyc
