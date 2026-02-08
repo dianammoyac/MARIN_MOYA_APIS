@@ -1,0 +1,182 @@
+/* =====================================
+   MARÍN MOYA INVERSIONES
+   Inversiones con propósito
+   Estilo corporativo premium
+   ===================================== */
+
+:root {
+  --verde-oscuro: #0e2a2a;
+  --azul-petroleo: #1f3a4a;
+  --dorado: #c6a15b;
+  --gris-fondo: #f5f6f7;
+  --gris-texto: #2f2f2f;
+  --blanco: #ffffff;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  background-color: var(--gris-fondo);
+  color: var(--gris-texto);
+}
+
+/* =====================
+   HEADER DE MARCA
+   ===================== */
+.header {
+  background: linear-gradient(135deg, var(--verde-oscuro), var(--azul-petroleo));
+  padding: 28px 0;
+  text-align: center;
+}
+
+.header h1 {
+  margin: 0;
+  color: var(--blanco);
+  font-size: 32px;
+  letter-spacing: 2px;
+}
+
+.header span {
+  display: block;
+  margin-top: 6px;
+  font-size: 14px;
+  color: var(--dorado);
+  letter-spacing: 1px;
+}
+
+/* =====================
+   CONTENEDOR GENERAL
+   ===================== */
+.container {
+  max-width: 1100px;
+  margin: 40px auto;
+  background: var(--blanco);
+  padding: 32px 36px;
+  border-radius: 14px;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.08);
+}
+
+/* =====================
+   TÍTULOS
+   ===================== */
+h2 {
+  margin-top: 0;
+  color: var(--azul-petroleo);
+  border-bottom: 2px solid var(--dorado);
+  padding-bottom: 10px;
+}
+
+/* =====================
+   ENLACES
+   ===================== */
+a {
+  color: var(--azul-petroleo);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+a:hover {
+  color: var(--dorado);
+}
+
+/* =====================
+   BOTÓN PRINCIPAL
+   ===================== */
+.btn {
+  display: inline-block;
+  background: var(--dorado);
+  color: var(--blanco);
+  padding: 12px 22px;
+  border-radius: 10px;
+  font-weight: 600;
+  margin-bottom: 22px;
+  transition: all 0.2s ease;
+}
+
+.btn:hover {
+  background: #b08b45;
+  color: var(--blanco);
+}
+
+/* =====================
+   LISTADO DE INMUEBLES
+   ===================== */
+ul {
+  list-style: none;
+  padding: 0;
+  margin-top: 20px;
+}
+
+li {
+  padding: 18px 20px;
+  margin-bottom: 14px;
+  border-left: 6px solid var(--azul-petroleo);
+  background: #fafafa;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+li:hover {
+  background: #f0f3f4;
+  border-left-color: var(--dorado);
+}
+
+/* =====================
+   FORMULARIOS
+   ===================== */
+label {
+  font-weight: 600;
+  color: var(--azul-petroleo);
+}
+
+input,
+select,
+textarea {
+  width: 100%;
+  max-width: 560px;
+  padding: 10px 12px;
+  margin-top: 6px;
+  margin-bottom: 18px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  border-color: var(--dorado);
+}
+
+/* =====================
+   BOTONES FORM
+   ===================== */
+button {
+  background: var(--azul-petroleo);
+  color: var(--blanco);
+  padding: 12px 22px;
+  border: none;
+  border-radius: 10px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+button:hover {
+  opacity: 0.9;
+}
+
+/* =====================
+   DETALLE INMUEBLE
+   ===================== */
+.detalle p {
+  margin: 10px 0;
+}
+
+.detalle b {
+  color: var(--verde-oscuro);
+}

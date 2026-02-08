@@ -1,0 +1,32 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Listado de Inmuebles</title>
+  <link rel="stylesheet" href="{% static 'inmuebles/styles.css' %}">
+</head>
+<body>
+    <div class="header">
+    <h1>MARÍN MOYA</h1>
+    <span>Inversiones con propósito</span>
+    </div>
+  <div class="container">
+    <h2>Portafolio de Inmuebles</h2>
+    <a class="btn" href="{% url 'inmuebles_crear' %}">
+    + Publicar inmueble
+    </a>
+
+    <ul>
+      {% for i in inmuebles %}
+        <li>
+          <a href="{% url 'inmuebles_detalle' i.id %}">{{ i.titulo }}</a>
+          - {{ i.ciudad }} - {{ i.precio }} {{ i.moneda }}
+        </li>
+      {% empty %}
+        <li>No hay inmuebles registrados</li>
+      {% endfor %}
+    </ul>
+  </div>
+</body>
+</html>

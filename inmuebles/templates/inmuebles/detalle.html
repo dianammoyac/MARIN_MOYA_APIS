@@ -1,0 +1,26 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>{{ inmueble.titulo }}</title>
+  <link rel="stylesheet" href="{% static 'inmuebles/styles.css' %}">
+</head>
+<body>
+    <div class="header">
+    <h1>MARÍN MOYA</h1>
+    <span>Inversiones con propósito</span>
+    </div>
+  <div class="container detalle">
+    <h1>{{ inmueble.titulo }}</h1>
+
+    <p><b>Código:</b> {{ inmueble.codigo }}</p>
+    <p><b>Ciudad:</b> {{ inmueble.ciudad }}</p>
+    <p><b>Dirección:</b> {{ inmueble.direccion }}</p>
+    <p><b>Precio:</b> {{ inmueble.precio }} {{ inmueble.moneda }}</p>
+    <p><b>Descripción:</b> {{ inmueble.descripcion }}</p>
+
+    <p><a href="{% url 'inmuebles_listado' %}">Volver al listado</a></p>
+  </div>
+</body>
+</html>
