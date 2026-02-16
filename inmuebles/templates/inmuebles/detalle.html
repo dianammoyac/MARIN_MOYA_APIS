@@ -5,6 +5,8 @@
   <meta charset="utf-8">
   <title>{{ inmueble.titulo }}</title>
   <link rel="stylesheet" href="{% static 'inmuebles/styles.css' %}">
+  <link rel="stylesheet" href="{% static 'inmuebles/chatbot.css' %}">
+
 </head>
 <body>
     <div class="header">
@@ -22,5 +24,18 @@
 
     <p><a href="{% url 'inmuebles_listado' %}">Volver al listado</a></p>
   </div>
+  <button class="chat-toggle" onclick="toggleChat()">💬</button>
+
+<div class="chat-container" id="chat">
+  <div class="chat-header">Marín Moya Inversiones (M²)</div>
+  <div class="chat-messages" id="messages"></div>
+  <div class="chat-input">
+    <input type="text" id="userInput" placeholder="Escribe tu palabra...">
+    <button onclick="sendMessage()">Enviar</button>
+  </div>
+</div>
+
+<script src="{% static 'inmuebles/chatbot.js' %}"></script>
+
 </body>
 </html>
