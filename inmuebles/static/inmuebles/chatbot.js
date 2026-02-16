@@ -51,4 +51,5 @@ function sendMessage() {
   messages.innerHTML += "<div class='bot'>" + response + "</div>";
   document.getElementById("userInput").value = "";
   messages.scrollTop = messages.scrollHeight;
+  
 }
