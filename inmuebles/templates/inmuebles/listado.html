@@ -1,34 +1,47 @@
-{% load static %}
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <title>Listado de Inmuebles</title>
-  <link rel="stylesheet" href="{% static 'inmuebles/styles.css' %}">
-  <link rel="stylesheet" href="{% static 'inmuebles/chatbot.css' %}">
+{% extends 'base.html' %}
+{% load humanize %}
 
-</head>
-<body>
-    <div class="header">
-    <h1>MARÍN MOYA</h1>
-    <span>Inversiones con propósito</span>
-    </div>
+{% block content %}
   <div class="container">
-    <h2>Portafolio de Inmuebles</h2>
-    <a class="btn" href="{% url 'inmuebles_crear' %}">
-    + Publicar inmueble
-    </a>
+    {% if es_privado %}
+      <h2>Mis Publicaciones</h2>
+    {% else %}
+      <h2>Portafolio de Inmuebles</h2>
+    {% endif %}
 
-    <ul>
+    {% if es_privado %}
+      <a class="btn" href="{% url 'inmuebles_crear' %}">
+      + Publicar inmueble
+      </a>
+    {% endif %}
+
+    <div class="inmuebles-grid">
       {% for i in inmuebles %}
-        <li>
-          <a href="{% url 'inmuebles_detalle' i.id %}">{{ i.titulo }}</a>
-          - {{ i.ciudad }} - {{ i.precio }} {{ i.moneda }}
-        </li>
+        <div class="card-inmueble">
+          <a href="{% url 'inmuebles_detalle' i.id %}">
+            <div class="card-photo">
+              {% if i.imagen1 %}
+                <img src="{{ i.imagen1.url }}" alt="{{ i.titulo }}">
+              {% else %}
+                <div class="no-photo">Sin Imagen</div>
+              {% endif %}
+            </div>
+            <div class="card-body">
+              <h3>{{ i.titulo }}</h3>
+              <p>{{ i.ciudad }} - <strong>{{ i.moneda }} $ {{ i.precio|intcomma }}</strong></p>
+            </div>
+          </a>
+
+          {% if es_privado %}
+            <div class="acciones-lista">
+                <a href="{% url 'inmuebles_editar' i.id %}" class="btn-accion" title="Editar">✏️</a>
+                <a href="{% url 'inmuebles_eliminar' i.id %}" class="btn-accion" title="Eliminar">🗑️</a>
+            </div>
+          {% endif %}
+        </div>
       {% empty %}
-        <li>No hay inmuebles registrados</li>
+        <p style="grid-column: 1 / -1; text-align: center; padding: 40px; color: #7f8c8d;">No hay inmuebles para mostrar en esta sección.</p>
       {% endfor %}
-    </ul>
+    </div>
   </div>
-</body>
-</html>
+{% endblock %}

@@ -1,41 +1,63 @@
+{% extends 'base.html' %}
 {% load static %}
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <title>{{ inmueble.titulo }}</title>
-  <link rel="stylesheet" href="{% static 'inmuebles/styles.css' %}">
-  <link rel="stylesheet" href="{% static 'inmuebles/chatbot.css' %}">
+{% load humanize %}
 
-</head>
-<body>
-    <div class="header">
-    <h1>MARÍN MOYA</h1>
-    <span>Inversiones con propósito</span>
+{% block content %}
+<div class="container">
+    <div class="detalle-header">
+        <div>
+            <h2>{{ inmueble.titulo }}</h2>
+            <span>Código: {{ inmueble.codigo }}</span>
+        </div>
+        <div class="precio-tag">
+            {{ inmueble.moneda }} $ {{ inmueble.precio|intcomma }}
+        </div>
     </div>
-  <div class="container detalle">
-    <h1>{{ inmueble.titulo }}</h1>
 
-    <p><b>Código:</b> {{ inmueble.codigo }}</p>
-    <p><b>Ciudad:</b> {{ inmueble.ciudad }}</p>
-    <p><b>Dirección:</b> {{ inmueble.direccion }}</p>
-    <p><b>Precio:</b> {{ inmueble.precio }} {{ inmueble.moneda }}</p>
-    <p><b>Descripción:</b> {{ inmueble.descripcion }}</p>
+    <!-- Carrusel de Imágenes -->
+    <div class="carousel-container">
+        {% if inmueble.imagen1 %}<div class="carousel-slide"><img src="{{ inmueble.imagen1.url }}"></div>{% endif %}
+        {% if inmueble.imagen2 %}<div class="carousel-slide"><img src="{{ inmueble.imagen2.url }}"></div>{% endif %}
+        {% if inmueble.imagen3 %}<div class="carousel-slide"><img src="{{ inmueble.imagen3.url }}"></div>{% endif %}
+        {% if inmueble.imagen4 %}<div class="carousel-slide"><img src="{{ inmueble.imagen4.url }}"></div>{% endif %}
+        
+        {% if inmueble.imagen2 %}
+        <div class="carousel-nav">
+            <button class="nav-btn" onclick="plusSlides(-1)">❮</button>
+            <button class="nav-btn" onclick="plusSlides(1)">❯</button>
+        </div>
+        {% endif %}
+    </div>
 
-    <p><a href="{% url 'inmuebles_listado' %}">Volver al listado</a></p>
-  </div>
-  <button class="chat-toggle" onclick="toggleChat()">💬</button>
+    <!-- Información Organizada -->
+    <div class="detalle-grid">
+        <div class="info-item"><span class="info-label">Tipo:</span><span class="info-value">{{ inmueble.get_tipo_display }}</span></div>
+        <div class="info-item"><span class="info-label">Operación:</span><span class="info-value">{{ inmueble.get_operacion_display }}</span></div>
+        <div class="info-item"><span class="info-label">Área:</span><span class="info-value">{{ inmueble.area_m2 }} m²</span></div>
+        <div class="info-item"><span class="info-label">Habitaciones:</span><span class="info-value">{{ inmueble.habitaciones }}</span></div>
+        <div class="info-item"><span class="info-label">Baños:</span><span class="info-value">{{ inmueble.banos }}</span></div>
+        <div class="info-item"><span class="info-label">Estrato:</span><span class="info-value">{{ inmueble.estrato|default:"N/A" }}</span></div>
+        <div class="info-item"><span class="info-label">Ciudad:</span><span class="info-value">{{ inmueble.ciudad }}</span></div>
+        <div class="info-item"><span class="info-label">Barrio:</span><span class="info-value">{{ inmueble.barrio }}</span></div>
+    </div>
 
-<div class="chat-container" id="chat">
-  <div class="chat-header">Marín Moya Inversiones (M²)</div>
-  <div class="chat-messages" id="messages"></div>
-  <div class="chat-input">
-    <input type="text" id="userInput" placeholder="Escribe tu palabra...">
-    <button onclick="sendMessage()">Enviar</button>
-  </div>
+    <div style="margin-top: 30px;">
+        <h3>Descripción</h3>
+        <p>{{ inmueble.descripcion|linebreaks }}</p>
+    </div>
+
+    <!-- Sección de Contacto -->
+    <div style="margin-top: 40px; padding: 25px; background: var(--azul-petroleo); color: white; border-radius: 12px;">
+        <h4>Contacto del Asesor</h4>
+        <div style="display: flex; gap: 40px; flex-wrap: wrap;">
+            <p><strong>Nombre:</strong> {{ inmueble.nombre_contacto }}</p>
+            <p><strong>Teléfono:</strong> {{ inmueble.telefono_contacto }}</p>
+            <p><strong>Email:</strong> {{ inmueble.email_contacto }}</p>
+        </div>
+    </div>
+
+    <div style="margin-top: 30px;">
+        <a href="{% url 'inmuebles_listado' %}" class="btn">Volver al listado</a>
+    </div>
 </div>
-
-<script src="{% static 'inmuebles/chatbot.js' %}"></script>
-
-</body>
-</html>
+{% endblock %}

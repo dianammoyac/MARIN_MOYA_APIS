@@ -1,0 +1,56 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Marín Moya Inversiones{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'inmuebles/styles.css' %}">
+    <link rel="stylesheet" href="{% static 'inmuebles/chatbot.css' %}">
+</head>
+<body>
+    <div class="header">
+        <h1>MARÍN MOYA</h1>
+        <span>Inversiones con propósito</span>
+        <nav class="header-nav">
+            <a href="{% url 'inmuebles_listado' %}">Inicio</a> |
+            {% if user.is_authenticated %}
+                <a href="{% url 'mis_inmuebles' %}">Mis Inmuebles</a> |
+                <span>Hola, {{ user.username }}</span> | <a href="{% url 'logout' %}">Cerrar sesión</a>
+            {% else %}
+                <a href="{% url 'login' %}">Iniciar sesión</a>
+            {% endif %}
+        </nav>
+    </div>
+
+    {% if messages %}
+        <div class="container" style="margin-bottom: 0; box-shadow: none; background: transparent; padding-top: 20px; padding-bottom: 0;">
+            {% for message in messages %}
+                <div style="padding: 15px; background: #eef2ff; color: #1e3a8a; border-radius: 8px; margin-bottom: 10px; border: 1px solid #d1d5db;">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    {% block content %}{% endblock %}
+
+    <!-- Chatbot Widget -->
+    <div id="chat-widget">
+        <button id="chat-button" onclick="toggleChat()">💬 ¿Necesitas ayuda?</button>
+        <div id="chat" style="display: none;">
+            <div class="chat-header">
+                <strong>Asistente M²</strong>
+                <span onclick="toggleChat()" style="cursor:pointer; float:right;">&times;</span>
+            </div>
+            <div id="messages"></div>
+            <div class="chat-input-area">
+                <input type="text" id="userInput" placeholder="Escribe tu pregunta..." onkeypress="if(event.key === 'Enter') sendMessage()">
+                <button onclick="sendMessage()">➤</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="{% static 'inmuebles/chatbot.js' %}"></script>
+</body>
+</html>

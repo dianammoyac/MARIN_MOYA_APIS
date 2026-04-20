@@ -1,28 +1,15 @@
-{% load static %}
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <title>Crear Inmueble</title>
-  <link rel="stylesheet" href="{% static 'inmuebles/styles.css' %}">
-  <link rel="stylesheet" href="{% static 'inmuebles/chatbot.css' %}">
+{% extends 'base.html' %}
 
-</head>
-<body>
-    <div class="header">
-    <h1>MARÍN MOYA</h1>
-    <span>Inversiones con propósito</span>
-    </div>
+{% block content %}
   <div class="container">
-    <h1>Crear Inmueble</h1>
+    <h1>{% if editando %}Editar{% else %}Crear{% endif %} Inmueble</h1>
 
-    <form method="post">
+    <form method="post" enctype="multipart/form-data">
       {% csrf_token %}
       {{ form.as_p }}
       <button type="submit">Guardar</button>
     </form>
 
-    <p><a href="{% url 'inmuebles_listado' %}">Volver</a></p>
+    <p><a href="{% url 'mis_inmuebles' %}">Volver a mis inmuebles</a></p>
   </div>
-</body>
-</html>
+{% endblock %}

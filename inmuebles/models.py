@@ -1,4 +1,5 @@
 from django.db import models
+from django.contrib.auth.models import User
 
 
 class Inmueble(models.Model):
@@ -34,6 +35,7 @@ class Inmueble(models.Model):
     id = models.BigAutoField(primary_key=True)
 
     # Identidad comercial (portal)
+    usuario = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
     codigo = models.CharField(max_length=30, unique=True)  # Ej: MM-BOG-0001
     titulo = models.CharField(max_length=150)
     descripcion = models.TextField()
@@ -74,9 +76,15 @@ class Inmueble(models.Model):
     telefono_contacto = models.CharField(max_length=30, blank=True)
     email_contacto = models.EmailField(blank=True)
 
+    # Imágenes
+    imagen1 = models.ImageField(upload_to='inmuebles/', blank=True, null=True)
+    imagen2 = models.ImageField(upload_to='inmuebles/', blank=True, null=True)
+    imagen3 = models.ImageField(upload_to='inmuebles/', blank=True, null=True)
+    imagen4 = models.ImageField(upload_to='inmuebles/', blank=True, null=True)
+
     # Fechas
-    fecha_publicacion = models.DateField()
-    fecha_actualizacion = models.DateField()
+    fecha_publicacion = models.DateField(auto_now_add=True)
+    fecha_actualizacion = models.DateField(auto_now=True)
 
     class Meta:
         db_table = 'inmuebles'
@@ -85,3 +93,29 @@ class Inmueble(models.Model):
 
     def __str__(self):
         return f"{self.codigo} - {self.titulo}"
+
+    def save(self, *args, **kwargs):
+        # Solo generamos el código si no existe (creación)
+        if not self.codigo:
+            # Extraemos las iniciales (asegurando que existan)
+            p = self.pais[0].upper() if self.pais else 'X'
+            d = self.departamento[0].upper() if self.departamento else 'X'
+            c = self.ciudad[0].upper() if self.ciudad else 'X'
+            prefix = f"{p}{d}{c}-"
+
+            # Buscamos el último inmueble con ese mismo prefijo para incrementar el número
+            ultimo = Inmueble.objects.filter(codigo__startswith=prefix).order_by('id').last()
+            
+            if ultimo:
+                # Intentamos extraer el número final después del guion
+                try:
+                    ultimo_numero = int(ultimo.codigo.split('-')[-1])
+                    nuevo_numero = ultimo_numero + 1
+                except (ValueError, IndexError):
+                    nuevo_numero = 1
+            else:
+                nuevo_numero = 1
+
+            self.codigo = f"{prefix}{nuevo_numero}"
+        
+        super().save(*args, **kwargs)

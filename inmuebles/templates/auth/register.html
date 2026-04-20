@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Registro - Marín Moya</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f4f6f9;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .register-box {
+            width: 400px;
+            background: #ffffff;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+        }
+        .register-box h2 {
+            margin: 0 0 20px 0;
+            text-align: center;
+            color: #1f2937;
+        }
+        .register-box p { margin-bottom: 14px; }
+        .register-box label { display: block; margin-bottom: 4px; font-weight: bold; color: #374151; }
+        .register-box input { width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; box-sizing: border-box; }
+        .register-box button {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            background: #c6a15b; /* Dorado corporativo */
+            color: white;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 15px;
+            font-weight: bold;
+        }
+        .helptext { font-size: 11px; color: #6b7280; display: block; margin-bottom: 10px; }
+        .errorlist { color: #b91c1c; font-size: 12px; list-style: none; padding: 0; }
+    </style>
+</head>
+<body>
+    <div class="register-box">
+        <h2>Crea tu cuenta</h2>
+        <form method="post">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit">Registrarse</button>
+        </form>
+        <p style="text-align: center; margin-top: 20px; font-size: 14px;">
+            ¿Ya tienes cuenta? <a href="{% url 'login' %}" style="color: #1f2937; font-weight: bold; text-decoration: none;">Inicia sesión</a>
+        </p>
+    </div>
+</body>
+</html>
