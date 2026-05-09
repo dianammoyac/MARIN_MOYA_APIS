@@ -34,13 +34,13 @@
     /* ─── NAVEGACIÓN ─── */
     nav { position: fixed; top: 0; left: 0; right: 0; z-index: 500; display: flex; align-items: center; justify-content: space-between; padding: 20px 64px; transition: .4s; background: transparent; }
     nav.scrolled { background: var(--blanco); border-bottom: 1px solid var(--borde); padding: 18px 64px; }
-    .nav-logo { font-family: 'Playfair Display', serif; font-size: 19px; letter-spacing: 3px; text-transform: uppercase; color: var(--blanco); text-decoration: none; display: flex; flex-direction: column; }
+    .nav-logo { font-family: 'Playfair Display', serif; font-size: 19px; letter-spacing: 4px; text-transform: uppercase; color: var(--blanco); text-decoration: none; display: flex; flex-direction: column; }
     nav.scrolled .nav-logo { color: var(--verde); }
     .nav-right { display: flex; align-items: center; gap: 36px; }
     .nav-links { list-style: none; display: flex; gap: 36px; }
     .nav-links a { font-size: 12px; letter-spacing: 2px; text-transform: uppercase; color: rgba(255,255,255,.75); text-decoration: none; }
     nav.scrolled .nav-links a { color: var(--gris); }
-    .nav-login { font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: rgba(255,255,255,.7); text-decoration: none; transition: color .2s; }
+    .nav-login { font-size: 11px; font-weight: 400; letter-spacing: 2px; text-transform: uppercase; color: rgba(255,255,255,.7); text-decoration: none; transition: color .2s; }
     nav.scrolled .nav-login { color: var(--gris); }
     .nav-login:hover { color: var(--dorado); }
     .nav-sep { width: 1px; height: 16px; background: rgba(255,255,255,.2); }
@@ -52,8 +52,8 @@
     .hero::before { content: ''; position: absolute; inset: 0; background-image: repeating-linear-gradient(90deg, transparent, transparent 79px, rgba(255,255,255,.015) 80px), repeating-linear-gradient(0deg, transparent, transparent 79px, rgba(255,255,255,.015) 80px); pointer-events: none; }
     
     .hero-left { z-index: 2; max-width: 650px; }
-    .hero-eyebrow { font-size: 10px; font-weight: 500; letter-spacing: 4px; text-transform: uppercase; color: var(--dorado); margin-bottom: 24px; opacity: 0; animation: slideUp .8s .1s forwards; }
-    .hero h1 { font-family: 'Playfair Display', serif; font-size: clamp(52px, 5.5vw, 86px); color: var(--blanco); line-height: 1.05; opacity: 0; animation: slideUp .85s .2s forwards; }
+    .hero-eyebrow { font-size: 10px; font-weight: 500; letter-spacing: 5px; text-transform: uppercase; color: var(--dorado); margin-bottom: 24px; opacity: 0; animation: slideUp .8s .1s forwards; }
+    .hero h1 { font-family: 'Playfair Display', serif; font-size: clamp(52px, 5.5vw, 86px); font-weight: 400; color: var(--blanco); line-height: 1.05; letter-spacing: -0.01em; opacity: 0; animation: slideUp .85s .2s forwards; }
     .hero h1 em { font-style: italic; color: var(--dorado); }
     .hero-sub { font-size: 16px; font-weight: 300; color: rgba(255,255,255,.45); line-height: 1.8; max-width: 480px; margin: 32px 0 48px; opacity: 0; animation: slideUp .8s .3s forwards; }
     .hero-actions { display: flex; gap: 24px; align-items: center; opacity: 0; animation: slideUp .8s .5s forwards; }
@@ -136,14 +136,15 @@
     .panel-form button:hover { background: #b08b45; }
     
     /* SECCIÓN GENÉRICA */
-    .s-kicker { font-size: 10px; font-weight: 400; letter-spacing: 4px; text-transform: uppercase; color: var(--dorado); margin-bottom: 22px; }
-    .s-title { font-family: 'Playfair Display', serif; font-size: clamp(34px, 3.5vw, 54px); font-weight: 400; color: var(--verde); line-height: 1.12; margin: 0; border: none; padding: 0; }
+    .s-kicker { font-size: 10px; font-weight: 500; letter-spacing: 5px; text-transform: uppercase; color: var(--dorado); margin-bottom: 22px; }
+    .s-title { font-family: 'Playfair Display', serif; font-size: clamp(34px, 3.5vw, 54px); font-weight: 400; color: var(--verde); line-height: 1.12; letter-spacing: -0.01em; margin: 0; border: none; padding: 0; }
+    .s-title.white { color: var(--blanco); }
     .s-title em { font-style: italic; color: var(--dorado); }
 
     /* CTA PUBLICAR */
     .cta-publish { background: var(--verde); border-top: 1px solid rgba(198,161,91,.12); }
     .cta-pub-inner { max-width: 1200px; margin: 0 auto; padding: 110px 64px; text-align: center; }
-    .cta-pub-title { font-family: 'Playfair Display', serif; font-size: clamp(42px, 5vw, 70px); color: var(--blanco); line-height: 1.05; margin-bottom: 22px; }
+    .cta-pub-title { font-family: 'Playfair Display', serif; font-size: clamp(42px, 5vw, 70px); font-weight: 400; color: var(--blanco); line-height: 1.05; letter-spacing: -0.01em; margin-bottom: 22px; }
     .cta-pub-sub { font-size: 15px; color: rgba(255,255,255,.5); line-height: 1.85; max-width: 520px; margin: 0 auto 48px; }
     .cta-pub-actions { display: flex; gap: 20px; justify-content: center; align-items: center; flex-wrap: wrap; }
     .cta-outline { font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: rgba(255,255,255,.6); text-decoration: none; padding: 15px 34px; border: 1px solid rgba(255,255,255,.2); transition: .25s; cursor: none; }
@@ -153,7 +154,7 @@
     .cats-bg { background: var(--marfil); border-top: 1px solid var(--borde); border-bottom: 1px solid var(--borde); }
     .cats-inner { max-width: 1200px; margin: 0 auto; padding: 100px 64px; }
     .cats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--borde); border: 1px solid var(--borde); margin-top: 60px; }
-    .cat-item { background: var(--marfil); padding: 22px 40px; display: flex; flex-direction: column; gap: 14px; text-decoration: none; transition: background .25s; opacity: 0; transform: translateY(12px); transition: opacity .5s, transform .5s, background .25s; }
+    .cat-item { background: var(--blanco); padding: 22px 40px; display: flex; flex-direction: column; gap: 14px; text-decoration: none; transition: background .25s; opacity: 0; transform: translateY(12px); transition: opacity .5s, transform .5s, background .25s; }
     .cat-item.vis { opacity: 1; transform: translateY(0); }
     .cat-item:hover { background: var(--verde); }
     .cat-icon { font-size: 28px; transition: transform .3s; }
@@ -170,8 +171,8 @@
     .strip-item.vis { opacity: 1; transform: translateY(0); }
     .strip-item:last-child { border-right: none; }
     .port-wrapper { position: relative; overflow: hidden; margin-top: 60px; }
-    .port-grid { display: flex; gap: 30px; transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1); background: transparent; border: none; }
-    .prop-card { flex: 0 0 calc(33.333% - 20px); min-width: 320px; background: var(--blanco); overflow: hidden; opacity: 0; transform: translateY(20px); transition: opacity .6s, transform .6s; border: 1px solid var(--borde); }
+    .port-grid { display: flex; gap: 1px; transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1); background: var(--borde); border: 1px solid var(--borde); }
+    .prop-card { flex: 0 0 calc(33.333% - 0.66px); min-width: 320px; background: var(--blanco); overflow: hidden; opacity: 0; transform: translateY(20px); transition: opacity .6s, transform .6s; }
     .carousel-nav-port { position: absolute; top: 50%; width: 100%; display: flex; justify-content: space-between; transform: translateY(-50%); pointer-events: none; z-index: 10; padding: 0 10px; }
     .c-btn { width: 45px; height: 45px; background: var(--verde); color: var(--dorado); border: none; cursor: pointer; pointer-events: auto; display: flex; align-items: center; justify-content: center; font-size: 18px; transition: .3s; border-radius: 50%; }
     .c-btn:hover { background: var(--dorado); color: var(--verde); }
@@ -198,6 +199,7 @@
       <li><a href="#categorias">Categorías</a></li>
       <li><a href="#servicios">Servicios</a></li>
       <li><a href="#contacto">Contacto</a></li>
+      <li><a href="{% url 'prueba' %}">Prueba con este diseño</a></li>
     </ul>
 
     <a href="{% url 'login' %}" class="nav-login">Iniciar sesión</a>
@@ -212,7 +214,7 @@
 
     <h1>
       El inmueble<br>
-      que buscabas<br>
+      que buscas<br>
       <em>te espera.</em>
     </h1>
 
@@ -297,8 +299,8 @@
 <section style="max-width:1200px; margin:0 auto; padding:110px 64px;" id="portafolio">
   <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:60px;">
     <div>
-      <p style="color:var(--dorado); font-size:10px; letter-spacing:4px; margin-bottom:22px;">SELECCIÓN ACTUAL</p>
-      <h2 style="font-family:'Playfair Display'; font-size:54px; color:var(--verde);">Portafolio de <em>inmuebles</em></h2>
+      <p class="s-kicker">SELECCIÓN ACTUAL</p>
+      <h2 class="s-title">Portafolio de <em>inmuebles</em></h2>
     </div>
     <a href="{% url 'inmuebles_listado' %}" style="color:var(--verde); border-bottom:1px solid var(--dorado); padding-bottom:3px; text-decoration:none; font-size:11px;">VER TODO →</a>
   </div>
@@ -412,8 +414,8 @@
 <section style="background:var(--marfil); padding:100px 64px;" id="servicios">
   <div style="max-width:1200px; margin:0 auto; display:grid; grid-template-columns: 1fr 1fr; gap:80px; align-items:center;">
     <div>
-      <p style="color:var(--dorado); font-size:10px; letter-spacing:4px; margin-bottom:22px;">NUESTROS SERVICIOS</p>
-      <h2 style="font-family:'Playfair Display'; font-size:54px; color:var(--verde); line-height:1.1;">Lo que hacemos <em>diferente.</em></h2>
+      <p class="s-kicker">NUESTROS SERVICIOS</p>
+      <h2 class="s-title">Lo que hacemos <em>diferente.</em></h2>
       <div style="margin-top:50px; display:flex; flex-direction:column; gap:30px;">
         <div style="display:flex; gap:20px;">
           <span style="color:var(--dorado); font-family:'Playfair Display';">01</span>
@@ -441,8 +443,8 @@
 <section style="padding:100px 64px; background:var(--verde); color:white;" id="contacto">
   <div style="max-width:1200px; margin:0 auto; display:grid; grid-template-columns: 1fr 1.2fr; gap:100px;">
     <div>
-      <p style="color:var(--dorado); font-size:10px; letter-spacing:4px; margin-bottom:22px;">HABLEMOS</p>
-      <h2 style="font-family:'Playfair Display'; font-size:45px; color:white; line-height:1.2;">Encontremos su próximo <em>proyecto.</em></h2>
+      <p class="s-kicker">HABLEMOS</p>
+      <h2 class="s-title white">Encontremos su próximo <em>proyecto.</em></h2>
       <div style="margin-top:50px; display:flex; flex-direction:column; gap:25px;">
         <p style="font-size:14px; color:rgba(255,255,255,.5);">Déjenos sus datos y un asesor se comunicará con usted en menos de 24 horas.</p>
         <p style="font-size:18px;">contacto@marinmoya.co</p>
@@ -523,7 +525,7 @@
     if (pIdx > max) pIdx = 0;
     if (pIdx < 0) pIdx = max;
 
-    const cardWidth = cards[0].offsetWidth + 30; // 30 es el gap
+    const cardWidth = cards[0].offsetWidth + 1; // 1 es el gap
     track.style.transform = `translateX(-${pIdx * cardWidth}px)`;
 
     document.getElementById('prevP').disabled = pIdx === 0;

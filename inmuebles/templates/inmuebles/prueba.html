@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Marín Moya Inversiones - Prueba de Diseño</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,700;1,400;1,500&family=Jost:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --negro:   #0d0d0d;
+      --verde:   #0e2a2a;
+      --dorado:  #c6a15b;
+      --marfil:  #f9f6f1;
+      --gris:    #888;
+      --borde:   #e2ddd6;
+      --blanco:  #fff;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body { font-family: 'Jost', sans-serif; background: var(--blanco); color: var(--negro); overflow-x: hidden; }
+
+    /* ─── CURSOR PERSONALIZADO ─── */
+    * { cursor: none; }
+    @media (hover: hover) and (pointer: fine) { * { cursor: none; } }
+    #cursor { width: 10px; height: 10px; background: var(--dorado); border-radius: 50%; position: fixed; top: 0; left: 0; pointer-events: none; z-index: 9999; transform: translate(-50%, -50%); display: none; transition: width .3s, height .3s, background .3s; }
+    #cursor.grow { width: 40px; height: 40px; background: transparent; border: 1px solid var(--dorado); }
+    @media (hover: hover) and (pointer: fine) { #cursor { display: block; } }
+
+    /* ─── NAVBAR ─── */
+    nav { position: fixed; top: 0; left: 0; right: 0; z-index: 500; display: flex; align-items: center; justify-content: space-between; padding: 28px 64px; transition: padding .4s, background .4s; }
+    nav.scrolled { background: var(--blanco); border-bottom: 1px solid var(--borde); padding: 18px 64px; }
+    .nav-logo { font-family: 'Playfair Display', serif; font-size: 19px; font-weight: 500; letter-spacing: 3px; text-transform: uppercase; color: var(--blanco); text-decoration: none; transition: color .3s; }
+    nav.scrolled .nav-logo { color: var(--verde); }
+    .nav-right { display: flex; align-items: center; gap: 40px; }
+    .nav-links { list-style: none; display: flex; gap: 36px; }
+    .nav-links a { font-size: 12px; font-weight: 400; letter-spacing: 2px; text-transform: uppercase; color: rgba(255,255,255,.75); text-decoration: none; transition: color .2s; }
+    nav.scrolled .nav-links a { color: var(--gris); }
+    .nav-links a:hover, nav.scrolled .nav-links a:hover { color: var(--dorado); }
+    .nav-btn { font-size: 11px; font-weight: 500; letter-spacing: 2px; text-transform: uppercase; color: var(--dorado); text-decoration: none; border: 1px solid var(--dorado); padding: 10px 22px; transition: background .25s, color .25s; }
+    .nav-btn:hover { background: var(--dorado); color: var(--blanco); }
+    .nav-login { font-size: 11px; font-weight: 400; letter-spacing: 2px; text-transform: uppercase; color: rgba(255,255,255,.6); text-decoration: none; transition: color .2s; }
+    nav.scrolled .nav-login { color: var(--gris); }
+    .nav-login:hover { color: var(--dorado); }
+    .nav-sep { width: 1px; height: 16px; background: rgba(255,255,255,.2); display: inline-block; }
+    nav.scrolled .nav-sep { background: var(--borde); }
+
+    /* ─── HERO ─── */
+    .hero { height: 100vh; min-height: 700px; background: var(--verde); display: grid; grid-template-columns: 1fr 1fr; position: relative; overflow: hidden; }
+    .hero::after { content: ''; position: absolute; top: 0; bottom: 0; left: 50%; width: 1px; background: rgba(198,161,91,.18); }
+    .hero-left { display: flex; flex-direction: column; justify-content: flex-end; padding: 0 64px 80px; position: relative; z-index: 2; }
+    .hero-eyebrow { font-size: 10px; font-weight: 400; letter-spacing: 4px; text-transform: uppercase; color: var(--dorado); margin-bottom: 28px; opacity: 0; animation: slideUp .8s .2s forwards; }
+    .hero h1 { font-family: 'Playfair Display', serif; font-size: clamp(52px, 5.5vw, 86px); font-weight: 400; line-height: 1.05; color: var(--blanco); opacity: 0; animation: slideUp .9s .35s forwards; }
+    .hero h1 em { font-style: italic; color: var(--dorado); }
+    .hero-sub { margin-top: 30px; font-size: 14px; font-weight: 300; line-height: 1.85; color: rgba(255,255,255,.55); max-width: 400px; opacity: 0; animation: slideUp .9s .5s forwards; }
+    .hero-actions { margin-top: 50px; display: flex; gap: 20px; align-items: center; opacity: 0; animation: slideUp .9s .65s forwards; }
+    .btn-gold { font-size: 11px; font-weight: 500; letter-spacing: 2.5px; text-transform: uppercase; background: var(--dorado); color: var(--blanco); padding: 15px 34px; text-decoration: none; transition: background .25s; }
+    .btn-gold:hover { background: #b08b45; }
+    .btn-ghost { font-size: 11px; font-weight: 400; letter-spacing: 2px; text-transform: uppercase; color: rgba(255,255,255,.6); text-decoration: none; padding-bottom: 2px; border-bottom: 1px solid rgba(255,255,255,.25); transition: color .2s, border-color .2s; }
+    .btn-ghost:hover { color: var(--dorado); border-color: var(--dorado); }
+    .hero-number { position: absolute; bottom: 70px; right: 64px; font-family: 'Playfair Display', serif; font-size: 160px; font-weight: 700; color: rgba(198,161,91,.07); line-height: 1; pointer-events: none; user-select: none; }
+    .scroll-hint { position: absolute; bottom: 40px; left: 64px; display: flex; align-items: center; gap: 14px; color: rgba(255,255,255,.3); font-size: 10px; letter-spacing: 3px; text-transform: uppercase; opacity: 0; animation: slideUp .9s .9s forwards; }
+    .scroll-hint::before { content: ''; width: 40px; height: 1px; background: rgba(198,161,91,.4); }
+    .hero-right { position: relative; overflow: hidden; display: flex; align-items: center; justify-content: center; }
+    .hero-right-bg { position: absolute; inset: 0; background: var(--verde); }
+    .hero-panel { position: relative; z-index: 2; background: rgba(255,255,255,.05); border: 1px solid rgba(198,161,91,.25); padding: 38px 32px; width: 340px; backdrop-filter: blur(8px); opacity: 0; animation: slideUp .9s .4s forwards; }
+    .panel-title { font-family: 'Playfair Display', serif; font-size: 18px; font-weight: 400; color: var(--blanco); margin-bottom: 28px; padding-bottom: 16px; border-bottom: 1px solid rgba(198,161,91,.2); letter-spacing: 1px; }
+    .panel-form label { display: block; font-size: 9px; font-weight: 500; color: var(--dorado); letter-spacing: 3px; text-transform: uppercase; margin-bottom: 8px; }
+    .panel-form select, .panel-form input { width: 100%; background: rgba(255,255,255,.06); border: none; border-bottom: 1px solid rgba(255,255,255,.15); padding: 10px 0; color: rgba(255,255,255,.85); font-size: 14px; font-weight: 300; margin-bottom: 22px; outline: none; transition: border-color .2s; font-family: 'Jost', sans-serif; appearance: none; }
+    .panel-form select option { background: var(--verde); }
+    .panel-form select:focus, .panel-form input:focus { border-bottom-color: var(--dorado); }
+    .panel-form input::placeholder { color: rgba(255,255,255,.3); }
+    .panel-form button { width: 100%; background: var(--dorado); color: var(--blanco); font-weight: 500; font-size: 11px; letter-spacing: 2.5px; text-transform: uppercase; padding: 15px; border: none; cursor: none; transition: background .25s; font-family: 'Jost', sans-serif; margin-top: 4px; }
+    .panel-form button:hover { background: #b08b45; }
+
+    /* ─── CIFRAS STRIP ─── */
+    .strip { background: var(--marfil); border-top: 1px solid var(--borde); border-bottom: 1px solid var(--borde); display: grid; grid-template-columns: repeat(4, 1fr); }
+    .strip-item { padding: 52px 48px; border-right: 1px solid var(--borde); opacity: 0; transform: translateY(16px); transition: opacity .6s, transform .6s; }
+    .strip-item:last-child { border-right: none; }
+    .strip-item.vis { opacity: 1; transform: translateY(0); }
+    .strip-num { font-family: 'Playfair Display', serif; font-size: 44px; font-weight: 400; color: var(--verde); line-height: 1; }
+    .strip-label { margin-top: 8px; font-size: 11px; font-weight: 400; letter-spacing: 2px; text-transform: uppercase; color: var(--gris); }
+
+    /* ─── SECCIÓN GENÉRICA ─── */
+    .s { max-width: 1200px; margin: 0 auto; padding: 110px 64px; }
+    .s-kicker { font-size: 10px; font-weight: 400; letter-spacing: 4px; text-transform: uppercase; color: var(--dorado); margin-bottom: 22px; }
+    .s-title { font-family: 'Playfair Display', serif; font-size: clamp(34px, 3.5vw, 54px); font-weight: 400; color: var(--verde); line-height: 1.12; }
+    .s-title em { font-style: italic; color: var(--dorado); }
+    .s-body { font-size: 15px; font-weight: 300; line-height: 1.9; color: #555; max-width: 540px; }
+
+    /* ─── PORTAFOLIO ─── */
+    .port-header { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 60px; flex-wrap: wrap; gap: 20px; }
+    .port-link { font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: var(--verde); text-decoration: none; border-bottom: 1px solid var(--dorado); padding-bottom: 3px; transition: color .2s; }
+    .port-link:hover { color: var(--dorado); }
+    .port-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--borde); border: 1px solid var(--borde); }
+    .prop-card { background: var(--blanco); overflow: hidden; opacity: 0; transform: translateY(20px); transition: opacity .6s, transform .6s; }
+    .prop-card.vis { opacity: 1; transform: translateY(0); }
+    .prop-img-wrap { overflow: hidden; height: 240px; position: relative; }
+    .prop-img-wrap img, .prop-img-mock { width: 100%; height: 100%; object-fit: cover; transition: transform .7s ease; display: block; }
+    .prop-card:hover .prop-img-wrap img, .prop-card:hover .prop-img-mock { transform: scale(1.06); }
+    .prop-img-mock { background: var(--verde); display: flex; align-items: center; justify-content: center; }
+    .prop-img-mock svg { opacity: .18; }
+    .prop-tag { position: absolute; top: 20px; left: 20px; font-size: 9px; font-weight: 500; letter-spacing: 2px; text-transform: uppercase; background: var(--dorado); color: var(--blanco); padding: 5px 12px; }
+    .prop-body { padding: 28px 28px 32px; }
+    .prop-tipo { font-size: 10px; letter-spacing: 2.5px; text-transform: uppercase; color: var(--gris); margin-bottom: 10px; }
+    .prop-title { font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 400; color: var(--verde); margin-bottom: 8px; line-height: 1.25; }
+    .prop-loc { font-size: 12px; font-weight: 300; color: var(--gris); margin-bottom: 24px; letter-spacing: .5px; }
+    .prop-foot { display: flex; align-items: center; justify-content: space-between; padding-top: 20px; border-top: 1px solid var(--borde); }
+    .prop-price { font-family: 'Playfair Display', serif; font-size: 22px; font-weight: 400; color: var(--negro); }
+    .prop-price small { display: block; font-family: 'Jost', sans-serif; font-size: 9px; font-weight: 400; letter-spacing: 2px; text-transform: uppercase; color: var(--gris); margin-bottom: 2px; }
+    .prop-feats { display: flex; gap: 16px; font-size: 11px; color: var(--gris); letter-spacing: .5px; }
+
+    /* ─── CATEGORÍAS ─── */
+    .cats-bg { background: var(--marfil); border-top: 1px solid var(--borde); border-bottom: 1px solid var(--borde); }
+    .cats-inner { max-width: 1200px; margin: 0 auto; padding: 100px 64px; }
+    .cats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--borde); border: 1px solid var(--borde); margin-top: 60px; }
+    .cat-item { background: var(--marfil); padding: 22px 40px; display: flex; flex-direction: column; gap: 14px; text-decoration: none; opacity: 0; transform: translateY(12px); transition: opacity .5s, transform .5s, background .25s; }
+    .cat-item.vis { opacity: 1; transform: translateY(0); }
+    .cat-item:hover { background: var(--verde); }
+    .cat-icon { font-size: 28px; transition: transform .3s; }
+    .cat-item:hover .cat-icon { transform: scale(1.15); }
+    .cat-name { font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 400; color: var(--verde); transition: color .25s; }
+    .cat-item:hover .cat-name { color: var(--dorado); }
+    .cat-desc { font-size: 13px; font-weight: 300; color: var(--gris); line-height: 1.7; transition: color .25s; }
+    .cat-item:hover .cat-desc { color: rgba(255,255,255,.5); }
+    .cat-arrow { font-size: 18px; color: var(--dorado); margin-top: auto; opacity: 0; transition: opacity .25s, transform .25s; }
+    .cat-item:hover .cat-arrow { opacity: 1; transform: translateX(4px); }
+
+    /* ─── SERVICIOS ─── */
+    .services-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: center; margin-top: 80px; }
+    .service-list { display: flex; flex-direction: column; }
+    .service-item { display: grid; grid-template-columns: 44px 1fr; gap: 24px; padding: 30px 0; border-bottom: 1px solid var(--borde); opacity: 0; transform: translateX(-16px); transition: opacity .5s, transform .5s; }
+    .service-item:first-child { border-top: 1px solid var(--borde); }
+    .service-item.vis { opacity: 1; transform: translateX(0); }
+    .service-num { font-family: 'Playfair Display', serif; font-size: 13px; color: var(--dorado); padding-top: 3px; }
+    .service-title { font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 400; color: var(--verde); margin-bottom: 8px; }
+    .service-desc { font-size: 13px; font-weight: 300; color: var(--gris); line-height: 1.75; }
+    .service-img-wrap { position: relative; height: 560px; }
+    .service-img-panel { position: absolute; inset: 0; background: var(--verde); display: flex; align-items: center; justify-content: center; overflow: hidden; }
+    .service-img-panel::after { content: 'M²'; font-family: 'Playfair Display', serif; font-size: 200px; font-weight: 700; color: rgba(198,161,91,.08); position: absolute; }
+    .service-deco { position: absolute; bottom: -28px; right: -28px; width: 160px; height: 160px; border: 1px solid var(--dorado); opacity: .3; }
+
+    /* ─── CONTACTO ─── */
+    .contact-bg { background: var(--verde); }
+    .contact-inner { max-width: 1200px; margin: 0 auto; padding: 110px 64px; display: grid; grid-template-columns: 1fr 1fr; gap: 100px; align-items: start; }
+    .contact-left .s-kicker { color: var(--dorado); }
+    .contact-left .s-title { color: var(--blanco); }
+    .contact-left .s-body { color: rgba(255,255,255,.5); margin-top: 24px; }
+    .contact-info { margin-top: 50px; display: flex; flex-direction: column; gap: 28px; }
+    .c-info-item { display: flex; flex-direction: column; gap: 5px; }
+    .c-info-label { font-size: 9px; letter-spacing: 3px; text-transform: uppercase; color: var(--dorado); }
+    .c-info-val { font-size: 15px; font-weight: 300; color: rgba(255,255,255,.75); }
+    .contact-form { display: flex; flex-direction: column; gap: 20px; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .field { display: flex; flex-direction: column; gap: 8px; }
+    .field label { font-size: 9px; letter-spacing: 3px; text-transform: uppercase; color: rgba(255,255,255,.4); }
+    .field input, .field select, .field textarea { background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.12); padding: 14px 16px; color: var(--blanco); font-family: 'Jost', sans-serif; font-size: 14px; font-weight: 300; outline: none; transition: border-color .25s; width: 100%; }
+    .field select option { background: var(--verde); }
+    .field textarea { resize: none; height: 110px; }
+    .field input:focus, .field select:focus, .field textarea:focus { border-color: var(--dorado); }
+    .form-submit { margin-top: 8px; background: var(--dorado); color: var(--blanco); border: none; padding: 16px 38px; font-family: 'Jost', sans-serif; font-size: 11px; font-weight: 500; letter-spacing: 2.5px; text-transform: uppercase; cursor: none; transition: background .25s; align-self: flex-start; }
+    .form-submit:hover { background: #b08b45; }
+
+    /* ─── CTA PUBLICAR ─── */
+    .cta-publish { background: var(--verde); border-top: 1px solid rgba(198,161,91,.12); }
+    .cta-pub-inner { max-width: 1200px; margin: 0 auto; padding: 110px 64px; text-align: center; }
+    .cta-pub-title { font-family: 'Playfair Display', serif; font-size: clamp(42px, 5vw, 70px); font-weight: 400; color: var(--blanco); line-height: 1.05; margin-bottom: 22px; }
+    .cta-pub-sub { font-size: 15px; font-weight: 300; color: rgba(255,255,255,.5); line-height: 1.85; max-width: 520px; margin: 0 auto 48px; }
+    .cta-pub-actions { display: flex; gap: 20px; justify-content: center; align-items: center; flex-wrap: wrap; }
+    .cta-outline { font-size: 11px; font-weight: 400; letter-spacing: 2px; text-transform: uppercase; color: rgba(255,255,255,.6); text-decoration: none; padding: 15px 34px; border: 1px solid rgba(255,255,255,.2); transition: border-color .25s, color .25s; }
+    .cta-outline:hover { border-color: var(--dorado); color: var(--dorado); }
+
+    /* ─── FOOTER ─── */
+    footer { background: #080f0f; padding: 70px 64px 36px; }
+    .footer-top { display: grid; grid-template-columns: 1.6fr 1fr 1fr; gap: 60px; padding-bottom: 60px; border-bottom: 1px solid rgba(255,255,255,.07); }
+    .f-brand { font-family: 'Playfair Display', serif; font-size: 22px; font-weight: 400; letter-spacing: 3px; text-transform: uppercase; color: var(--blanco); margin-bottom: 6px; }
+    .f-tag { font-size: 10px; letter-spacing: 3px; text-transform: uppercase; color: var(--dorado); margin-bottom: 24px; }
+    .f-desc { font-size: 13px; font-weight: 300; line-height: 1.85; color: rgba(255,255,255,.35); max-width: 280px; }
+    .f-col h5 { font-size: 9px; letter-spacing: 3px; text-transform: uppercase; color: var(--dorado); margin-bottom: 22px; }
+    .f-col ul { list-style: none; display: flex; flex-direction: column; gap: 12px; }
+    .f-col a { font-size: 13px; font-weight: 300; color: rgba(255,255,255,.4); text-decoration: none; transition: color .2s; }
+    .f-col a:hover { color: var(--dorado); }
+    .footer-bot { display: flex; align-items: center; justify-content: space-between; padding-top: 30px; font-size: 11px; color: rgba(255,255,255,.2); flex-wrap: wrap; gap: 12px; }
+
+    /* ─── ANIMACIONES ─── */
+    @keyframes slideUp { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* ─── RESPONSIVE ─── */
+    @media (max-width: 960px) {
+      nav, nav.scrolled { padding: 20px 28px; }
+      .nav-links { display: none; }
+      .hero { grid-template-columns: 1fr; }
+      .hero-right { display: flex; flex-direction: column; min-height: 400px; }
+      .hero-panel { width: 90%; max-width: 340px; }
+      .hero::after { display: none; }
+      .hero-left { padding: 0 28px 70px; }
+      .strip { grid-template-columns: 1fr 1fr; }
+      .port-grid { grid-template-columns: 1fr 1fr; }
+      .cats-grid { grid-template-columns: 1fr 1fr; }
+      .services-grid { grid-template-columns: 1fr; }
+      .service-img-wrap { height: 300px; }
+      .contact-inner { grid-template-columns: 1fr; gap: 60px; }
+      .footer-top { grid-template-columns: 1fr 1fr; }
+      .s { padding: 80px 28px; }
+      .cats-inner { padding: 80px 28px; }
+    }
+
+    @media (max-width: 600px) {
+      .strip { grid-template-columns: 1fr; }
+      .port-grid { grid-template-columns: 1fr; }
+      .cats-grid { grid-template-columns: 1fr; }
+      .form-row { grid-template-columns: 1fr; }
+      .footer-top { grid-template-columns: 1fr; }
+      footer { padding: 50px 28px 28px; }
+    }
+  </style>
+</head>
+<body>
+
+<div id="cursor"></div>
+
+<!-- Navbar -->
+<nav id="navbar">
+  <a href="/" class="nav-logo">Marín Moya</a>
+  <div class="nav-right">
+    <ul class="nav-links">
+      <li><a href="#portafolio">Portafolio</a></li>
+      <li><a href="#categorias">Categorías</a></li>
+      <li><a href="#servicios">Servicios</a></li>
+      <li><a href="#contacto">Contacto</a></li>
+    </ul>
+    <a href="/login/" class="nav-login">Iniciar sesión</a>
+    <span class="nav-sep"></span>
+    <a href="/inmuebles/" class="nav-btn">Acceder al portal →</a>
+  </div>
+</nav>
+
+<!-- Hero -->
+<section class="hero">
+  <div class="hero-left">
+    <p class="hero-eyebrow">Inversiones con propósito · Colombia</p>
+    <h1>El inmueble<br/>que buscabas<br/><em>te espera.</em></h1>
+    <p class="hero-sub">Conectamos personas con propiedades únicas en Colombia. Casas, apartamentos, lotes y locales seleccionados con criterio.</p>
+    <div class="hero-actions">
+      <a href="/inmuebles/" class="btn-gold">Explorar portafolio</a>
+      <a href="#contacto" class="btn-ghost">Hablar con un asesor</a>
+    </div>
+    <div class="scroll-hint">Desplazar</div>
+  </div>
+
+  <div class="hero-right">
+    <div class="hero-panel">
+      <div class="panel-title">Buscar inmueble</div>
+      <form class="panel-form" action="/inmuebles/" method="get">
+        <label>Operación</label>
+        <select name="operacion">
+          <option value="">Venta · Arriendo · Cesión</option>
+          <option value="VENTA">Venta</option>
+          <option value="ARRIENDO">Arriendo</option>
+          <option value="CESION">Cesión de derechos</option>
+        </select>
+        <label>Tipo de inmueble</label>
+        <select name="tipo">
+          <option value="">Todos los tipos</option>
+          <option value="APARTAMENTO">Apartamento</option>
+          <option value="CASA">Casa</option>
+          <option value="LOCAL">Local comercial</option>
+        </select>
+        <label>Ciudad</label>
+        <input type="text" name="ciudad" placeholder="Ej: Armenia, Bogotá…"/>
+        <button type="submit">Buscar propiedades</button>
+      </form>
+    </div>
+    <div class="hero-right-bg">
+      <div style="position:absolute;bottom:50px;right:40px;font-family:'Playfair Display',serif;font-size:120px;font-weight:700;color:rgba(198,161,91,.06);line-height:1;">M²</div>
+    </div>
+  </div>
+  <div class="hero-number">M²</div>
+</section>
+
+<!-- Cifras -->
+<div class="strip">
+  <div class="strip-item">
+    <div class="strip-num">6</div>
+    <div class="strip-label">Tipos de inmueble</div>
+  </div>
+  <div class="strip-item">
+    <div class="strip-num">+50</div>
+    <div class="strip-label">Propiedades activas</div>
+  </div>
+  <div class="strip-item">
+    <div class="strip-num">100%</div>
+    <div class="strip-label">Asesoría personalizada</div>
+  </div>
+  <div class="strip-item">
+    <div class="strip-num">COP · USD</div>
+    <div class="strip-label">Monedas aceptadas</div>
+  </div>
+</div>
+
+<!-- Portafolio -->
+<section class="s" id="portafolio">
+  <div class="port-header">
+    <div>
+      <div class="s-kicker">Selección actual</div>
+      <h2 class="s-title">Portafolio de<br/><em>inmuebles</em></h2>
+    </div>
+    <a href="/inmuebles/" class="port-link">Ver todas las propiedades →</a>
+  </div>
+  <div class="port-grid">
+    <div class="prop-card">
+      <div class="prop-img-wrap"><div class="prop-img-mock"></div><span class="prop-tag">Disponible</span></div>
+      <div class="prop-body">
+        <div class="prop-tipo">Casa · Venta</div>
+        <div class="prop-title">Casa Campestre Los Robles</div>
+        <div class="prop-loc">Circasia, Quindío</div>
+        <div class="prop-foot"><div class="prop-price"><small>COP</small>$ 540.000.000</div></div>
+      </div>
+    </div>
+    <!-- Repetir según necesidad -->
+  </div>
+</section>
+
+<!-- Categorías -->
+<div class="cats-bg" id="categorias">
+  <div class="cats-inner">
+    <div class="s-kicker">Qué encontrarás</div>
+    <h2 class="s-title">Cada necesidad,<br/><em>una categoría.</em></h2>
+    <div class="cats-grid">
+      <a class="cat-item" href="/inmuebles/?tipo=APARTAMENTO"><span class="cat-icon">🏢</span><div class="cat-name">Apartamentos</div></a>
+      <a class="cat-item" href="/inmuebles/?tipo=CASA"><span class="cat-icon">🏡</span><div class="cat-name">Casas</div></a>
+      <a class="cat-item" href="/inmuebles/?tipo=LOCAL"><span class="cat-icon">🏬</span><div class="cat-name">Locales</div></a>
+    </div>
+  </div>
+</div>
+
+<!-- Servicios -->
+<section class="s" id="servicios">
+  <div class="services-grid">
+    <div class="service-list">
+      <div class="service-item"><span class="service-num">01</span><div><div class="service-title">Asesoría personalizada</div><div class="service-desc">Acompañamos cada etapa del proceso inmobiliario.</div></div></div>
+      <div class="service-item"><span class="service-num">02</span><div><div class="service-title">Inventario verificado</div><div class="service-desc">Propiedades validadas antes de publicarse.</div></div></div>
+    </div>
+    <div class="service-img-wrap"><div class="service-img-panel"></div></div>
+  </div>
+</section>
+
+<!-- Contacto -->
+<div class="contact-bg" id="contacto">
+  <div class="contact-inner">
+    <div class="contact-left">
+      <div class="s-kicker">Hablemos</div>
+      <h2 class="s-title">Encontremos<br/>la propiedad<br/><em>ideal para ti.</em></h2>
+      <div class="contact-info">
+        <div class="c-info-item"><span class="c-info-label">Correo</span><span class="c-info-val">contacto@marinmoya.co</span></div>
+      </div>
+    </div>
+    <form class="contact-form" id="mainContactForm">
+      <div class="form-row">
+        <div class="field"><label for="name">Nombre</label><input type="text" id="name" required/></div>
+        <div class="field"><label for="phone">Teléfono</label><input type="tel" id="phone"/></div>
+      </div>
+      <div class="field"><label for="email">Email</label><input type="email" id="email" required/></div>
+      <button type="submit" class="form-submit">Enviar consulta</button>
+    </form>
+  </div>
+</div>
+
+<footer>
+  <div class="footer-top">
+    <div><div class="f-brand">Marín Moya</div><div class="f-tag">Inversiones con propósito</div></div>
+  </div>
+  <div class="footer-bot"><span>© 2026 Marín Moya Inversiones</span></div>
+</footer>
+
+<script>
+  const cursor = document.getElementById('cursor');
+  document.addEventListener('mousemove', e => { cursor.style.left = e.clientX + 'px'; cursor.style.top = e.clientY + 'px'; });
+  document.querySelectorAll('a, button, .cat-item, .prop-card').forEach(el => {
+    el.addEventListener('mouseenter', () => cursor.classList.add('grow'));
+    el.addEventListener('mouseleave', () => cursor.classList.remove('grow'));
+  });
+
+  const nav = document.getElementById('navbar');
+  window.addEventListener('scroll', () => { nav.classList.toggle('scrolled', window.scrollY > 60); });
+
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach((e, i) => { if (e.isIntersecting) { setTimeout(() => e.target.classList.add('vis'), i * 90); io.unobserve(e.target); } });
+  }, { threshold: 0.1 });
+  document.querySelectorAll('.strip-item, .prop-card, .cat-item, .service-item').forEach(el => io.observe(el));
+</script>
+</body>
+</html>

@@ -20,6 +20,10 @@ def index2_view(request):
     return render(request, "inmuebles/index2.html", {"inmuebles": inmuebles})
 
 
+def prueba_view(request):
+    return render(request, "inmuebles/prueba.html")
+
+
 def login_view(request):
     if request.user.is_authenticated:
         return redirect("mis_inmuebles")
