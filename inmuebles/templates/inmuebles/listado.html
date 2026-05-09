@@ -234,6 +234,7 @@
     .prop-prices { padding:14px 0; border-top:1px solid var(--borde); border-bottom:1px solid var(--borde); margin-bottom:16px; }
     .prop-price-lbl { font-size:8.5px; letter-spacing:2px; text-transform:uppercase; color:var(--gris); margin-bottom:4px; }
     .prop-price-cop { font-family:'Playfair Display',serif; font-size:21px; font-weight:400; color:var(--negro); line-height:1; }
+    .prop-price-usd { font-size:12px; color:var(--dorado); margin-top:4px; font-weight:400; }
 
     .prop-foot { display:flex; align-items:center; justify-content:space-between; margin-top:auto; }
     .prop-feats { display:flex; gap:12px; font-size:11px; font-weight:300; color:var(--gris); }
@@ -452,8 +453,14 @@
           <div class="prop-title" style="color:var(--verde);">{{ inmueble.titulo }}</div>
           <div class="prop-loc">{{ inmueble.ciudad }}, {{ inmueble.departamento }}</div>
           <div class="prop-prices">
-            <div class="prop-price-lbl">Precio</div>
-            <div class="prop-price-cop">$ {{ inmueble.precio|intcomma }}</div>
+            <div class="prop-price-lbl">Precio {{ inmueble.get_operacion_display|lower }}</div>
+            {% if inmueble.moneda == 'COP' %}
+              <div class="prop-price-cop">COP $ {{ inmueble.precio|intcomma }}</div>
+              <div class="prop-price-usd">USD $ <span class="convert-price" data-value="{{ inmueble.precio }}" data-from="COP"></span></div>
+            {% else %}
+              <div class="prop-price-cop">COP $ <span class="convert-price" data-value="{{ inmueble.precio }}" data-from="USD"></span></div>
+              <div class="prop-price-usd">USD $ {{ inmueble.precio|intcomma }}</div>
+            {% endif %}
           </div>
           <div class="prop-foot">
             <div class="prop-feats">
@@ -615,6 +622,21 @@
     applyFilters();
   }
 
+  /* ─── PRICE CONVERSION ─── */
+  const TRM_ESTIMATE = 4000;
+  function updateConversions() {
+    document.querySelectorAll('.convert-price').forEach(el => {
+      const val = parseFloat(el.dataset.value);
+      const from = el.dataset.from;
+      let result = 0;
+      
+      if (from === 'COP') result = val / TRM_ESTIMATE;
+      else result = val * TRM_ESTIMATE;
+      
+      el.textContent = Math.round(result).toLocaleString('es-CO');
+    });
+  }
+
   function parsePrecio(str) {
     if (!str) return 0;
     return parseInt(str.replace(/\D/g,'')) || 0;
@@ -627,6 +649,7 @@
 
   // Al cargar la página, verificar si hay parámetros en la URL (desde el buscador del index)
   window.addEventListener('load', () => {
+    updateConversions();
     const urlParams = new URLSearchParams(window.location.search);
     
     // 1. Tipo de inmueble (Checkbox)

@@ -82,6 +82,16 @@ def mis_inmuebles(request):
     return render(request, "inmuebles/dashboard.html", {"inmuebles": inmuebles_query, "stats": stats})
 
 
+@login_required
+def perfil_view(request):
+    inmuebles_user = Inmueble.objects.filter(usuario=request.user)
+    stats = {
+        'total': inmuebles_user.count(),
+        'activos': inmuebles_user.filter(estatus='DISPONIBLE').count(),
+    }
+    return render(request, "inmuebles/perfil.html", {"stats": stats})
+
+
 def inmuebles_detalle(request, pk):
     inmueble = get_object_or_404(Inmueble, pk=pk)
     return render(request, "inmuebles/detalle.html", {"inmueble": inmueble})
