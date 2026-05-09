@@ -15,7 +15,7 @@ class Inmueble(models.Model):
     OPERACION = [
         ('VENTA', 'Venta'),
         ('ARRIENDO', 'Arriendo'),
-        ('VENTA_ARRIENDO', 'Venta y Arriendo'),
+        ('CESION', 'Cesión'),
     ]
 
     ESTADO_INMUEBLE = [

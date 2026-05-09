@@ -15,9 +15,14 @@ class InmuebleViewSet(viewsets.ModelViewSet):
     serializer_class = InmuebleSerializer
 
 
+def index2_view(request):
+    inmuebles = Inmueble.objects.all().order_by('?')
+    return render(request, "inmuebles/index2.html", {"inmuebles": inmuebles})
+
+
 def login_view(request):
     if request.user.is_authenticated:
-        return redirect("inmuebles_listado")
+        return redirect("mis_inmuebles")
 
     form = LoginForm(request.POST or None)
 
@@ -61,15 +66,20 @@ def logout_view(request):
 
 
 def inmuebles_listado(request):
-    inmuebles = Inmueble.objects.all().order_by("-id")[:6]
     inmuebles = Inmueble.objects.all().order_by("-id")
     return render(request, "inmuebles/listado.html", {"inmuebles": inmuebles})
 
 
 @login_required
 def mis_inmuebles(request):
-    inmuebles = Inmueble.objects.filter(usuario=request.user).order_by("-id")
-    return render(request, "inmuebles/listado.html", {"inmuebles": inmuebles, "es_privado": True})
+    inmuebles_query = Inmueble.objects.filter(usuario=request.user).order_by("-id")
+    stats = {
+        'total': inmuebles_query.count(),
+        'activos': inmuebles_query.filter(estatus='DISPONIBLE').count(),
+        'pausados': inmuebles_query.filter(estatus='INACTIVO').count(),
+        'finalizados': inmuebles_query.filter(estatus__in=['VENDIDO', 'ARRENDADO']).count(),
+    }
+    return render(request, "inmuebles/dashboard.html", {"inmuebles": inmuebles_query, "stats": stats})
 
 
 def inmuebles_detalle(request, pk):

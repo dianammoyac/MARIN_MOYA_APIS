@@ -1,103 +1,510 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <title>Iniciar sesión</title>
-    <style>
-        body {
-            margin: 0;
-            font-family: Arial, sans-serif;
-            background: #f4f6f9;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-        }
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Iniciar sesión — Marín Moya Inversiones</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,700;1,400;1,500&family=Jost:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --negro:  #0d0d0d;
+      --verde:  #0e2a2a;
+      --dorado: #c6a15b;
+      --marfil: #f9f6f1;
+      --gris:   #888;
+      --borde:  #e2ddd6;
+      --blanco: #fff;
+    }
 
-        .login-box {
-            width: 360px;
-            background: #ffffff;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-        }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
 
-        .login-box h2 {
-            margin: 0 0 20px 0;
-            text-align: center;
-            color: #1f2937;
-        }
+    body {
+      font-family: 'Jost', sans-serif;
+      background: var(--verde);
+      color: var(--negro);
+      overflow: hidden;
+      height: 100vh;
+    }
 
-        .login-box p {
-            margin-bottom: 14px;
-        }
+    /* ─── CURSOR ─── */
+    * { cursor: none; }
+    @media (hover: hover) and (pointer: fine) { * { cursor: none; } }
+    #cursor {
+      width: 10px; height: 10px;
+      background: var(--dorado);
+      border-radius: 50%;
+      position: fixed; top: 0; left: 0;
+      pointer-events: none; z-index: 9999;
+      transform: translate(-50%, -50%);
+      display: none;
+      transition: width .3s, height .3s, background .3s;
+    }
+    #cursor.grow {
+      width: 40px; height: 40px;
+      background: transparent;
+      border: 1px solid var(--dorado);
+    }
+    @media (hover: hover) and (pointer: fine) { #cursor { display: block; } }
 
-        .login-box label {
-            display: block;
-            margin-bottom: 6px;
-            font-weight: bold;
-            color: #374151;
-        }
+    /* ─── KEYFRAMES ─── */
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(28px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
 
-        .login-box input {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #d1d5db;
-            border-radius: 6px;
-            box-sizing: border-box;
-        }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
 
-        .login-box button {
-            width: 100%;
-            padding: 12px;
-            border: none;
-            background: #1f2937;
-            color: white;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 15px;
-        }
+    /* ─── LAYOUT — two columns full height ─── */
+    .page {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      height: 100vh;
+      position: relative;
+    }
 
-        .login-box button:hover {
-            opacity: 0.95;
-        }
+    /* vertical divider */
+    .page::after {
+      content: '';
+      position: absolute;
+      top: 0; bottom: 0; left: 50%;
+      width: 1px;
+      background: rgba(198,161,91,.18);
+      z-index: 1;
+    }
 
-        .message {
-            padding: 10px;
-            margin-bottom: 15px;
-            border-radius: 6px;
-            background: #eef2ff;
-            color: #1e3a8a;
-            font-size: 14px;
-        }
+    /* ─── LEFT PANEL — decorative brand side ─── */
+    .left {
+      background: var(--verde);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 56px 64px 64px;
+      position: relative;
+      overflow: hidden;
+      z-index: 2;
+    }
 
-        .errorlist {
-            color: #b91c1c;
-            margin: 6px 0 0 0;
-            padding-left: 18px;
-            font-size: 13px;
-        }
-    </style>
+    /* grid lines texture */
+    .left::before {
+      content: '';
+      position: absolute; inset: 0;
+      background-image:
+        repeating-linear-gradient(90deg, transparent, transparent 79px, rgba(255,255,255,.025) 80px),
+        repeating-linear-gradient(0deg,  transparent, transparent 79px, rgba(255,255,255,.025) 80px);
+      pointer-events: none;
+    }
+
+    /* large M² watermark */
+    .left::after {
+      content: 'M²';
+      font-family: 'Playfair Display', serif;
+      font-size: 340px; font-weight: 700;
+      color: rgba(198,161,91,.05);
+      position: absolute; right: -30px; bottom: -40px;
+      line-height: 1; pointer-events: none; user-select: none;
+    }
+
+    .left-logo {
+      font-family: 'Playfair Display', serif;
+      font-size: 18px; font-weight: 500;
+      letter-spacing: 3px; text-transform: uppercase;
+      color: var(--blanco); text-decoration: none;
+      opacity: 0;
+      animation: slideUp .7s .1s forwards;
+      position: relative; z-index: 2;
+    }
+
+    .left-logo span {
+      display: block;
+      font-size: 8.5px; font-weight: 400;
+      letter-spacing: 4px; color: var(--dorado);
+      margin-top: 4px;
+    }
+
+    .left-body {
+      position: relative; z-index: 2;
+    }
+
+    .left-eyebrow {
+      font-size: 9.5px; font-weight: 400;
+      letter-spacing: 4px; text-transform: uppercase;
+      color: var(--dorado); margin-bottom: 24px;
+      display: flex; align-items: center; gap: 14px;
+      opacity: 0;
+      animation: slideUp .8s .3s forwards;
+    }
+    .left-eyebrow::before {
+      content: ''; display: block;
+      width: 36px; height: 1px;
+      background: var(--dorado);
+    }
+
+    .left-title {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(38px, 4vw, 58px);
+      font-weight: 400; line-height: 1.1;
+      color: var(--blanco);
+      opacity: 0;
+      animation: slideUp .85s .45s forwards;
+    }
+
+    .left-title em {
+      font-style: italic;
+      color: var(--dorado);
+    }
+
+    .left-sub {
+      margin-top: 24px;
+      font-size: 13.5px; font-weight: 300;
+      line-height: 1.9; color: rgba(255,255,255,.45);
+      max-width: 360px;
+      opacity: 0;
+      animation: slideUp .85s .6s forwards;
+    }
+
+    .left-stats {
+      display: flex; gap: 40px;
+      margin-top: 52px; padding-top: 36px;
+      border-top: 1px solid rgba(198,161,91,.15);
+      opacity: 0;
+      animation: slideUp .85s .75s forwards;
+    }
+
+    .left-stat-num {
+      font-family: 'Playfair Display', serif;
+      font-size: 34px; font-weight: 400;
+      color: var(--dorado); line-height: 1;
+    }
+
+    .left-stat-label {
+      font-size: 10px; font-weight: 400;
+      letter-spacing: 1.5px; color: rgba(255,255,255,.35);
+      text-transform: uppercase; margin-top: 5px;
+    }
+
+    .left-footer {
+      font-size: 11px; font-weight: 300;
+      color: rgba(255,255,255,.2); letter-spacing: 1px;
+      position: relative; z-index: 2;
+      opacity: 0;
+      animation: fadeIn .8s 1.1s forwards;
+    }
+
+    /* ─── RIGHT PANEL — login form ─── */
+    .right {
+      background: var(--marfil);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 56px 80px;
+      position: relative;
+      z-index: 2;
+    }
+
+    .form-wrap {
+      width: 100%;
+      max-width: 380px;
+      opacity: 0;
+      animation: slideUp .9s .5s forwards;
+    }
+
+    /* back link */
+    .back-link {
+      display: inline-flex; align-items: center; gap: 8px;
+      font-size: 10px; font-weight: 400;
+      letter-spacing: 2.5px; text-transform: uppercase;
+      color: var(--gris); text-decoration: none;
+      margin-bottom: 48px;
+      transition: color .2s;
+    }
+    .back-link::before { content: '←'; font-size: 12px; transition: transform .2s; }
+    .back-link:hover { color: var(--dorado); }
+    .back-link:hover::before { transform: translateX(-4px); }
+
+    .form-eyebrow {
+      font-size: 9.5px; font-weight: 500;
+      letter-spacing: 4px; text-transform: uppercase;
+      color: var(--dorado); margin-bottom: 14px;
+      display: flex; align-items: center; gap: 12px;
+    }
+    .form-eyebrow::before {
+      content: ''; display: block;
+      width: 24px; height: 1px; background: var(--dorado);
+    }
+
+    .form-title {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(28px, 3vw, 38px);
+      font-weight: 400; line-height: 1.1;
+      color: var(--verde); margin-bottom: 8px;
+    }
+
+    .form-sub {
+      font-size: 13px; font-weight: 300;
+      color: var(--gris); line-height: 1.7;
+      margin-bottom: 44px;
+    }
+
+    /* ─── FORM FIELDS ─── */
+    .field {
+      display: flex; flex-direction: column;
+      margin-bottom: 30px;
+    }
+
+    .field label {
+      font-size: 9px; font-weight: 500;
+      letter-spacing: 3px; text-transform: uppercase;
+      color: var(--verde); opacity: .7;
+    }
+
+    .field input {
+      background: transparent;
+      border: none;
+      border-bottom: 1px solid var(--borde);
+      padding: 10px 0;
+      font-family: 'Jost', sans-serif;
+      font-size: 15px; font-weight: 300;
+      color: var(--negro);
+      outline: none;
+      transition: border-color .25s;
+    }
+
+    .field input::placeholder { color: rgba(0,0,0,.25); }
+    .field input:focus { border-bottom-color: var(--dorado); }
+
+    /* password row */
+    .field-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 10px;
+    }
+    .field-row label {
+      font-size: 9px; font-weight: 500;
+      letter-spacing: 3px; text-transform: uppercase;
+      color: var(--verde); opacity: .7;
+    }
+    .forgot-link {
+      font-size: 10px; font-weight: 300;
+      letter-spacing: 1px; color: var(--gris);
+      text-decoration: none;
+      transition: color .2s;
+    }
+    .forgot-link:hover { color: var(--dorado); }
+
+    /* ─── SUBMIT BUTTON ─── */
+    .btn-submit {
+      width: 100%;
+      background: var(--verde);
+      color: var(--blanco);
+      font-family: 'Jost', sans-serif;
+      font-size: 11px; font-weight: 500;
+      letter-spacing: 2.5px; text-transform: uppercase;
+      padding: 17px;
+      border: none;
+      margin-top: 8px;
+      transition: background .25s;
+      cursor: none;
+    }
+    .btn-submit:hover { background: var(--dorado); }
+
+    /* ─── DIVIDER ─── */
+    .form-divider {
+      display: flex; align-items: center; gap: 16px;
+      margin: 28px 0;
+    }
+    .form-divider::before,
+    .form-divider::after {
+      content: ''; flex: 1;
+      height: 1px; background: var(--borde);
+    }
+    .form-divider span {
+      font-size: 10px; font-weight: 300;
+      letter-spacing: 2px; text-transform: uppercase;
+      color: rgba(0,0,0,.25);
+    }
+
+    /* ─── REGISTER LINK ─── */
+    .register-row {
+      text-align: center;
+      font-size: 12px; font-weight: 300;
+      color: var(--gris);
+    }
+    .register-row a {
+      color: var(--verde); font-weight: 500;
+      text-decoration: none;
+      border-bottom: 1px solid var(--dorado);
+      padding-bottom: 1px;
+      transition: color .2s;
+    }
+    .register-row a:hover { color: var(--dorado); }
+
+    /* ─── DECORATIVE LINE bottom-right ─── */
+    .right-deco {
+      position: absolute;
+      bottom: 36px; right: 48px;
+      display: flex; align-items: center; gap: 12px;
+      font-size: 9px; font-weight: 300;
+      letter-spacing: 3px; text-transform: uppercase;
+      color: rgba(0,0,0,.18);
+      opacity: 0;
+      animation: fadeIn .8s 1.2s forwards;
+    }
+    .right-deco::before {
+      content: ''; display: block;
+      width: 28px; height: 1px;
+      background: var(--dorado); opacity: .4;
+    }
+
+    /* MESSAGES */
+    .messages { list-style: none; padding: 0; margin-bottom: 20px; width: 100%; }
+    .message { padding: 12px; font-size: 13px; border-radius: 4px; margin-bottom: 10px; }
+    .message.error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+    .message.success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+
+    /* ─── RESPONSIVE ─── */
+    @media (max-width: 900px) {
+      body { overflow: auto; }
+      .page { grid-template-columns: 1fr; height: auto; }
+      .page::after { display: none; }
+      .left { padding: 52px 36px 60px; min-height: 420px; }
+      .left::after { font-size: 200px; }
+      .right { padding: 60px 36px; }
+      .left-stats { gap: 28px; }
+    }
+  </style>
 </head>
 <body>
-    <div class="login-box">
-        <h2>Ingreso al sistema</h2>
+
+  <!-- Cursor -->
+  <div id="cursor"></div>
+
+  <div class="page">
+
+    <!-- ═══ LEFT — brand panel ═══ -->
+    <div class="left">
+      <a href="{% url 'index2' %}" class="left-logo">
+        Marín Moya
+        <span>Inversiones</span>
+      </a>
+
+      <div class="left-body">
+        <div class="left-eyebrow">Bienvenido de nuevo</div>
+        <h1 class="left-title">
+          El inmueble<br/>que buscabas<br/><em>te espera.</em>
+        </h1>
+        <p class="left-sub">
+          Accedé a tu cuenta para gestionar tus propiedades,
+          guardar favoritos y conectar con inversores en toda Colombia.
+        </p>
+
+        <div class="left-stats">
+          <div>
+            <div class="left-stat-num">+200</div>
+            <div class="left-stat-label">Inmuebles vendidos</div>
+          </div>
+          <div>
+            <div class="left-stat-num">48+</div>
+            <div class="left-stat-label">Propiedades activas</div>
+          </div>
+          <div>
+            <div class="left-stat-num">96%</div>
+            <div class="left-stat-label">Clientes satisfechos</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="left-footer">
+        © 2026 Marín Moya Inversiones · Armenia, Colombia
+      </div>
+    </div>
+
+    <!-- ═══ RIGHT — form panel ═══ -->
+    <div class="right">
+
+      <div class="form-wrap">
+
+        <a href="{% url 'index2' %}" class="back-link">Volver al inicio</a>
+
+        <div class="form-eyebrow">Portal de acceso</div>
+        <h2 class="form-title">Iniciar sesión</h2>
+        <p class="form-sub">Ingresá tus credenciales para continuar.</p>
 
         {% if messages %}
+          <ul class="messages">
             {% for message in messages %}
-                <div class="message">{{ message }}</div>
+              <li class="message {{ message.tags }}">{{ message }}</li>
             {% endfor %}
+          </ul>
         {% endif %}
 
         <form method="post">
-            {% csrf_token %}
-            {{ form.as_p }}
-            <button type="submit">Ingresar</button>
+          {% csrf_token %}
+
+          <div class="field">
+            <label for="id_username">Nombre de usuario o correo</label>
+            <input
+              type="text"
+              id="id_username"
+              name="username"
+              placeholder="Ingrese su usuario"
+              autocomplete="username"
+              required
+            />
+          </div>
+
+          <div class="field">
+            <div class="field-row">
+              <label for="id_password">Contraseña</label>
+              <a href="#" class="forgot-link">¿Olvidaste tu contraseña?</a>
+            </div>
+            <input
+              type="password"
+              id="id_password"
+              name="password"
+              placeholder="••••••••"
+              autocomplete="current-password"
+              required
+            />
+          </div>
+
+          <button type="submit" class="btn-submit">Iniciar sesión</button>
+
         </form>
 
-        <p style="text-align: center; margin-top: 20px; font-size: 14px;">
-            ¿No tienes cuenta? <a href="{% url 'register' %}" style="color: #1f2937; font-weight: bold; text-decoration: none;">Regístrate aquí</a>
-        </p>
+        <div class="form-divider"><span>o</span></div>
+
+        <div class="register-row">
+          ¿No tenés cuenta?
+          <a href="{% url 'register' %}">Registrate gratis</a>
+        </div>
+
+      </div>
+
+      <div class="right-deco">Inversiones con propósito · Colombia</div>
+
     </div>
+
+  </div>
+
+  <!-- ═══ Scripts ═══ -->
+  <script>
+    // Cursor personalizado
+    const cursor = document.getElementById('cursor');
+    document.addEventListener('mousemove', e => {
+      cursor.style.left = e.clientX + 'px';
+      cursor.style.top  = e.clientY + 'px';
+    });
+    document.querySelectorAll('a, button, input, select').forEach(el => {
+      el.addEventListener('mouseenter', () => cursor.classList.add('grow'));
+      el.addEventListener('mouseleave', () => cursor.classList.remove('grow'));
+    });
+  </script>
+
 </body>
 </html>

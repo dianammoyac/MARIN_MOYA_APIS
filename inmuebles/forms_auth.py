@@ -23,31 +23,40 @@ class LoginForm(forms.Form):
 
 
 class RegistroForm(UserCreationForm):
+    username = forms.CharField(
+        label="Nombre de usuario",
+        widget=forms.TextInput(attrs={"placeholder": "Usuario único"})
+    )
     first_name = forms.CharField(
         label="Nombres",
-        widget=forms.TextInput(attrs={"class": "form-control", "placeholder": "Sus nombres"})
+        widget=forms.TextInput(attrs={"placeholder": "Sus nombres"})
     )
     last_name = forms.CharField(
         label="Apellidos",
-        widget=forms.TextInput(attrs={"class": "form-control", "placeholder": "Sus apellidos"})
+        widget=forms.TextInput(attrs={"placeholder": "Sus apellidos"})
+    )
+    password1 = forms.CharField(
+        label="Contraseña",
+        widget=forms.PasswordInput(attrs={"placeholder": "Mínimo 8 caracteres", "class": "has-icon"}),
+        help_text="La contraseña debe tener al menos 8 caracteres."
+    )
+    password2 = forms.CharField(
+        label="Repetir Contraseña",
+        widget=forms.PasswordInput(attrs={"placeholder": "Repetí tu contraseña", "class": "has-icon"})
     )
     email = forms.EmailField(
         label="Correo electrónico",
-        widget=forms.EmailInput(attrs={"class": "form-control", "placeholder": "ejemplo@correo.com"})
+        widget=forms.EmailInput(attrs={"placeholder": "ejemplo@correo.com"})
     )
     celular = forms.CharField(
         label="Celular / WhatsApp",
-        widget=forms.TextInput(attrs={"class": "form-control", "placeholder": "Ej: +57 300..."})
-    )
-    pais = forms.CharField(
-        label="País",
-        widget=forms.TextInput(attrs={"class": "form-control", "placeholder": "Colombia"})
+        widget=forms.TextInput(attrs={"placeholder": "Ej: +57 300..."})
     )
     ciudad = forms.CharField(
         label="Ciudad",
-        widget=forms.TextInput(attrs={"class": "form-control", "placeholder": "Ej: Bogotá"})
+        widget=forms.TextInput(attrs={"placeholder": "Ej: Bogotá"})
     )
 
     class Meta(UserCreationForm.Meta):
         model = User
-        fields = UserCreationForm.Meta.fields + ("first_name", "last_name", "email")
+        fields = ("username", "first_name", "last_name", "email")

@@ -1,0 +1,536 @@
+{% load static %}
+{% load humanize %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Diseño Premium - Marín Moya</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,700;1,400;1,500&family=Jost:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --negro:   #0d0d0d;
+      --verde:   #0e2a2a;
+      --dorado:  #c6a15b;
+      --marfil:  #f9f6f1;
+      --gris:    #888;
+      --borde:   #e2ddd6;
+      --blanco:  #fff;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body { font-family: 'Jost', sans-serif; background: var(--blanco); color: var(--negro); overflow-x: hidden; }
+
+    /* ─── CURSOR PERSONALIZADO ─── */
+    * { cursor: none; }
+    #cursor { width: 10px; height: 10px; background: var(--dorado); border-radius: 50%; position: fixed; top: 0; left: 0; pointer-events: none; z-index: 9999; transform: translate(-50%, -50%); display: none; transition: width .3s, height .3s, background .3s; }
+    #cursor.grow { width: 40px; height: 40px; background: transparent; border: 1px solid var(--dorado); }
+    @media (hover: hover) and (pointer: fine) { #cursor { display: block; } }
+
+    nav { position: fixed; top: 0; left: 0; right: 0; z-index: 500; display: flex; align-items: center; justify-content: space-between; padding: 20px 64px; transition: .4s; background: transparent; }
+    nav.scrolled { background: var(--blanco); border-bottom: 1px solid var(--borde); padding: 18px 64px; }
+    .nav-logo { font-family: 'Playfair Display', serif; font-size: 19px; letter-spacing: 3px; text-transform: uppercase; color: var(--blanco); text-decoration: none; display: flex; flex-direction: column; }
+    nav.scrolled .nav-logo { color: var(--verde); }
+    .nav-links { list-style: none; display: flex; gap: 36px; }
+    .nav-links a { font-size: 12px; letter-spacing: 2px; text-transform: uppercase; color: rgba(255,255,255,.75); text-decoration: none; }
+    nav.scrolled .nav-links a { color: var(--gris); }
+    .nav-btn { font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: var(--dorado); border: 1px solid var(--dorado); padding: 10px 22px; text-decoration: none; }
+    .hero { height: 100vh; background: var(--verde); display: grid; grid-template-columns: 1.2fr 0.8fr; position: relative; overflow: hidden; align-items: center; padding: 0 64px; }
+    .hero-left { z-index: 2; max-width: 650px; }
+    .hero h1 { font-family: 'Playfair Display', serif; font-size: clamp(52px, 5.5vw, 86px); color: var(--blanco); line-height: 1.05; }
+    .hero h1 em { font-style: italic; color: var(--dorado); }
+    .hero-panel {
+      position: relative;
+      z-index: 2;
+      background: rgba(255,255,255,.05);
+      border: 1px solid rgba(198,161,91,.25);
+      padding: 38px 32px;
+      width: 340px;
+      backdrop-filter: blur(8px);
+      opacity: 0;
+      animation: slideUp .9s .4s forwards;
+    }
+
+    .panel-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 18px;
+      font-weight: 400;
+      color: var(--blanco);
+      margin-bottom: 28px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid rgba(198,161,91,.2);
+      letter-spacing: 1px;
+    }
+
+    .panel-form label {
+      display: block;
+      font-size: 9px;
+      font-weight: 500;
+      color: var(--dorado);
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    .panel-form select,
+    .panel-form input {
+      width: 100%;
+      background: rgba(255,255,255,.06);
+      border: none;
+      border-bottom: 1px solid rgba(255,255,255,.15);
+      padding: 10px 0;
+      color: rgba(255,255,255,.85);
+      font-size: 14px;
+      font-weight: 300;
+      margin-bottom: 22px;
+      outline: none;
+      transition: border-color .2s;
+      font-family: 'Jost', sans-serif;
+      appearance: none;
+    }
+
+    .panel-form select option { background: var(--verde); color: #fff; }
+
+    .panel-form select:focus,
+    .panel-form input:focus { border-bottom-color: var(--dorado); }
+
+    .panel-form input::placeholder { color: rgba(255,255,255,.3); }
+
+    .panel-form button {
+      width: 100%;
+      background: var(--dorado);
+      color: var(--blanco);
+      font-weight: 500;
+      font-size: 11px;
+      letter-spacing: 2.5px;
+      text-transform: uppercase;
+      padding: 15px;
+      border: none;
+      cursor: none;
+      transition: background .25s;
+      font-family: 'Jost', sans-serif;
+      margin-top: 4px;
+    }
+
+    .panel-form button:hover { background: #b08b45; }
+    
+    /* SECCIÓN GENÉRICA */
+    .s-kicker { font-size: 10px; font-weight: 400; letter-spacing: 4px; text-transform: uppercase; color: var(--dorado); margin-bottom: 22px; }
+    .s-title { font-family: 'Playfair Display', serif; font-size: clamp(34px, 3.5vw, 54px); font-weight: 400; color: var(--verde); line-height: 1.12; margin: 0; border: none; padding: 0; }
+    .s-title em { font-style: italic; color: var(--dorado); }
+
+    /* CTA PUBLICAR */
+    .cta-publish { background: var(--verde); border-top: 1px solid rgba(198,161,91,.12); }
+    .cta-pub-inner { max-width: 1200px; margin: 0 auto; padding: 110px 64px; text-align: center; }
+    .cta-pub-title { font-family: 'Playfair Display', serif; font-size: clamp(42px, 5vw, 70px); color: var(--blanco); line-height: 1.05; margin-bottom: 22px; }
+    .cta-pub-sub { font-size: 15px; color: rgba(255,255,255,.5); line-height: 1.85; max-width: 520px; margin: 0 auto 48px; }
+    .cta-pub-actions { display: flex; gap: 20px; justify-content: center; align-items: center; flex-wrap: wrap; }
+    .cta-outline { font-size: 11px; letter-spacing: 2px; text-transform: uppercase; color: rgba(255,255,255,.6); text-decoration: none; padding: 15px 34px; border: 1px solid rgba(255,255,255,.2); transition: .25s; cursor: none; }
+    .cta-outline:hover { border-color: var(--dorado); color: var(--dorado); }
+
+    /* CATEGORÍAS */
+    .cats-bg { background: var(--marfil); border-top: 1px solid var(--borde); border-bottom: 1px solid var(--borde); }
+    .cats-inner { max-width: 1200px; margin: 0 auto; padding: 100px 64px; }
+    .cats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: var(--borde); border: 1px solid var(--borde); margin-top: 60px; }
+    .cat-item { background: var(--marfil); padding: 22px 40px; display: flex; flex-direction: column; gap: 14px; text-decoration: none; transition: background .25s; opacity: 0; transform: translateY(12px); transition: opacity .5s, transform .5s, background .25s; }
+    .cat-item.vis { opacity: 1; transform: translateY(0); }
+    .cat-item:hover { background: var(--verde); }
+    .cat-icon { font-size: 28px; transition: transform .3s; }
+    .cat-item:hover .cat-icon { transform: scale(1.15); }
+    .cat-name { font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 400; color: var(--verde); transition: color .25s; }
+    .cat-item:hover .cat-name { color: var(--dorado); }
+    .cat-desc { font-size: 13px; font-weight: 300; color: var(--gris); line-height: 1.7; transition: color .25s; }
+    .cat-item:hover .cat-desc { color: rgba(255,255,255,.5); }
+    .cat-arrow { font-size: 18px; color: var(--dorado); margin-top: auto; transition: opacity .25s, transform .25s; opacity: 0; }
+    .cat-item:hover .cat-arrow { opacity: 1; transform: translateX(4px); }
+
+    .strip { background: var(--marfil); display: grid; grid-template-columns: repeat(4, 1fr); border-bottom: 1px solid var(--borde); }
+    .strip-item { padding: 52px; border-right: 1px solid var(--borde); text-align: center; opacity: 0; transform: translateY(16px); transition: opacity .6s, transform .6s; }
+    .strip-item.vis { opacity: 1; transform: translateY(0); }
+    .strip-item:last-child { border-right: none; }
+    .port-wrapper { position: relative; overflow: hidden; margin-top: 60px; }
+    .port-grid { display: flex; gap: 30px; transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1); background: transparent; border: none; }
+    .prop-card { flex: 0 0 calc(33.333% - 20px); min-width: 320px; background: var(--blanco); overflow: hidden; opacity: 0; transform: translateY(20px); transition: opacity .6s, transform .6s; border: 1px solid var(--borde); }
+    .carousel-nav-port { position: absolute; top: 50%; width: 100%; display: flex; justify-content: space-between; transform: translateY(-50%); pointer-events: none; z-index: 10; padding: 0 10px; }
+    .c-btn { width: 45px; height: 45px; background: var(--verde); color: var(--dorado); border: none; cursor: pointer; pointer-events: auto; display: flex; align-items: center; justify-content: center; font-size: 18px; transition: .3s; border-radius: 50%; }
+    .c-btn:hover { background: var(--dorado); color: var(--verde); }
+    .c-btn:disabled { opacity: 0; pointer-events: none; }
+    .prop-card.vis { opacity: 1; transform: translateY(0); }
+    .prop-img-wrap { height: 240px; background: var(--verde); position: relative; overflow: hidden; }
+    .prop-img-wrap img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.5s; }
+    .prop-card:hover .prop-img-wrap img { transform: scale(1.1); }
+    .prop-body { padding: 28px; }
+    .prop-price { font-family: 'Playfair Display', serif; font-size: 22px; }
+    .footer-top { display: grid; grid-template-columns: 1.6fr 1fr 1fr; gap: 60px; padding: 70px 64px; background: #080f0f; color: white; }
+    @media (max-width: 960px) { .hero, .strip, .port-grid, .cats-grid { grid-template-columns: 1fr; } .cats-inner { padding: 80px 28px; } }
+  </style>
+</head>
+<body style="cursor: none;">
+<div id="cursor"></div>
+
+<nav id="navbar">
+  <a href="{% url 'index2' %}" class="nav-logo">Marín Moya</a>
+
+  <div class="nav-right">
+    <ul class="nav-links">
+      <li><a href="#portafolio">Portafolio</a></li>
+      <li><a href="#categorias">Categorías</a></li>
+      <li><a href="#servicios">Servicios</a></li>
+      <li><a href="#contacto">Contacto</a></li>
+    </ul>
+
+    <a href="{% url 'login' %}" class="nav-login">Iniciar sesión</a>
+    <span class="nav-sep"></span>
+    <a href="{% url 'inmuebles_listado' %}" class="nav-btn">Acceder al portal →</a>
+  </div>
+</nav>
+
+<section class="hero">
+  <div class="hero-left">
+    <p class="hero-eyebrow">Inversiones con propósito · Colombia</p>
+
+    <h1>
+      El inmueble<br>
+      que buscabas<br>
+      <em>te espera.</em>
+    </h1>
+
+    <p class="hero-sub">
+      Conectamos personas con propiedades únicas en Colombia. Casas,
+      apartamentos, lotes y locales seleccionados con criterio, gestionados
+      con transparencia.
+    </p>
+
+    <div class="hero-actions">
+      <a href="{% url 'inmuebles_listado' %}" class="btn-gold">Explorar portafolio</a>
+      <a href="#contacto" class="btn-ghost">Hablar con un asesor</a>
+    </div>
+
+    <div class="scroll-hint">Desplazar</div>
+  </div>
+
+  <div class="hero-right">
+    <div class="hero-right-bg">
+      <svg width="100%" height="100%" viewBox="0 0 600 800" xmlns="http://www.w3.org/2000/svg">
+        <line x1="0" y1="0" x2="600" y2="800" stroke="#c6a15b" stroke-width="1"/>
+        <line x1="200" y1="0" x2="600" y2="533" stroke="#c6a15b" stroke-width="1"/>
+        <line x1="400" y1="0" x2="600" y2="267" stroke="#c6a15b" stroke-width="1"/>
+        <line x1="0" y1="266" x2="400" y2="800" stroke="#c6a15b" stroke-width="1"/>
+        <line x1="0" y1="533" x2="200" y2="800" stroke="#c6a15b" stroke-width="1"/>
+      </svg>
+    </div>
+
+    <div class="hero-panel">
+      <div class="panel-title">Buscar inmueble</div>
+
+      <form class="panel-form" action="{% url 'inmuebles_listado' %}" method="get">
+        <label>Operación</label>
+        <select name="operacion">
+          <option value="">Venta · Arriendo · Cesión</option>
+          <option value="VENTA">Venta</option>
+          <option value="ARRIENDO">Arriendo</option>
+          <option value="CESION">Cesión de derechos</option>
+        </select>
+
+        <label>Tipo de inmueble</label>
+        <select name="tipo">
+          <option value="">Todos los tipos</option>
+          <option value="APARTAMENTO">Apartamento</option>
+          <option value="CASA">Casa</option>
+          <option value="LOCAL">Local comercial</option>
+          <option value="OFICINA">Oficina</option>
+          <option value="LOTE">Lote</option>
+          <option value="BODEGA">Bodega</option>
+        </select>
+
+        <label>Ciudad</label>
+        <input type="text" name="ciudad" placeholder="Ej: Armenia, Bogotá...">
+
+        <button type="submit">Buscar propiedades</button>
+      </form>
+    </div>
+
+    <div class="hero-number">M²</div>
+  </div>
+</section>
+
+<div class="strip">
+  <div class="strip-item">
+    <div style="font-size:44px; font-family:'Playfair Display'; color:var(--verde);">+50</div>
+    <div style="font-size:11px; color:var(--gris); letter-spacing:2px;">PROPIEDADES</div>
+  </div>
+  <div class="strip-item">
+    <div style="font-size:44px; font-family:'Playfair Display'; color:var(--verde);">100%</div>
+    <div style="font-size:11px; color:var(--gris); letter-spacing:2px;">CONFIANZA</div>
+  </div>
+  <div class="strip-item">
+    <div style="font-size:44px; font-family:'Playfair Display'; color:var(--verde);">24/7</div>
+    <div style="font-size:11px; color:var(--gris); letter-spacing:2px;">ASESORÍA</div>
+  </div>
+  <div class="strip-item">
+    <div style="font-size:44px; font-family:'Playfair Display'; color:var(--verde);">COP</div>
+    <div style="font-size:11px; color:var(--gris); letter-spacing:2px;">MERCADO LOCAL</div>
+  </div>
+</div>
+
+<section style="max-width:1200px; margin:0 auto; padding:110px 64px;" id="portafolio">
+  <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:60px;">
+    <div>
+      <p style="color:var(--dorado); font-size:10px; letter-spacing:4px; margin-bottom:22px;">SELECCIÓN ACTUAL</p>
+      <h2 style="font-family:'Playfair Display'; font-size:54px; color:var(--verde);">Portafolio de <em>inmuebles</em></h2>
+    </div>
+    <a href="{% url 'inmuebles_listado' %}" style="color:var(--verde); border-bottom:1px solid var(--dorado); padding-bottom:3px; text-decoration:none; font-size:11px;">VER TODO →</a>
+  </div>
+
+  <div class="port-wrapper" id="portWrapper">
+    <div class="carousel-nav-port" id="navPort">
+      <button class="c-btn" id="prevP" onclick="slideP(-1)" disabled>❮</button>
+      <button class="c-btn" id="nextP" onclick="slideP(1)">❯</button>
+    </div>
+    <div class="port-grid" id="pTrack">
+      {% for i in inmuebles %}
+        <div class="prop-card">
+          <div class="prop-img-wrap">
+            {% if i.imagen1 %}<img src="{{ i.imagen1.url }}" alt="{{ i.titulo }}">
+            {% else %}<div style="display:flex; align-items:center; justify-content:center; height:100%; color:rgba(255,255,255,.2); font-size:60px;">M²</div>{% endif %}
+            <span style="position:absolute; top:20px; left:20px; background:var(--dorado); color:white; font-size:9px; padding:5px 12px; letter-spacing:2px;">{{ i.get_operacion_display|upper }}</span>
+          </div>
+          <div class="prop-body">
+            <p style="font-size:10px; color:var(--gris); letter-spacing:2px; margin-bottom:10px;">{{ i.get_tipo_display|upper }}</p>
+            <h4 style="font-family:'Playfair Display'; font-size:20px; color:var(--verde); margin-bottom:8px;"><a href="{% url 'inmuebles_detalle' i.id %}" style="text-decoration:none; color:inherit;">{{ i.titulo }}</a></h4>
+            <p style="font-size:12px; color:var(--gris); margin-bottom:24px;">{{ i.ciudad }}, {{ i.departamento }}</p>
+            <div style="display:flex; justify-content:space-between; align-items:center; padding-top:20px; border-top:1px solid var(--borde);">
+              <div class="prop-price"><small style="display:block; font-size:9px; color:var(--gris);">{{ i.moneda }}</small>$ {{ i.precio|intcomma }}</div>
+              <div style="font-size:11px; color:var(--gris);">{{ i.area_m2 }} m²</div>
+            </div>
+          </div>
+        </div>
+      {% empty %}
+        <p style="padding: 40px; color: var(--gris); text-align: center; width: 100%;">No hay inmuebles disponibles en este momento.</p>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════ CTA PUBLICAR ═══════════════════════════════ -->
+<div class="cta-publish">
+  <div class="cta-pub-inner">
+    <div class="s-kicker">¿LISTO PARA COMENZAR?</div>
+    <h2 class="cta-pub-title">
+      {% if user.is_authenticated %}
+        Hola, {{ user.first_name|default:user.username }}. ¿Qué publicamos hoy?
+      {% else %}
+        Publicá tu inmueble hoy
+      {% endif %}
+    </h2>
+    <p class="cta-pub-sub">
+      {% if user.is_authenticated %}
+        Sigue haciendo crecer tu inventario con las herramientas profesionales de Marín Moya Inversiones.
+      {% else %}
+        Regístrate en el portal, cargá tus propiedades y gestioná tu inventario con las herramientas profesionales de Marín Moya Inversiones.
+      {% endif %}
+    </p>
+    <div class="cta-pub-actions">
+      {% if not user.is_authenticated %}
+        <a href="{% url 'register' %}" style="background:var(--dorado); color:white; padding:15px 34px; text-decoration:none; font-size:11px; letter-spacing:2px;">CREAR CUENTA GRATIS →</a>
+      {% else %}
+        <a href="{% url 'inmuebles_crear' %}" style="background:var(--dorado); color:white; padding:15px 34px; text-decoration:none; font-size:11px; letter-spacing:2px;">PUBLICAR INMUEBLE →</a>
+      {% endif %}
+      <a href="{% url 'inmuebles_listado' %}" class="cta-outline">VER PORTAFOLIO</a>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ CATEGORÍAS ═══════════════════════════════ -->
+<div class="cats-bg" id="categorias">
+  <div class="cats-inner">
+    <div class="s-kicker">QUÉ ENCONTRARÁS</div>
+    <h2 class="s-title">Cada necesidad, <em>una categoría.</em></h2>
+    
+    <div class="cats-grid">
+      <a class="cat-item" href="{% url 'inmuebles_listado' %}?tipo=apartamento">
+        <span class="cat-icon">🏢</span>
+        <div class="cat-name">Apartamentos</div>
+        <div class="cat-desc">Residencias en conjuntos cerrados con zonas comunes y seguridad.</div>
+        <span class="cat-arrow">→</span>
+      </a>
+      <a class="cat-item" href="{% url 'inmuebles_listado' %}?tipo=casa">
+        <span class="cat-icon">🏡</span>
+        <div class="cat-name">Casas</div>
+        <div class="cat-desc">Viviendas independientes, campestres o en urbanizaciones exclusivas.</div>
+        <span class="cat-arrow">→</span>
+      </a>
+      <a class="cat-item" href="{% url 'inmuebles_listado' %}?tipo=local">
+        <span class="cat-icon">🏬</span>
+        <div class="cat-name">Locales</div>
+        <div class="cat-desc">Espacios comerciales en zonas de alto flujo y visibilidad estratégica.</div>
+        <span class="cat-arrow">→</span>
+      </a>
+      <a class="cat-item" href="{% url 'inmuebles_listado' %}?tipo=oficina">
+        <span class="cat-icon">💼</span>
+        <div class="cat-name">Oficinas</div>
+        <div class="cat-desc">Unidades ejecutivas en edificios corporativos de primer nivel.</div>
+        <span class="cat-arrow">→</span>
+      </a>
+      <a class="cat-item" href="{% url 'inmuebles_listado' %}?tipo=lote">
+        <span class="cat-icon">🌿</span>
+        <div class="cat-name">Lotes</div>
+        <div class="cat-desc">Terrenos para construcción, inversión o desarrollo residencial.</div>
+        <span class="cat-arrow">→</span>
+      </a>
+      <a class="cat-item" href="{% url 'inmuebles_listado' %}?tipo=bodega">
+        <span class="cat-icon">🏭</span>
+        <div class="cat-name">Bodegas</div>
+        <div class="cat-desc">Espacios industriales y logísticos con acceso vehicular amplio.</div>
+        <span class="cat-arrow">→</span>
+      </a>
+    </div>
+  </div>
+</div>
+
+<section style="background:var(--marfil); padding:100px 64px;" id="servicios">
+  <div style="max-width:1200px; margin:0 auto; display:grid; grid-template-columns: 1fr 1fr; gap:80px; align-items:center;">
+    <div>
+      <p style="color:var(--dorado); font-size:10px; letter-spacing:4px; margin-bottom:22px;">NUESTROS SERVICIOS</p>
+      <h2 style="font-family:'Playfair Display'; font-size:54px; color:var(--verde); line-height:1.1;">Lo que hacemos <em>diferente.</em></h2>
+      <div style="margin-top:50px; display:flex; flex-direction:column; gap:30px;">
+        <div style="display:flex; gap:20px;">
+          <span style="color:var(--dorado); font-family:'Playfair Display';">01</span>
+          <div>
+            <h5 style="font-size:18px; color:var(--verde); margin-bottom:8px;">Gestión Transparente</h5>
+            <p style="font-size:13px; color:var(--gris); line-height:1.7;">Acompañamiento legal y comercial en cada etapa del proceso.</p>
+          </div>
+        </div>
+        <div style="display:flex; gap:20px;">
+          <span style="color:var(--dorado); font-family:'Playfair Display';">02</span>
+          <div>
+            <h5 style="font-size:18px; color:var(--verde); margin-bottom:8px;">Avalúos Profesionales</h5>
+            <p style="font-size:13px; color:var(--gris); line-height:1.7;">Determinamos el valor real de su propiedad con criterios de mercado.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div style="height:500px; background:var(--verde); display:flex; align-items:center; justify-content:center; position:relative;">
+       <div style="font-size:120px; font-family:'Playfair Display'; color:rgba(198,161,91,.1);">M²</div>
+       <div style="position:absolute; bottom:-20px; right:-20px; width:120px; height:120px; border:1px solid var(--dorado); opacity:.3;"></div>
+    </div>
+  </div>
+</section>
+
+<section style="padding:100px 64px; background:var(--verde); color:white;" id="contacto">
+  <div style="max-width:1200px; margin:0 auto; display:grid; grid-template-columns: 1fr 1.2fr; gap:100px;">
+    <div>
+      <p style="color:var(--dorado); font-size:10px; letter-spacing:4px; margin-bottom:22px;">HABLEMOS</p>
+      <h2 style="font-family:'Playfair Display'; font-size:45px; color:white; line-height:1.2;">Encontremos su próximo <em>proyecto.</em></h2>
+      <div style="margin-top:50px; display:flex; flex-direction:column; gap:25px;">
+        <p style="font-size:14px; color:rgba(255,255,255,.5);">Déjenos sus datos y un asesor se comunicará con usted en menos de 24 horas.</p>
+        <p style="font-size:18px;">contacto@marinmoya.co</p>
+      </div>
+    </div>
+    <form style="display:flex; flex-direction:column; gap:20px;">
+      <input type="text" placeholder="Nombre" style="background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.1); padding:15px; color:white; outline:none;">
+      <input type="email" placeholder="Correo" style="background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.1); padding:15px; color:white; outline:none;">
+      <textarea placeholder="Mensaje" style="background:rgba(255,255,255,.05); border:1px solid rgba(255,255,255,.1); padding:15px; color:white; height:120px; outline:none;"></textarea>
+      <button type="button" style="background:var(--dorado); color:white; padding:16px; border:none; letter-spacing:2px; font-weight:500;">ENVIAR CONSULTA</button>
+    </form>
+  </div>
+</section>
+
+<footer class="footer-top">
+    <div>
+      <div style="font-family:'Playfair Display'; font-size:22px; letter-spacing:3px; margin-bottom:6px;">MARÍN MOYA</div>
+      <p style="font-size:13px; color:rgba(255,255,255,.35); line-height:1.8;">Portal inmobiliario líder en gestión de activos de alta valorización en Colombia.</p>
+    </div>
+    <div>
+      <h5 style="font-size:9px; color:var(--dorado); letter-spacing:3px; margin-bottom:22px;">PORTAL</h5>
+      <ul style="list-style:none; display:flex; flex-direction:column; gap:12px;">
+        <li><a href="{% url 'inmuebles_listado' %}" style="color:rgba(255,255,255,.4); font-size:13px; text-decoration:none;">Portafolio</a></li>
+        <li><a href="{% url 'register' %}" style="color:rgba(255,255,255,.4); font-size:13px; text-decoration:none;">Crear Cuenta</a></li>
+      </ul>
+    </div>
+    <div>
+      <h5 style="font-size:9px; color:var(--dorado); letter-spacing:3px; margin-bottom:22px;">UBICACIÓN</h5>
+      <p style="color:rgba(255,255,255,.4); font-size:13px;">Armenia, Quindío · Colombia</p>
+    </div>
+</footer>
+
+<script>
+  const cursor = document.getElementById('cursor');
+  document.addEventListener('mousemove', e => {
+    cursor.style.left = e.clientX + 'px';
+    cursor.style.top  = e.clientY + 'px';
+  });
+  document.querySelectorAll('a, button, .cat-item, .prop-card').forEach(el => {
+    el.addEventListener('mouseenter', () => cursor.classList.add('grow'));
+    el.addEventListener('mouseleave', () => cursor.classList.remove('grow'));
+  });
+  window.addEventListener('scroll', () => {
+    document.getElementById('navbar').classList.toggle('scrolled', window.scrollY > 60);
+  });
+
+  // Intersection Observer para animaciones suaves al bajar
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach((e, i) => {
+      if (e.isIntersecting) {
+        setTimeout(() => e.target.classList.add('vis'), i * 90);
+        io.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.1 });
+
+  document.querySelectorAll(
+    '.strip-item, .prop-card, .cat-item'
+  ).forEach(el => io.observe(el));
+
+  // Lógica de Carrusel para el Portafolio
+  let pIdx = 0;
+  let autoPlayInterval;
+
+  window.slideP = function(dir) {
+    const track = document.getElementById('pTrack');
+    if(!track) return;
+    const cards = track.querySelectorAll('.prop-card');
+    if(!cards.length) return;
+    
+    const total = cards.length;
+    const show = window.innerWidth > 960 ? 3 : 1;
+    const max = Math.max(0, total - show);
+
+    pIdx += dir;
+    
+    // Reiniciar al principio si llegamos al final en auto-play
+    if (pIdx > max) pIdx = 0;
+    if (pIdx < 0) pIdx = max;
+
+    const cardWidth = cards[0].offsetWidth + 30; // 30 es el gap
+    track.style.transform = `translateX(-${pIdx * cardWidth}px)`;
+
+    document.getElementById('prevP').disabled = pIdx === 0;
+    document.getElementById('nextP').disabled = pIdx >= max;
+    if(document.getElementById('navPort')) {
+        document.getElementById('navPort').style.display = total <= show ? 'none' : 'flex';
+    }
+  };
+
+  function startAutoPlay() {
+    autoPlayInterval = setInterval(() => slideP(1), 5000); // Cambia cada 5 segundos
+  }
+
+  function stopAutoPlay() {
+    clearInterval(autoPlayInterval);
+  }
+
+  window.addEventListener('resize', () => { pIdx = 0; slideP(0); });
+  window.addEventListener('load', () => {
+    slideP(0);
+    startAutoPlay();
+    
+    const wrapper = document.getElementById('portWrapper');
+    if(wrapper) {
+      wrapper.addEventListener('mouseenter', stopAutoPlay);
+      wrapper.addEventListener('mouseleave', startAutoPlay);
+    }
+  });
+</script>
+</body>
+</html>

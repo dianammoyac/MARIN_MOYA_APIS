@@ -1,59 +1,202 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <title>Registro - Marín Moya</title>
-    <style>
-        body {
-            margin: 0;
-            font-family: Arial, sans-serif;
-            background: #f4f6f9;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-        }
-        .register-box {
-            width: 400px;
-            background: #ffffff;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-        }
-        .register-box h2 {
-            margin: 0 0 20px 0;
-            text-align: center;
-            color: #1f2937;
-        }
-        .register-box p { margin-bottom: 14px; }
-        .register-box label { display: block; margin-bottom: 4px; font-weight: bold; color: #374151; }
-        .register-box input { width: 100%; padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; box-sizing: border-box; }
-        .register-box button {
-            width: 100%;
-            padding: 12px;
-            border: none;
-            background: #c6a15b; /* Dorado corporativo */
-            color: white;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 15px;
-            font-weight: bold;
-        }
-        .helptext { font-size: 11px; color: #6b7280; display: block; margin-bottom: 10px; }
-        .errorlist { color: #b91c1c; font-size: 12px; list-style: none; padding: 0; }
-    </style>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Crear cuenta — Marín Moya Inversiones</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,700;1,400;1,500&family=Jost:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --negro:  #0d0d0d; --verde:  #0e2a2a; --dorado: #c6a15b; --marfil: #f9f6f1;
+      --gris:   #888; --borde:  #e2ddd6; --blanco: #ffffff; --error:  #b84040;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Jost', sans-serif; background: var(--verde); color: var(--negro); min-height: 100vh; margin: 0; overflow-x: hidden; }
+    
+    #cursor { width: 10px; height: 10px; background: var(--dorado); border-radius: 50%; position: fixed; top: 0; left: 0; pointer-events: none; z-index: 9999; transform: translate(-50%, -50%); transition: width .3s, height .3s; display: none; }
+    #cursor.grow { width: 40px; height: 40px; background: transparent; border: 1px solid var(--dorado); }
+    @media (hover: hover) and (pointer: fine) { #cursor { display: block; } }
+
+    .page { display: grid; grid-template-columns: 1fr 1fr; min-height: 100vh; }
+    .left { background: var(--verde); padding: 60px; display: flex; flex-direction: column; justify-content: space-between; color: white; position: relative; overflow: hidden; }
+    .left::after { content: 'M²'; position: absolute; bottom: -40px; right: -20px; font-size: 300px; font-family: 'Playfair Display'; opacity: 0.05; font-style: italic; }
+    .right { background: var(--marfil); padding: 60px; display: flex; align-items: center; justify-content: center; }
+    .form-wrap { width: 100%; max-width: 420px; }
+
+    .back-link { font-size: 10px; letter-spacing: 2.5px; text-transform: uppercase; color: var(--gris); text-decoration: none; margin-bottom: 40px; display: inline-block; }
+    .form-title { font-family: 'Playfair Display', serif; font-size: 36px; color: var(--verde); margin-bottom: 8px; }
+    .form-sub { font-size: 13px; color: var(--gris); margin-bottom: 32px; }
+    .field { display: flex; flex-direction: column; margin-bottom: 20px; }
+    .field label { font-size: 9px; letter-spacing: 3px; text-transform: uppercase; color: var(--verde); opacity: .65; margin-bottom: 8px; }
+    .field input { background: transparent; border: none; border-bottom: 1px solid var(--borde); padding: 10px 0; font-family: 'Jost', sans-serif; font-size: 15px; font-weight: 300; outline: none; transition: border-color .25s; }
+    .field input:focus { border-bottom-color: var(--dorado); }
+    .field-err { font-size: 10.5px; color: var(--error); margin-top: 5px; }
+    .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+    .btn-submit { width: 100%; background: var(--verde); color: var(--blanco); padding: 18px; border: none; font-family: 'Jost', sans-serif; font-size: 11px; letter-spacing: 2.5px; text-transform: uppercase; cursor: none; transition: .25s; margin-top: 10px; }
+    .btn-submit:hover { background: var(--dorado); }
+    .divider { display: flex; align-items: center; gap: 15px; margin: 25px 0; color: rgba(0,0,0,.2); font-size: 10px; text-transform: uppercase; }
+    .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: var(--borde); }
+    .login-row { text-align: center; font-size: 12px; color: var(--gris); }
+    .login-row a { color: var(--verde); font-weight: 500; text-decoration: none; border-bottom: 1px solid var(--dorado); }
+    @media (max-width: 960px) { .page { grid-template-columns: 1fr; } .page::after { display: none; } .left { padding: 40px; } }
+  </style>
 </head>
 <body>
-    <div class="register-box">
-        <h2>Crea tu cuenta</h2>
-        <form method="post">
-            {% csrf_token %}
-            {{ form.as_p }}
-            <button type="submit">Registrarse</button>
-        </form>
-        <p style="text-align: center; margin-top: 20px; font-size: 14px;">
-            ¿Ya tienes cuenta? <a href="{% url 'login' %}" style="color: #1f2937; font-weight: bold; text-decoration: none;">Inicia sesión</a>
+  <div id="cursor"></div>
+  <div class="page">
+    <div class="left">
+      <a href="{% url 'index2' %}" class="left-logo">
+        Marín Moya
+        <span>Inversiones</span>
+      </a>
+
+      <div class="left-body">
+        <div class="left-eyebrow">Nuevo en el portal</div>
+        <h1 class="left-title">
+          Tu cuenta,<br/>tu <em>portafolio.</em>
+        </h1>
+        <p class="left-sub">
+          Registrate y empezá a publicar tus propiedades en toda Colombia.
         </p>
+
+        <div class="benefits">
+          <div class="benefit">
+            <div class="benefit-dot">
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="2,6 5,9 10,3"/>
+              </svg>
+            </div>
+            <div>
+              <div class="benefit-title">Publicaciones ilimitadas</div>
+              <div class="benefit-desc">Cargá todos tus inmuebles sin restricciones.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="left-footer">© 2026 Marín Moya Inversiones · Armenia, Colombia</div>
     </div>
+
+    <div class="right">
+      <div class="form-wrap">
+        <a href="{% url 'index2' %}" class="back-link">← Volver al inicio</a>
+        <h2 class="form-title">Registro</h2>
+        <p class="form-sub">Completá tus datos para comenzar.</p>
+
+        {% if form.errors %}
+          <div style="background: #fdf2f2; border: 1px solid var(--error); padding: 15px; margin-bottom: 25px; border-radius: 4px;">
+            <p style="color: var(--error); font-weight: 500; font-size: 13px; margin-bottom: 5px;">Por favor, revisa lo siguiente:</p>
+            {% for error in form.non_field_errors %}
+              <p style="color: var(--error); font-size: 12px;">• {{ error }}</p>
+            {% endfor %}
+            {% for field in form %}
+              {% for error in field.errors %}
+                <p style="color: var(--error); font-size: 12px;">• <strong>{{ field.label }}:</strong> {{ error }}</p>
+              {% endfor %}
+            {% endfor %}
+          </div>
+        {% endif %}
+
+        <form method="post">
+          {% csrf_token %}
+          
+          <div class="row2">
+            <div class="field">
+              <label>Nombre *</label>
+              {{ form.first_name }}
+              {% for error in form.first_name.errors %}<span class="field-err">{{ error }}</span>{% endfor %}
+            </div>
+            <div class="field">
+              <label>Apellido *</label>
+              {{ form.last_name }}
+              {% for error in form.last_name.errors %}<span class="field-err">{{ error }}</span>{% endfor %}
+            </div>
+          </div>
+
+          <div class="field">
+            <label>Nombre de usuario *</label>
+            {{ form.username }}
+            {% for error in form.username.errors %}<span class="field-err">{{ error }}</span>{% endfor %}
+          </div>
+
+          <div class="row2">
+            <div class="field">
+              <label>WhatsApp / Tel *</label>
+              {{ form.celular }}
+              {% for error in form.celular.errors %}<span class="field-err">{{ error }}</span>{% endfor %}
+            </div>
+            <div class="field">
+              <label>Email *</label>
+              {{ form.email }}
+              {% for error in form.email.errors %}<span class="field-err">{{ error }}</span>{% endfor %}
+            </div>
+          </div>
+
+          <div class="field">
+            <label>Ciudad *</label>
+            {{ form.ciudad }}
+            {% for error in form.ciudad.errors %}<span class="field-err">{{ error }}</span>{% endfor %}
+          </div>
+
+          <div class="field">
+            <label>Contraseña *</label>
+          <div class="input-wrap">
+            {{ form.password1 }}
+            <button type="button" class="pwd-toggle" onclick="togglePwd('id_password1', this)" tabindex="-1" aria-label="Mostrar contraseña">
+              <svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round">
+                <ellipse cx="7.5" cy="7.5" rx="5.5" ry="3.5"/>
+                <circle cx="7.5" cy="7.5" r="1.5"/>
+              </svg>
+            </button>
+          </div>
+          {% for error in form.password1.errors %}<span class="field-err">{{ error }}</span>{% endfor %}
+          </div>
+
+          <div class="field">
+            <label>Repetir Contraseña *</label>
+          <div class="input-wrap">
+            {{ form.password2 }}
+            <button type="button" class="pwd-toggle" onclick="togglePwd('id_password2', this)" tabindex="-1" aria-label="Mostrar contraseña">
+              <svg width="15" height="15" viewBox="0 0 15 15" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round">
+                <ellipse cx="7.5" cy="7.5" rx="5.5" ry="3.5"/>
+                <circle cx="7.5" cy="7.5" r="1.5"/>
+              </svg>
+            </button>
+          </div>
+            {% for error in form.password2.errors %}<span class="field-err">{{ error }}</span>{% endfor %}
+          </div>
+
+          <button type="submit" class="btn-submit">Crear cuenta gratis</button>
+
+          <div class="divider"><span>o</span></div>
+
+          <div class="login-row">
+            ¿Ya tenés cuenta? <a href="{% url 'login' %}">Iniciar sesión</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const cursor = document.getElementById('cursor');
+    document.addEventListener('mousemove', e => {
+      cursor.style.left = e.clientX + 'px';
+      cursor.style.top  = e.clientY + 'px';
+    });
+    document.querySelectorAll('a, button, input').forEach(el => {
+      el.addEventListener('mouseenter', () => cursor.classList.add('grow'));
+      el.addEventListener('mouseleave', () => cursor.classList.remove('grow'));
+    });
+
+  /* ─── PASSWORD TOGGLE ─── */
+  function togglePwd(id, btn) {
+    const input = document.getElementById(id);
+    const isText = input.type === 'text';
+    input.type = isText ? 'password' : 'text';
+    btn.style.opacity = isText ? '1' : '.5';
+  }
+  </script>
 </body>
 </html>

@@ -629,43 +629,6 @@
     entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('vis'); });
   }, { threshold: 0.05 });
   document.querySelectorAll('.prop-card').forEach(c => obs.observe(c));
-
-  // Al cargar la página, verificar si hay parámetros en la URL (desde el buscador del index)
-  window.addEventListener('load', () => {
-    const urlParams = new URLSearchParams(window.location.search);
-    
-    // 1. Tipo de inmueble (Checkbox)
-    const tipoParam = urlParams.get('tipo');
-    if (tipoParam) {
-      const checkbox = document.querySelector(`.tipo-opt input[data-tipo="${tipoParam.toLowerCase()}"]`);
-      if (checkbox) checkbox.checked = true;
-    }
-
-    // 2. Operación (Tabs)
-    const opParam = urlParams.get('operacion');
-    if (opParam) {
-      const opVal = opParam.toLowerCase();
-      const opBtn = Array.from(document.querySelectorAll('.op-tab')).find(b => 
-        b.getAttribute('onclick') && b.getAttribute('onclick').includes(`'${opVal}'`)
-      );
-      if (opBtn) {
-        document.querySelectorAll('.op-tab').forEach(b => b.classList.remove('active'));
-        opBtn.classList.add('active');
-        state.op = opVal;
-      }
-    }
-
-    // 3. Ciudad (Búsqueda por texto)
-    const ciudadParam = urlParams.get('ciudad');
-    if (ciudadParam) {
-      document.getElementById('heroSearch').value = ciudadParam;
-    }
-
-    // Ejecutar filtros iniciales si hay algún parámetro en la URL
-    if (urlParams.toString()) {
-      applyFilters();
-    }
-  });
 </script>
 </body>
 </html>

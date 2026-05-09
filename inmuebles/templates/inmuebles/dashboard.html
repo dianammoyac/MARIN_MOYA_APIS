@@ -1,0 +1,793 @@
+{% load static %}
+{% load humanize %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Mis Inmuebles — Marín Moya Inversiones</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,700;1,400;1,500&family=Jost:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --negro:  #0d0d0d;
+      --verde:  #0e2a2a;
+      --dorado: #c6a15b;
+      --marfil: #f9f6f1;
+      --gris:   #888;
+      --borde:  #e2ddd6;
+      --blanco: #fff;
+      --rojo:   #b84040;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Jost', sans-serif;
+      background: var(--marfil);
+      color: var(--negro);
+      overflow-x: hidden;
+      min-height: 100vh;
+    }
+
+    /* ─── CURSOR ─── */
+    * { cursor: none; }
+    @media (hover: hover) and (pointer: fine) { * { cursor: none; } }
+    #cursor {
+      width: 10px; height: 10px;
+      background: var(--dorado); border-radius: 50%;
+      position: fixed; top: 0; left: 0;
+      pointer-events: none; z-index: 9999;
+      transform: translate(-50%, -50%);
+      display: none;
+      transition: width .3s, height .3s, background .3s;
+    }
+    #cursor.grow { width: 40px; height: 40px; background: transparent; border: 1px solid var(--dorado); }
+    @media (hover: hover) and (pointer: fine) { #cursor { display: block; } }
+
+    /* ─── KEYFRAMES ─── */
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(24px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; } to { opacity: 1; }
+    }
+
+    /* ─── NAV ─── */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 500;
+      background: var(--blanco);
+      border-bottom: 1px solid var(--borde);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 64px; height: 68px;
+    }
+
+    .nav-logo {
+      font-family: 'Playfair Display', serif;
+      font-size: 17px; font-weight: 500;
+      letter-spacing: 3px; text-transform: uppercase;
+      color: var(--verde); text-decoration: none;
+      display: flex; flex-direction: column; gap: 2px;
+    }
+    .nav-logo span {
+      font-size: 8.5px; font-weight: 400;
+      letter-spacing: 4px; color: var(--dorado);
+    }
+
+    .nav-right { display: flex; align-items: center; gap: 36px; }
+
+    .nav-user {
+      display: flex; align-items: center; gap: 12px;
+      font-size: 12px; font-weight: 300; color: var(--gris);
+    }
+    .nav-avatar {
+      width: 34px; height: 34px;
+      background: var(--verde);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Playfair Display', serif;
+      font-size: 13px; font-weight: 500;
+      color: var(--dorado);
+      flex-shrink: 0;
+    }
+
+    .nav-sep { width: 1px; height: 18px; background: var(--borde); }
+
+    .nav-logout {
+      font-size: 10.5px; font-weight: 400;
+      letter-spacing: 2px; text-transform: uppercase;
+      color: var(--gris); text-decoration: none;
+      transition: color .2s;
+    }
+    .nav-logout:hover { color: var(--dorado); }
+
+    /* ─── PAGE LAYOUT ─── */
+    .page {
+      padding-top: 68px;
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 260px 1fr;
+    }
+
+    /* ─── SIDEBAR ─── */
+    .sidebar {
+      background: var(--verde);
+      min-height: calc(100vh - 68px);
+      padding: 52px 0;
+      position: sticky;
+      top: 68px;
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      overflow: hidden;
+    }
+
+    /* M² watermark in sidebar */
+    .sidebar::after {
+      content: 'M²';
+      font-family: 'Playfair Display', serif;
+      font-size: 200px; font-weight: 700;
+      color: rgba(198,161,91,.05);
+      position: absolute; right: -20px; bottom: -20px;
+      line-height: 1; pointer-events: none; user-select: none;
+      font-style: italic;
+    }
+
+    .sidebar-label {
+      font-size: 8.5px; font-weight: 500;
+      letter-spacing: 4px; text-transform: uppercase;
+      color: rgba(198,161,91,.5);
+      padding: 0 32px 18px;
+      border-bottom: 1px solid rgba(198,161,91,.1);
+      margin-bottom: 8px;
+    }
+
+    .sidebar-link {
+      display: flex; align-items: center; gap: 14px;
+      padding: 16px 32px;
+      font-size: 11.5px; font-weight: 400;
+      letter-spacing: 1.5px; text-transform: uppercase;
+      color: rgba(255,255,255,.45);
+      text-decoration: none;
+      transition: color .2s, background .2s;
+      position: relative; z-index: 1;
+      border-left: 2px solid transparent;
+    }
+    .sidebar-link:hover { color: rgba(255,255,255,.85); background: rgba(255,255,255,.04); }
+    .sidebar-link.active {
+      color: var(--dorado);
+      background: rgba(198,161,91,.07);
+      border-left-color: var(--dorado);
+    }
+
+    .sidebar-icon {
+      width: 16px; height: 16px;
+      flex-shrink: 0; opacity: .7;
+    }
+    .sidebar-link.active .sidebar-icon { opacity: 1; }
+
+    .sidebar-divider {
+      height: 1px; background: rgba(198,161,91,.1);
+      margin: 12px 32px;
+    }
+
+    /* ─── MAIN CONTENT ─── */
+    .main {
+      padding: 52px 64px 80px;
+      background: var(--marfil);
+    }
+
+    /* ─── PAGE HEADER ─── */
+    .page-header {
+      display: flex; align-items: flex-end;
+      justify-content: space-between;
+      margin-bottom: 48px;
+      padding-bottom: 36px;
+      border-bottom: 1px solid var(--borde);
+      flex-wrap: wrap; gap: 20px;
+      opacity: 0;
+      animation: slideUp .7s .1s forwards;
+    }
+
+    .page-eyebrow {
+      font-size: 9.5px; font-weight: 500;
+      letter-spacing: 4px; text-transform: uppercase;
+      color: var(--dorado); margin-bottom: 12px;
+      display: flex; align-items: center; gap: 12px;
+    }
+    .page-eyebrow::before {
+      content: ''; display: block;
+      width: 24px; height: 1px; background: var(--dorado);
+    }
+
+    .page-title {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(28px, 3vw, 42px);
+      font-weight: 400; color: var(--verde); line-height: 1.1;
+    }
+    .page-title em { font-style: italic; color: var(--dorado); }
+
+    .btn-publish {
+      display: inline-flex; align-items: center; gap: 10px;
+      background: var(--verde); color: var(--blanco);
+      font-family: 'Jost', sans-serif;
+      font-size: 10.5px; font-weight: 500;
+      letter-spacing: 2.5px; text-transform: uppercase;
+      padding: 14px 28px; text-decoration: none;
+      border: none;
+      transition: background .25s;
+      white-space: nowrap;
+    }
+    .btn-publish:hover { background: var(--dorado); }
+    .btn-publish svg { flex-shrink: 0; }
+
+    /* ─── STATS ROW ─── */
+    .stats-row {
+      display: grid; grid-template-columns: repeat(4, 1fr);
+      gap: 1px; background: var(--borde);
+      border: 1px solid var(--borde);
+      margin-bottom: 48px;
+      opacity: 0;
+      animation: slideUp .7s .2s forwards;
+    }
+
+    .stat-box {
+      background: var(--blanco);
+      padding: 28px 32px;
+      display: flex; flex-direction: column; gap: 6px;
+    }
+
+    .stat-box-num {
+      font-family: 'Playfair Display', serif;
+      font-size: 36px; font-weight: 400;
+      color: var(--verde); line-height: 1;
+    }
+    .stat-box-num .unit { font-size: 16px; color: var(--dorado); }
+
+    .stat-box-label {
+      font-size: 9px; font-weight: 500;
+      letter-spacing: 2.5px; text-transform: uppercase;
+      color: var(--gris);
+    }
+
+    /* ─── FILTERS / TOOLBAR ─── */
+    .toolbar {
+      display: flex; align-items: center;
+      justify-content: space-between;
+      margin-bottom: 28px;
+      flex-wrap: wrap; gap: 16px;
+      opacity: 0;
+      animation: slideUp .7s .3s forwards;
+    }
+
+    .filter-tabs {
+      display: flex; gap: 0;
+      border: 1px solid var(--borde);
+      background: var(--blanco);
+      overflow: hidden;
+    }
+
+    .filter-tab {
+      font-size: 10px; font-weight: 400;
+      letter-spacing: 2px; text-transform: uppercase;
+      color: var(--gris); padding: 10px 20px;
+      border: none; background: transparent;
+      border-right: 1px solid var(--borde);
+      transition: background .2s, color .2s;
+      font-family: 'Jost', sans-serif;
+    }
+    .filter-tab:last-child { border-right: none; }
+    .filter-tab:hover { color: var(--verde); background: var(--marfil); }
+    .filter-tab.active { background: var(--verde); color: var(--dorado); }
+
+    .toolbar-right { display: flex; align-items: center; gap: 16px; }
+
+    .sort-select {
+      background: var(--blanco); border: 1px solid var(--borde);
+      font-family: 'Jost', sans-serif; font-size: 11px; font-weight: 300;
+      color: var(--gris); padding: 10px 16px;
+      outline: none; appearance: none;
+    }
+
+    /* ─── PROPERTY GRID ─── */
+    .prop-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1px; background: var(--borde);
+      border: 1px solid var(--borde);
+    }
+
+    /* ─── PROPERTY CARD ─── */
+    .prop-card {
+      background: var(--blanco);
+      overflow: visible;
+      opacity: 0; transform: translateY(18px);
+      transition: opacity .55s ease, transform .55s ease;
+      position: relative;
+    }
+    .prop-card.vis { opacity: 1; transform: translateY(0); }
+
+    /* status badge on card */
+    .card-status {
+      position: absolute; top: 16px; left: 16px; z-index: 3;
+      font-size: 8.5px; font-weight: 500;
+      letter-spacing: 2px; text-transform: uppercase;
+      padding: 4px 11px;
+    }
+    .card-status.activo  { background: var(--dorado); color: var(--blanco); }
+    .card-status.pausado { background: rgba(0,0,0,.5); color: rgba(255,255,255,.7); }
+    .card-status.vendido { background: var(--verde); color: var(--dorado); }
+
+    /* op badge */
+    .card-op {
+      position: absolute; top: 16px; right: 16px; z-index: 3;
+      font-size: 8.5px; font-weight: 500;
+      letter-spacing: 2px; text-transform: uppercase;
+      background: rgba(255,255,255,.15);
+      backdrop-filter: blur(4px);
+      color: var(--blanco); padding: 4px 11px;
+      border: 1px solid rgba(255,255,255,.2);
+    }
+
+    .card-img {
+      height: 220px; position: relative; overflow: hidden;
+    }
+
+    .card-img-mock {
+      width: 100%; height: 100%;
+      background: var(--verde);
+      display: flex; align-items: center; justify-content: center;
+      transition: transform .7s ease;
+    }
+    .card-img-mock img { width: 100%; height: 100%; object-fit: cover; }
+    .prop-card:hover .card-img-mock { transform: scale(1.05); }
+
+    .card-img-mock .mock-m2 {
+      font-family: 'Playfair Display', serif;
+      font-size: 72px; font-style: italic; font-weight: 700;
+      color: rgba(255,255,255,.06); user-select: none;
+      position: relative; z-index: 1;
+    }
+
+    /* card body */
+    .card-body { padding: 22px 24px 20px; }
+
+    .card-tipo {
+      font-size: 9.5px; font-weight: 500;
+      letter-spacing: 2.5px; text-transform: uppercase;
+      color: var(--gris); margin-bottom: 8px;
+    }
+
+    .card-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 18px; font-weight: 400;
+      color: var(--verde); line-height: 1.25; margin-bottom: 5px;
+    }
+    .card-title a { text-decoration: none; color: inherit; }
+
+    .card-loc {
+      font-size: 12px; font-weight: 300;
+      color: var(--gris); margin-bottom: 18px; letter-spacing: .4px;
+    }
+
+    .card-prices {
+      padding: 14px 0; border-top: 1px solid var(--borde);
+      border-bottom: 1px solid var(--borde); margin-bottom: 16px;
+    }
+    .card-price-lbl {
+      font-size: 8.5px; letter-spacing: 2px; text-transform: uppercase;
+      color: var(--gris); margin-bottom: 4px;
+    }
+    .card-price-cop {
+      font-family: 'Playfair Display', serif;
+      font-size: 20px; font-weight: 400; color: var(--negro); line-height: 1;
+    }
+
+    /* ─── CARD ACTIONS BAR ─── */
+    .card-actions {
+      display: flex; align-items: center;
+      justify-content: space-between;
+      padding-top: 14px;
+    }
+
+    .card-feats {
+      display: flex; gap: 12px;
+      font-size: 11px; font-weight: 300; color: var(--gris);
+    }
+
+    .card-btns {
+      display: flex; align-items: center; gap: 2px;
+    }
+
+    .card-btn {
+      width: 36px; height: 36px;
+      display: flex; align-items: center; justify-content: center;
+      background: transparent; border: 1px solid var(--borde);
+      transition: background .2s, border-color .2s, color .2s;
+      text-decoration: none;
+      cursor: none;
+    }
+
+    .card-btn:hover { border-color: var(--dorado); }
+    .card-btn.edit:hover { background: var(--verde); }
+    .card-btn.edit:hover svg { stroke: var(--dorado); }
+    .card-btn.toggle:hover { background: var(--marfil); }
+    .card-btn.toggle:hover svg { stroke: var(--negro); }
+    .card-btn.delete:hover { background: var(--rojo); border-color: var(--rojo); }
+    .card-btn.delete:hover svg { stroke: var(--blanco); }
+
+    .card-btn svg { stroke: var(--gris); transition: stroke .2s; }
+
+    /* ─── EMPTY STATE ─── */
+    .empty-state {
+      grid-column: 1 / -1;
+      background: var(--blanco);
+      padding: 100px 40px;
+      text-align: center;
+    }
+
+    .empty-icon {
+      font-family: 'Playfair Display', serif;
+      font-size: 80px; font-style: italic;
+      color: rgba(14,42,42,.06); line-height: 1;
+      margin-bottom: 28px; user-select: none;
+    }
+
+    .empty-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 26px; font-weight: 400;
+      color: var(--verde); margin-bottom: 10px;
+    }
+
+    .empty-sub {
+      font-size: 14px; font-weight: 300;
+      color: var(--gris); line-height: 1.8; max-width: 320px; margin: 0 auto 36px;
+    }
+
+    /* ─── MODAL CONFIRM DELETE ─── */
+    .modal-overlay {
+      position: fixed; inset: 0; z-index: 1000;
+      background: rgba(14,42,42,.6);
+      display: none; align-items: center; justify-content: center;
+      backdrop-filter: blur(4px);
+    }
+    .modal-overlay.open { display: flex; }
+
+    .modal {
+      background: var(--blanco);
+      border: 1px solid var(--borde);
+      padding: 48px 52px;
+      max-width: 420px; width: 90%;
+      animation: slideUp .35s ease;
+      text-align: center;
+    }
+
+    .modal-icon {
+      width: 52px; height: 52px;
+      background: #fdf2f2;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 24px;
+    }
+
+    .modal-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 22px; font-weight: 400;
+      color: var(--verde); margin-bottom: 10px;
+    }
+
+    .modal-sub {
+      font-size: 13px; font-weight: 300;
+      color: var(--gris); line-height: 1.75; margin-bottom: 36px;
+    }
+
+    .modal-actions { display: flex; gap: 12px; }
+
+    .modal-cancel {
+      flex: 1; padding: 13px;
+      font-family: 'Jost', sans-serif;
+      font-size: 10.5px; font-weight: 400;
+      letter-spacing: 2px; text-transform: uppercase;
+      color: var(--gris); background: transparent;
+      border: 1px solid var(--borde);
+      transition: border-color .2s, color .2s;
+    }
+    .modal-cancel:hover { border-color: var(--negro); color: var(--negro); }
+
+    .modal-confirm {
+      flex: 1; padding: 13px;
+      font-family: 'Jost', sans-serif;
+      font-size: 10.5px; font-weight: 500;
+      letter-spacing: 2px; text-transform: uppercase;
+      color: var(--blanco); background: var(--rojo);
+      border: 1px solid var(--rojo);
+      transition: background .2s;
+      text-decoration: none;
+    }
+    .modal-confirm:hover { background: #a03535; }
+
+    /* ─── FOOTER ─── */
+    .page-footer {
+      background: var(--verde);
+      text-align: center;
+      padding: 36px 64px;
+      border-top: 1px solid rgba(198,161,91,.1);
+    }
+    .page-footer p {
+      font-size: 11px; font-weight: 300;
+      letter-spacing: 1.5px;
+      color: rgba(255,255,255,.2);
+    }
+
+    /* ─── RESPONSIVE ─── */
+    @media (max-width: 1100px) {
+      .page { grid-template-columns: 220px 1fr; }
+      .main { padding: 44px 40px 70px; }
+      .prop-grid { grid-template-columns: repeat(2, 1fr); }
+      .stats-row { grid-template-columns: repeat(2, 1fr); }
+    }
+    @media (max-width: 780px) {
+      nav { padding: 0 28px; }
+      .page { grid-template-columns: 1fr; }
+      .sidebar { display: none; }
+      .main { padding: 32px 24px 60px; }
+      .prop-grid { grid-template-columns: 1fr; }
+      .stats-row { grid-template-columns: repeat(2, 1fr); }
+      .page-footer { padding: 28px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Cursor -->
+  <div id="cursor"></div>
+
+  <!-- ═══ NAV ═══ -->
+  <nav>
+    <a href="{% url 'index2' %}" class="nav-logo">
+      Marín Moya
+      <span>Inversiones</span>
+    </a>
+    <div class="nav-right">
+      <div class="nav-user">
+        <div class="nav-avatar">{{ user.username|first|upper }}</div>
+        <span>{{ user.get_full_name|default:user.username }}</span>
+      </div>
+      <div class="nav-sep"></div>
+      <a href="{% url 'logout' %}" class="nav-logout">Cerrar sesión</a>
+    </div>
+  </nav>
+
+  <!-- ═══ PAGE LAYOUT ═══ -->
+  <div class="page">
+
+    <!-- ─── SIDEBAR ─── -->
+    <aside class="sidebar">
+      <div class="sidebar-label">Portal</div>
+
+      <a href="{% url 'mis_inmuebles' %}" class="sidebar-link active">
+        <svg class="sidebar-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="1" y="1" width="6" height="6" stroke="currentColor" stroke-width="1.2"/>
+          <rect x="9" y="1" width="6" height="6" stroke="currentColor" stroke-width="1.2"/>
+          <rect x="1" y="9" width="6" height="6" stroke="currentColor" stroke-width="1.2"/>
+          <rect x="9" y="9" width="6" height="6" stroke="currentColor" stroke-width="1.2"/>
+        </svg>
+        Mis inmuebles
+      </a>
+
+      <a href="{% url 'inmuebles_crear' %}" class="sidebar-link">
+        <svg class="sidebar-icon" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.2"/>
+          <line x1="8" y1="5" x2="8" y2="11" stroke="currentColor" stroke-width="1.2"/>
+          <line x1="5" y1="8" x2="11" y2="8" stroke="currentColor" stroke-width="1.2"/>
+        </svg>
+        Publicar inmueble
+      </a>
+
+      <div class="sidebar-divider"></div>
+      <div class="sidebar-label" style="padding-top:18px;">Cuenta</div>
+
+      <a href="#" class="sidebar-link">
+        <svg class="sidebar-icon" viewBox="0 0 16 16" fill="none">
+          <circle cx="8" cy="5.5" r="3" stroke="currentColor" stroke-width="1.2"/>
+          <path d="M2 14c0-3.314 2.686-5 6-5s6 1.686 6 5" stroke="currentColor" stroke-width="1.2"/>
+        </svg>
+        Mi perfil
+      </a>
+
+      <a href="{% url 'logout' %}" class="sidebar-link" style="margin-top:auto;">
+        <svg class="sidebar-icon" viewBox="0 0 16 16" fill="none">
+          <path d="M6 3H3v10h3M10 11l4-3-4-3M14 8H6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+        </svg>
+        Cerrar sesión
+      </a>
+    </aside>
+
+    <!-- ─── MAIN ─── -->
+    <main class="main">
+
+      <!-- Page Header -->
+      <div class="page-header">
+        <div>
+          <div class="page-eyebrow">Panel de gestión</div>
+          <h1 class="page-title">Mis <em>inmuebles</em></h1>
+        </div>
+        <a href="{% url 'inmuebles_crear' %}" class="btn-publish">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+            <circle cx="7" cy="7" r="6" stroke="currentColor" stroke-width="1.3"/>
+            <line x1="7" y1="4.5" x2="7" y2="9.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+            <line x1="4.5" y1="7" x2="9.5" y2="7" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+          </svg>
+          Publicar inmueble
+        </a>
+      </div>
+
+      <!-- Stats -->
+      <div class="stats-row">
+        <div class="stat-box">
+          <div class="stat-box-num">{{ stats.total }}</div>
+          <div class="stat-box-label">Total publicados</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-box-num">{{ stats.activos }}</div>
+          <div class="stat-box-label">Activos</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-box-num">{{ stats.pausados }}</div>
+          <div class="stat-box-label">Pausados</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-box-num">{{ stats.finalizados }}<span class="unit"> ✓</span></div>
+          <div class="stat-box-label">Vendidos / Arrendados</div>
+        </div>
+      </div>
+
+      <!-- Toolbar -->
+      <div class="toolbar">
+        <div class="filter-tabs">
+          <button class="filter-tab active" onclick="filterCards('todos', this)">Todos</button>
+          <button class="filter-tab" onclick="filterCards('activo', this)">Activos</button>
+          <button class="filter-tab" onclick="filterCards('pausado', this)">Pausados</button>
+          <button class="filter-tab" onclick="filterCards('vendido', this)">Vendidos</button>
+        </div>
+        <div class="toolbar-right">
+          <select class="sort-select">
+            <option>Más recientes</option>
+            <option>Mayor precio</option>
+            <option>Menor precio</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Property Grid -->
+      <div class="prop-grid" id="propGrid">
+        {% for i in inmuebles %}
+        <div class="prop-card" data-status="{% if i.estatus == 'DISPONIBLE' %}activo{% elif i.estatus == 'INACTIVO' %}pausado{% else %}vendido{% endif %}">
+          <div class="card-img">
+            <div class="card-img-mock">
+              {% if i.imagen1 %}
+                <img src="{{ i.imagen1.url }}" alt="{{ i.titulo }}">
+              {% else %}
+                <div class="mock-m2">M²</div>
+              {% endif %}
+            </div>
+            {% if i.estatus == 'DISPONIBLE' %}
+              <div class="card-status activo">Activo</div>
+            {% elif i.estatus == 'INACTIVO' %}
+              <div class="card-status pausado">Pausado</div>
+            {% else %}
+              <div class="card-status vendido">{{ i.get_estatus_display }}</div>
+            {% endif %}
+            <div class="card-op">{{ i.get_operacion_display }}</div>
+          </div>
+          <div class="card-body">
+            <div class="card-tipo">{{ i.get_tipo_display }}</div>
+            <div class="card-title"><a href="{% url 'inmuebles_detalle' i.id %}">{{ i.titulo }}</a></div>
+            <div class="card-loc">{{ i.ciudad }}, {{ i.departamento }} · Estrato {{ i.estrato|default:"N/A" }}</div>
+            <div class="card-prices">
+              <div class="card-price-lbl">Precio {{ i.get_operacion_display|lower }}</div>
+              <div class="card-price-cop">{{ i.moneda }} $ {{ i.precio|intcomma }}</div>
+            </div>
+            <div class="card-actions">
+              <div class="card-feats">
+                <span>🛏 {{ i.habitaciones }}</span>
+                <span>🚿 {{ i.banos }}</span>
+                <span>📐 {{ i.area_m2|floatformat:0 }} m²</span>
+              </div>
+              <div class="card-btns">
+                <a href="{% url 'inmuebles_editar' i.id %}" class="card-btn edit" title="Editar">
+                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M9.5 2.5l2 2L4 12H2v-2L9.5 2.5z"/>
+                  </svg>
+                </a>
+                <button class="card-btn toggle" title="Cambiar estado">
+                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke-width="1.3" stroke-linecap="round">
+                    <rect x="3" y="2.5" width="3" height="9" rx=".5"/>
+                    <rect x="8" y="2.5" width="3" height="9" rx=".5"/>
+                  </svg>
+                </button>
+                <button class="card-btn delete" title="Eliminar" onclick="openModal(this, '{{ i.titulo }}', '{% url 'inmuebles_eliminar' i.id %}')">
+                  <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M2 3.5h10M5 3.5V2.5h4v1M5.5 6v4M8.5 6v4M3 3.5l.7 8h6.6l.7-8"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        {% empty %}
+        <div class="empty-state">
+          <div class="empty-icon">M²</div>
+          <div class="empty-title">Aún no tienes publicaciones</div>
+          <div class="empty-sub">Comienza a publicar tus inmuebles para que inversores de todo el país puedan verlos.</div>
+          <a href="{% url 'inmuebles_crear' %}" class="btn-publish" style="display:inline-flex; margin-top:10px;">Publicar mi primer inmueble</a>
+        </div>
+        {% endfor %}
+      </div>
+
+    </main>
+  </div>
+
+  <footer class="page-footer">
+    <p>© 2026 Marín Moya Inversiones · Armenia, Colombia</p>
+  </footer>
+
+  <div class="modal-overlay" id="deleteModal">
+    <div class="modal">
+      <div class="modal-icon">
+        <svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="#b84040" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M3 5.5h16M8 5.5V4h6v1.5M8.5 9v7M13.5 9v7M4.5 5.5l1.1 13h10.8l1.1-13"/>
+        </svg>
+      </div>
+      <div class="modal-title">¿Eliminar inmueble?</div>
+      <div class="modal-sub" id="modalSub">Esta acción no se puede deshacer.</div>
+      <div class="modal-actions">
+        <button class="modal-cancel" onclick="closeModal()">Cancelar</button>
+        <a href="#" class="modal-confirm" id="confirmDeleteBtn">Sí, eliminar</a>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const cursor = document.getElementById('cursor');
+    document.addEventListener('mousemove', e => {
+      cursor.style.left = e.clientX + 'px';
+      cursor.style.top  = e.clientY + 'px';
+    });
+    document.querySelectorAll('a, button, input, select').forEach(el => {
+      el.addEventListener('mouseenter', () => cursor.classList.add('grow'));
+      el.addEventListener('mouseleave', () => cursor.classList.remove('grow'));
+    });
+
+    const obs = new IntersectionObserver(entries => {
+      entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('vis'); });
+    }, { threshold: 0.08 });
+    document.querySelectorAll('.prop-card').forEach(c => obs.observe(c));
+
+    function filterCards(status, btn) {
+      document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+      btn.classList.add('active');
+
+      document.querySelectorAll('.prop-card').forEach(card => {
+        const match = status === 'todos' || card.dataset.status === status;
+        card.style.display = match ? '' : 'none';
+      });
+    }
+
+    function openModal(btn, name, deleteUrl) {
+      document.getElementById('modalSub').textContent = `"${name}" será eliminado permanentemente del portal.`;
+      document.getElementById('confirmDeleteBtn').href = deleteUrl;
+      document.getElementById('deleteModal').classList.add('open');
+    }
+
+    function closeModal() {
+      document.getElementById('deleteModal').classList.remove('open');
+    }
+
+    document.getElementById('deleteModal').addEventListener('click', function(e) {
+      if (e.target === this) closeModal();
+    });
+  </script>
+</body>
+</html>
