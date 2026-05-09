@@ -291,12 +291,9 @@
   </ul>
   <div class="nav-right">
     {% if user.is_authenticated %}
-      <a href="{% url 'mis_inmuebles' %}" class="nav-login">Mi Panel</a>
-      <div class="nav-sep"></div>
-      <a href="{% url 'logout' %}" class="nav-btn">Cerrar Sesión</a>
+      <span class="nav-login" style="pointer-events: none; color: var(--verde); margin-right: 15px;">Hola, {{ user.first_name|default:user.username }}</span>
+      <a href="{% url 'mis_inmuebles' %}" class="nav-btn">Ir a mi panel →</a>
     {% else %}
-      <a href="{% url 'login' %}" class="nav-login">Iniciar sesión</a>
-      <div class="nav-sep"></div>
       <a href="{% url 'login' %}" class="nav-btn">Acceder al portal →</a>
     {% endif %}
   </div>

@@ -67,7 +67,6 @@
     .scroll-hint::after { content: ''; display: block; width: 1px; height: 40px; background: rgba(198,161,91,.3); margin-top: 15px; }
 
     .hero-right { position: relative; height: 100%; display: flex; align-items: center; justify-content: center; z-index: 2; }
-    .hero-right-bg { position: absolute; inset: 0; opacity: .4; pointer-events: none; }
     .hero-number { position: absolute; right: -40px; bottom: -60px; font-family: 'Playfair Display', serif; font-size: 420px; font-weight: 700; font-style: italic; color: rgba(198,161,91,.03); line-height: 1; pointer-events: none; user-select: none; }
 
     .hero-panel { position: relative; z-index: 2; background: rgba(255,255,255,.05); border: 1px solid rgba(198,161,91,.25); padding: 38px 32px; width: 340px; backdrop-filter: blur(8px); opacity: 0; animation: slideUp .9s .4s forwards; }
@@ -199,12 +198,14 @@
       <li><a href="#categorias">Categorías</a></li>
       <li><a href="#servicios">Servicios</a></li>
       <li><a href="#contacto">Contacto</a></li>
-      <li><a href="{% url 'prueba' %}">Prueba con este diseño</a></li>
     </ul>
 
-    <a href="{% url 'login' %}" class="nav-login">Iniciar sesión</a>
-    <span class="nav-sep"></span>
-    <a href="{% url 'inmuebles_listado' %}" class="nav-btn">Acceder al portal →</a>
+    {% if user.is_authenticated %}
+      <span class="nav-login" style="margin-right: 20px; pointer-events: none;">Hola, {{ user.first_name|default:user.username }}</span>
+      <a href="{% url 'mis_inmuebles' %}" class="nav-btn">Ir a mi panel →</a>
+    {% else %}
+      <a href="{% url 'login' %}" class="nav-btn">Acceder al portal →</a>
+    {% endif %}
   </div>
 </nav>
 
@@ -233,16 +234,6 @@
   </div>
 
   <div class="hero-right">
-    <div class="hero-right-bg">
-      <svg width="100%" height="100%" viewBox="0 0 600 800" xmlns="http://www.w3.org/2000/svg">
-        <line x1="0" y1="0" x2="600" y2="800" stroke="#c6a15b" stroke-width="1"/>
-        <line x1="200" y1="0" x2="600" y2="533" stroke="#c6a15b" stroke-width="1"/>
-        <line x1="400" y1="0" x2="600" y2="267" stroke="#c6a15b" stroke-width="1"/>
-        <line x1="0" y1="266" x2="400" y2="800" stroke="#c6a15b" stroke-width="1"/>
-        <line x1="0" y1="533" x2="200" y2="800" stroke="#c6a15b" stroke-width="1"/>
-      </svg>
-    </div>
-
     <div class="hero-panel">
       <div class="panel-title">Buscar inmueble</div>
 
@@ -415,25 +406,32 @@
   <div style="max-width:1200px; margin:0 auto; display:grid; grid-template-columns: 1fr 1fr; gap:80px; align-items:center;">
     <div>
       <p class="s-kicker">NUESTROS SERVICIOS</p>
-      <h2 class="s-title">Lo que hacemos <em>diferente.</em></h2>
+      <h2 class="s-title">Más que publicar,<br>conectamos <em>oportunidades.</em></h2>
       <div style="margin-top:50px; display:flex; flex-direction:column; gap:30px;">
         <div style="display:flex; gap:20px;">
           <span style="color:var(--dorado); font-family:'Playfair Display';">01</span>
           <div>
-            <h5 style="font-size:18px; color:var(--verde); margin-bottom:8px;">Gestión Transparente</h5>
-            <p style="font-size:13px; color:var(--gris); line-height:1.7;">Acompañamiento legal y comercial en cada etapa del proceso.</p>
+            <h5 style="font-size:18px; color:var(--verde); margin-bottom:8px;">Visibilidad Estratégica</h5>
+            <p style="font-size:13px; color:var(--gris); line-height:1.7;">Tu inmueble no queda perdido entre cientos de publicaciones. Potenciamos su exposición dentro de la plataforma.</p>
           </div>
         </div>
         <div style="display:flex; gap:20px;">
           <span style="color:var(--dorado); font-family:'Playfair Display';">02</span>
           <div>
-            <h5 style="font-size:18px; color:var(--verde); margin-bottom:8px;">Avalúos Profesionales</h5>
-            <p style="font-size:13px; color:var(--gris); line-height:1.7;">Determinamos el valor real de su propiedad con criterios de mercado.</p>
+            <h5 style="font-size:18px; color:var(--verde); margin-bottom:8px;">Respaldo Comercial</h5>
+            <p style="font-size:13px; color:var(--gris); line-height:1.7;">Un equipo acompaña la atención de interesados y el seguimiento comercial de tu propiedad.</p>
+          </div>
+        </div>
+        <div style="display:flex; gap:20px;">
+          <span style="color:var(--dorado); font-family:'Playfair Display';">03</span>
+          <div>
+            <h5 style="font-size:18px; color:var(--verde); margin-bottom:8px;">Gestión por Consignación</h5>
+            <p style="font-size:13px; color:var(--gris); line-height:1.7;">Comercializamos activamente tu inmueble y conectamos oportunidades reales de venta o arriendo.</p>
           </div>
         </div>
       </div>
     </div>
-    <div style="height:500px; background:var(--verde); display:flex; align-items:center; justify-content:center; position:relative;">
+    <div style="height:600px; background:var(--verde); display:flex; align-items:center; justify-content:center; position:relative;">
        <div style="font-size:120px; font-family:'Playfair Display'; color:rgba(198,161,91,.1);">M²</div>
        <div style="position:absolute; bottom:-20px; right:-20px; width:120px; height:120px; border:1px solid var(--dorado); opacity:.3;"></div>
     </div>
