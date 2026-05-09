@@ -665,13 +665,15 @@
         {% for i in inmuebles %}
         <div class="prop-card" data-status="{% if i.estatus == 'DISPONIBLE' %}activo{% elif i.estatus == 'INACTIVO' %}pausado{% else %}vendido{% endif %}">
           <div class="card-img">
-            <div class="card-img-mock">
-              {% if i.imagen1 %}
-                <img src="{{ i.imagen1.url }}" alt="{{ i.titulo }}">
-              {% else %}
-                <div class="mock-m2">M²</div>
-              {% endif %}
-            </div>
+            <a href="{% url 'inmuebles_detalle' i.id %}" style="display:block; height:100%;">
+              <div class="card-img-mock">
+                {% if i.imagen1 %}
+                  <img src="{{ i.imagen1.url }}" alt="{{ i.titulo }}">
+                {% else %}
+                  <div class="mock-m2">M²</div>
+                {% endif %}
+              </div>
+            </a>
             {% if i.estatus == 'DISPONIBLE' %}
               <div class="card-status activo">Activo</div>
             {% elif i.estatus == 'INACTIVO' %}

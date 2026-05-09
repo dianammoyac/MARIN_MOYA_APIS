@@ -171,7 +171,8 @@
     .strip-item:last-child { border-right: none; }
     .port-wrapper { position: relative; overflow: hidden; margin-top: 60px; }
     .port-grid { display: flex; gap: 1px; transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1); background: var(--borde); border: 1px solid var(--borde); }
-    .prop-card { flex: 0 0 calc(33.333% - 0.66px); min-width: 320px; background: var(--blanco); overflow: hidden; opacity: 0; transform: translateY(20px); transition: opacity .6s, transform .6s; }
+    /* Se asegura que la tarjeta sea un bloque clickable sólido */
+    .prop-card { text-decoration: none; color: inherit; display: flex; flex-direction: column; position: relative; z-index: 1; flex: 0 0 calc(33.333% - 0.66px); min-width: 320px; background: var(--blanco); overflow: hidden; opacity: 0; transform: translateY(20px); transition: opacity .6s, transform .6s, background .3s; }
     .carousel-nav-port { position: absolute; top: 50%; width: 100%; display: flex; justify-content: space-between; transform: translateY(-50%); pointer-events: none; z-index: 10; padding: 0 10px; }
     .c-btn { width: 45px; height: 45px; background: var(--verde); color: var(--dorado); border: none; cursor: pointer; pointer-events: auto; display: flex; align-items: center; justify-content: center; font-size: 18px; transition: .3s; border-radius: 50%; }
     .c-btn:hover { background: var(--dorado); color: var(--verde); }
@@ -180,6 +181,7 @@
     .prop-img-wrap { height: 240px; background: var(--verde); position: relative; overflow: hidden; }
     .prop-img-wrap img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.5s; }
     .prop-card:hover .prop-img-wrap img { transform: scale(1.1); }
+    .prop-card:hover .prop-title { color: var(--dorado); } /* Efecto hover para el título */
     .prop-body { padding: 28px; }
     .prop-price { font-family: 'Playfair Display', serif; font-size: 22px; }
     .footer-top { display: grid; grid-template-columns: 1.6fr 1fr 1fr; gap: 60px; padding: 70px 64px; background: #080f0f; color: white; }
@@ -302,23 +304,23 @@
       <button class="c-btn" id="nextP" onclick="slideP(1)">❯</button>
     </div>
     <div class="port-grid" id="pTrack">
-      {% for i in inmuebles %}
-        <div class="prop-card">
+      {% for inmueble in inmuebles %}
+        <a href="{% url 'inmuebles_detalle' inmueble.id %}" class="prop-card">
           <div class="prop-img-wrap">
-            {% if i.imagen1 %}<img src="{{ i.imagen1.url }}" alt="{{ i.titulo }}">
+            {% if inmueble.imagen1 %}<img src="{{ inmueble.imagen1.url }}" alt="{{ inmueble.titulo }}">
             {% else %}<div style="display:flex; align-items:center; justify-content:center; height:100%; color:rgba(255,255,255,.2); font-size:60px;">M²</div>{% endif %}
-            <span style="position:absolute; top:20px; left:20px; background:var(--dorado); color:white; font-size:9px; padding:5px 12px; letter-spacing:2px;">{{ i.get_operacion_display|upper }}</span>
+            <span style="position:absolute; top:20px; left:20px; background:var(--dorado); color:white; font-size:9px; padding:5px 12px; letter-spacing:2px;">{{ inmueble.get_operacion_display|upper }}</span>
           </div>
           <div class="prop-body">
-            <p style="font-size:10px; color:var(--gris); letter-spacing:2px; margin-bottom:10px;">{{ i.get_tipo_display|upper }}</p>
-            <h4 style="font-family:'Playfair Display'; font-size:20px; color:var(--verde); margin-bottom:8px;"><a href="{% url 'inmuebles_detalle' i.id %}" style="text-decoration:none; color:inherit;">{{ i.titulo }}</a></h4>
-            <p style="font-size:12px; color:var(--gris); margin-bottom:24px;">{{ i.ciudad }}, {{ i.departamento }}</p>
+            <p style="font-size:10px; color:var(--gris); letter-spacing:2px; margin-bottom:10px;">{{ inmueble.get_tipo_display|upper }}</p>
+            <h4 class="prop-title" style="font-family:'Playfair Display'; font-size:20px; color:var(--verde); margin-bottom:8px;">{{ inmueble.titulo }}</h4>
+            <p style="font-size:12px; color:var(--gris); margin-bottom:24px;">{{ inmueble.ciudad }}, {{ inmueble.departamento }}</p>
             <div style="display:flex; justify-content:space-between; align-items:center; padding-top:20px; border-top:1px solid var(--borde);">
-              <div class="prop-price"><small style="display:block; font-size:9px; color:var(--gris);">{{ i.moneda }}</small>$ {{ i.precio|intcomma }}</div>
-              <div style="font-size:11px; color:var(--gris);">{{ i.area_m2 }} m²</div>
+              <div class="prop-price"><small style="display:block; font-size:9px; color:var(--gris);">{{ inmueble.moneda }}</small>$ {{ inmueble.precio|intcomma }}</div>
+              <div style="font-size:11px; color:var(--gris);">{{ inmueble.area_m2 }} m²</div>
             </div>
           </div>
-        </div>
+        </a>
       {% empty %}
         <p style="padding: 40px; color: var(--gris); text-align: center; width: 100%;">No hay inmuebles disponibles en este momento.</p>
       {% endfor %}

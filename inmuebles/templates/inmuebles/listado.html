@@ -202,14 +202,14 @@
     /* active filters chips */
     .active-chips { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:24px; min-height:32px; }
     .chip { display:inline-flex; align-items:center; gap:8px; background:var(--verde); color:rgba(255,255,255,.8); font-size:10px; font-weight:400; letter-spacing:1.5px; text-transform:uppercase; padding:6px 14px; border:1px solid rgba(198,161,91,.25); }
-    .chip-x { color:var(--dorado); font-size:12px; line-height:1; background:none; border:none; font-family:inherit; padding:0; transition:color .2s; }
+    .chip-x { color:var(--dorado); font-size:12px; line-height:1; background:none; border:none; font-family:inherit; padding:0; transition:color .2s; cursor: none; }
     .chip-x:hover { color:var(--blanco); }
 
     /* ─── PROPERTY GRID ─── */
     .prop-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:1px; background:var(--borde); border:1px solid var(--borde); }
 
     /* ─── PROPERTY CARD ─── */
-    .prop-card { background:var(--blanco); overflow:hidden; opacity:0; transform:translateY(18px); transition:opacity .55s ease, transform .55s ease; display:flex; flex-direction:column; }
+    .prop-card { background:var(--blanco); overflow:hidden; opacity:0; transform:translateY(18px); transition:opacity .55s ease, transform .55s ease; display:flex; flex-direction:column; position: relative; z-index: 1; text-decoration: none; color: inherit; }
     .prop-card.vis { opacity:1; transform:translateY(0); }
     .prop-card.hidden { display:none; }
 
@@ -230,15 +230,14 @@
     .prop-tipo { font-size:9.5px; font-weight:500; letter-spacing:2.5px; text-transform:uppercase; color:var(--gris); margin-bottom:8px; }
     .prop-title { font-family:'Playfair Display',serif; font-size:19px; font-weight:400; color:var(--verde); line-height:1.25; margin-bottom:5px; }
     .prop-loc { font-size:12px; font-weight:300; color:var(--gris); margin-bottom:18px; }
-
+    .prop-card:hover .prop-title { color: var(--dorado); } /* Efecto hover para el título */
     .prop-prices { padding:14px 0; border-top:1px solid var(--borde); border-bottom:1px solid var(--borde); margin-bottom:16px; }
     .prop-price-lbl { font-size:8.5px; letter-spacing:2px; text-transform:uppercase; color:var(--gris); margin-bottom:4px; }
     .prop-price-cop { font-family:'Playfair Display',serif; font-size:21px; font-weight:400; color:var(--negro); line-height:1; }
 
     .prop-foot { display:flex; align-items:center; justify-content:space-between; margin-top:auto; }
     .prop-feats { display:flex; gap:12px; font-size:11px; font-weight:300; color:var(--gris); }
-    .prop-cta { font-size:9.5px; font-weight:500; letter-spacing:2px; text-transform:uppercase; color:var(--verde); text-decoration:none; border-bottom:1px solid var(--borde); padding-bottom:2px; transition:color .2s, border-color .2s; white-space:nowrap; }
-    .prop-cta:hover { color:var(--dorado); border-color:var(--dorado); }
+    /* Se eliminan los estilos de .prop-cta ya que el enlace ahora envuelve toda la tarjeta */
 
     /* ─── EMPTY STATE ─── */
     #emptyState { display:none; background:var(--blanco); border:1px solid var(--borde); padding:100px 40px; text-align:center; }
@@ -429,7 +428,7 @@
     <div class="prop-grid" id="propGrid">
 
       {% for inmueble in inmuebles %}
-      <div class="prop-card" 
+      <a href="{% url 'inmuebles_detalle' inmueble.pk %}" class="prop-card"
            data-tipo="{{ inmueble.tipo|lower }}" 
            data-op="{{ inmueble.operacion|lower }}" 
            data-ciudad="{{ inmueble.ciudad|lower }}" 
@@ -444,13 +443,13 @@
             <div class="prop-img-mock"><div class="mock-m2">M²</div></div>
           {% endif %}
           <div class="prop-tag {% if inmueble.operacion == 'ARRIENDO' %}arriendo{% elif inmueble.operacion == 'CESION' %}cesion{% endif %}">
-            {{ inmueble.get_operacion_display }}
+            {{ inmueble.get_operacion_display }} 
           </div>
           <div class="prop-op">Estrato {{ inmueble.estrato|default:"N/A" }}</div>
         </div>
         <div class="prop-body">
           <div class="prop-tipo">{{ inmueble.get_tipo_display }} · {{ inmueble.ciudad }}</div>
-          <div class="prop-title">{{ inmueble.titulo }}</div>
+          <div class="prop-title" style="color:var(--verde);">{{ inmueble.titulo }}</div>
           <div class="prop-loc">{{ inmueble.ciudad }}, {{ inmueble.departamento }}</div>
           <div class="prop-prices">
             <div class="prop-price-lbl">Precio</div>
@@ -462,10 +461,9 @@
               <span>🚿 {{ inmueble.banos }}</span>
               <span>📐 {{ inmueble.area_m2|floatformat:0 }} m²</span>
             </div>
-            <a href="{% url 'inmuebles_detalle' inmueble.pk %}" class="prop-cta">Ver detalle →</a>
           </div>
         </div>
-      </div>
+      </a>
       {% endfor %}
 
     </div><!-- /prop-grid -->

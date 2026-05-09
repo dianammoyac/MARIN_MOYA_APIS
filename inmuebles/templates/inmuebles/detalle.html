@@ -1,63 +1,503 @@
-{% extends 'base.html' %}
 {% load static %}
 {% load humanize %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>{{ inmueble.titulo }} — Marín Moya Inversiones</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,700;1,400;1,500&family=Jost:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --negro:  #0d0d0d;
+      --verde:  #0e2a2a;
+      --dorado: #c6a15b;
+      --marfil: #f9f6f1;
+      --warm:   #f2ede6;
+      --gris:   #888;
+      --borde:  #e2ddd6;
+      --blanco: #ffffff;
+    }
 
-{% block content %}
-<div class="container">
-    <div class="detalle-header">
-        <div>
-            <h2>{{ inmueble.titulo }}</h2>
-            <span>Código: {{ inmueble.codigo }}</span>
-        </div>
-        <div class="precio-tag">
-            {{ inmueble.moneda }} $ {{ inmueble.precio|intcomma }}
-        </div>
-    </div>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body { font-family: 'Jost', sans-serif; font-weight: 300; background: var(--marfil); color: var(--negro); overflow-x: hidden; }
 
-    <!-- Carrusel de Imágenes -->
-    <div class="carousel-container">
-        {% if inmueble.imagen1 %}<div class="carousel-slide"><img src="{{ inmueble.imagen1.url }}"></div>{% endif %}
-        {% if inmueble.imagen2 %}<div class="carousel-slide"><img src="{{ inmueble.imagen2.url }}"></div>{% endif %}
-        {% if inmueble.imagen3 %}<div class="carousel-slide"><img src="{{ inmueble.imagen3.url }}"></div>{% endif %}
-        {% if inmueble.imagen4 %}<div class="carousel-slide"><img src="{{ inmueble.imagen4.url }}"></div>{% endif %}
-        
-        {% if inmueble.imagen2 %}
-        <div class="carousel-nav">
-            <button class="nav-btn" onclick="plusSlides(-1)">❮</button>
-            <button class="nav-btn" onclick="plusSlides(1)">❯</button>
-        </div>
-        {% endif %}
-    </div>
+    /* ─── CURSOR ─── */
+    * { cursor: none; }
+    #cursor { width: 10px; height: 10px; background: var(--dorado); border-radius: 50%; position: fixed; top: 0; left: 0; pointer-events: none; z-index: 9999; transform: translate(-50%,-50%); display: none; transition: width .3s, height .3s, background .3s; }
+    #cursor.grow { width: 40px; height: 40px; background: transparent; border: 1px solid var(--dorado); }
+    @media (hover:hover) and (pointer:fine) { #cursor { display: block; } }
 
-    <!-- Información Organizada -->
-    <div class="detalle-grid">
-        <div class="info-item"><span class="info-label">Tipo:</span><span class="info-value">{{ inmueble.get_tipo_display }}</span></div>
-        <div class="info-item"><span class="info-label">Operación:</span><span class="info-value">{{ inmueble.get_operacion_display }}</span></div>
-        <div class="info-item"><span class="info-label">Área:</span><span class="info-value">{{ inmueble.area_m2 }} m²</span></div>
-        <div class="info-item"><span class="info-label">Habitaciones:</span><span class="info-value">{{ inmueble.habitaciones }}</span></div>
-        <div class="info-item"><span class="info-label">Baños:</span><span class="info-value">{{ inmueble.banos }}</span></div>
-        <div class="info-item"><span class="info-label">Estrato:</span><span class="info-value">{{ inmueble.estrato|default:"N/A" }}</span></div>
-        <div class="info-item"><span class="info-label">Ciudad:</span><span class="info-value">{{ inmueble.ciudad }}</span></div>
-        <div class="info-item"><span class="info-label">Barrio:</span><span class="info-value">{{ inmueble.barrio }}</span></div>
-    </div>
+    @keyframes slideUp { from { opacity:0; transform:translateY(22px); } to { opacity:1; transform:translateY(0); } }
 
-    <div style="margin-top: 30px;">
-        <h3>Descripción</h3>
-        <p>{{ inmueble.descripcion|linebreaks }}</p>
-    </div>
+    /* ─── NAV ─── */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 500;
+      background: var(--blanco); border-bottom: 1px solid var(--borde);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 64px; height: 68px;
+      transition: background .3s, box-shadow .3s;
+    }
+    nav.scrolled { box-shadow: 0 2px 24px rgba(0,0,0,.06); }
+    .nav-logo { font-family:'Playfair Display',serif; font-size:17px; font-weight:500; letter-spacing:3px; text-transform:uppercase; color:var(--verde); text-decoration:none; display:flex; flex-direction:column; gap:2px; }
+    .nav-logo span { font-size:8.5px; font-weight:400; letter-spacing:4px; color:var(--dorado); }
+    .nav-links { list-style:none; display:flex; gap:36px; }
+    .nav-links a { font-size:11.5px; letter-spacing:2px; text-transform:uppercase; color:var(--gris); text-decoration:none; transition:color .2s; font-weight:400; }
+    .nav-links a:hover { color:var(--dorado); }
+    .nav-right { display:flex; align-items:center; gap:22px; }
+    .nav-sep { width:1px; height:18px; background:var(--borde); }
+    .nav-login { font-size:10.5px; letter-spacing:2px; text-transform:uppercase; color:var(--gris); text-decoration:none; transition:color .2s; }
+    .nav-login:hover { color:var(--dorado); }
+    .nav-btn { font-size:10.5px; font-weight:500; letter-spacing:2px; text-transform:uppercase; color:var(--dorado); text-decoration:none; border:1px solid var(--dorado); padding:9px 20px; transition:background .25s, color .25s; }
+    .nav-btn:hover { background:var(--dorado); color:var(--blanco); }
 
-    <!-- Sección de Contacto -->
-    <div style="margin-top: 40px; padding: 25px; background: var(--azul-petroleo); color: white; border-radius: 12px;">
-        <h4>Contacto del Asesor</h4>
-        <div style="display: flex; gap: 40px; flex-wrap: wrap;">
-            <p><strong>Nombre:</strong> {{ inmueble.nombre_contacto }}</p>
-            <p><strong>Teléfono:</strong> {{ inmueble.telefono_contacto }}</p>
-            <p><strong>Email:</strong> {{ inmueble.email_contacto }}</p>
-        </div>
-    </div>
+    /* ─── BREADCRUMB ─── */
+    .breadcrumb {
+      padding-top: 68px;
+      background: var(--blanco); border-bottom: 1px solid var(--borde);
+      padding-left: 64px; padding-right: 64px;
+      height: 48px; display: flex; align-items: center; gap: 10px;
+    }
+    .bc-link { font-size: 11px; font-weight: 300; color: var(--gris); text-decoration: none; transition: color .2s; }
+    .bc-link:hover { color: var(--dorado); }
+    .bc-sep { font-size: 11px; color: var(--borde); }
+    .bc-current { font-size: 11px; font-weight: 400; color: var(--negro); }
 
-    <div style="margin-top: 30px;">
-        <a href="{% url 'inmuebles_listado' %}" class="btn">Volver al listado</a>
-    </div>
+    /* ─── MAIN LAYOUT ─── */
+    .wrap { max-width: 1280px; margin: 0 auto; padding: 0 64px; }
+
+    /* ─── GALLERY SECTION ─── */
+    .gallery-section { background: var(--blanco); padding: 40px 0 0; }
+    .gallery-container {
+      position: relative;
+      height: 600px;
+      overflow: hidden;
+      background: var(--verde);
+    }
+    .gallery-track {
+      display: flex;
+      height: 100%;
+      transition: transform 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+    }
+    .gallery-slide {
+      flex: 0 0 100%;
+      height: 100%;
+      position: relative;
+      overflow: hidden;
+    }
+    .gallery-slide img {
+      width: 100%; height: 100%;
+      object-fit: cover;
+      transition: transform .8s ease;
+    }
+    .gallery-slide:hover img { transform: scale(1.04); }
+
+    .gallery-img-mock {
+      width: 100%; height: 100%;
+      display: flex; align-items: center; justify-content: center;
+      background: var(--verde);
+    }
+    .mock-label {
+      font-family: 'Playfair Display', serif;
+      font-size: 120px; font-style: italic; font-weight: 700;
+      color: rgba(255,255,255,.05); user-select: none;
+    }
+
+    .carousel-nav-main {
+      position: absolute; top: 50%; left: 40px; right: 40px;
+      display: flex; justify-content: space-between;
+      transform: translateY(-50%); pointer-events: none; z-index: 10;
+    }
+    .carousel-btn {
+      width: 54px; height: 54px;
+      background: rgba(14, 42, 42, 0.8); color: var(--dorado);
+      border: 1px solid rgba(198, 161, 91, 0.3); border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      cursor: none; pointer-events: auto; transition: all 0.3s;
+      backdrop-filter: blur(4px);
+    }
+    .carousel-btn:hover { background: var(--dorado); color: white; border-color: var(--dorado); }
+
+    .gallery-indicators {
+      position: absolute; bottom: 30px; left: 50%;
+      transform: translateX(-50%); display: flex; gap: 10px; z-index: 10;
+    }
+    .indicator {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: rgba(255,255,255,0.3); cursor: none;
+      transition: all 0.3s;
+    }
+    .indicator.active { background: var(--dorado); transform: scale(1.5); }
+
+    .gallery-op {
+      position: absolute; top: 30px; left: 40px; z-index: 4;
+      font-size: 10px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase;
+      padding: 7px 18px;
+      background: var(--dorado); color: var(--blanco);
+    }
+
+    /* ─── PROPERTY LAYOUT ─── */
+    .prop-layout {
+      display: grid;
+      grid-template-columns: 1fr 360px;
+      gap: 56px;
+      padding: 60px 0 100px;
+      align-items: start;
+    }
+
+    /* ─── LEFT CONTENT ─── */
+    .prop-main { display: flex; flex-direction: column; gap: 0; }
+    .prop-header { margin-bottom: 40px; opacity: 0; animation: slideUp .7s .15s forwards; }
+    .prop-tags { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; flex-wrap: wrap; }
+    .prop-tag-item { font-size: 9px; font-weight: 600; letter-spacing: 2.5px; text-transform: uppercase; padding: 5px 13px; }
+    .tag-tipo    { background: var(--warm); color: var(--verde); border: 1px solid var(--borde); }
+    .tag-op      { background: var(--dorado); color: var(--blanco); }
+    .tag-nuevo   { background: var(--verde); color: var(--dorado); border: 1px solid rgba(198,161,91,.25); }
+    .tag-ref     { background: transparent; color: var(--gris); border: 1px solid var(--borde); }
+
+    .prop-title { font-family: 'Playfair Display', serif; font-size: clamp(30px, 3.5vw, 50px); font-weight: 400; color: var(--verde); line-height: 1.1; margin-bottom: 12px; }
+    .prop-title em { font-style: italic; color: var(--dorado); }
+
+    .prop-location { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 300; color: var(--gris); }
+
+    /* price block */
+    .price-block {
+      background: var(--blanco); border: 1px solid var(--borde);
+      padding: 28px 32px; margin-bottom: 40px;
+      display: flex; align-items: flex-end; justify-content: space-between; gap: 20px;
+      opacity: 0; animation: slideUp .7s .25s forwards;
+    }
+    .price-label { font-size: 9px; font-weight: 600; letter-spacing: 3px; text-transform: uppercase; color: var(--gris); margin-bottom: 8px; }
+    .price-cop { font-family: 'Playfair Display', serif; font-size: 42px; font-weight: 400; color: var(--negro); line-height: 1; }
+    .price-m2  { font-size: 13px; font-weight: 300; color: var(--gris); margin-top: 4px; }
+
+    .price-actions { display: flex; flex-direction: column; gap: 10px; align-items: flex-end; }
+    .btn-fav { width: 44px; height: 44px; border: 1px solid var(--borde); background: var(--marfil); display: flex; align-items: center; justify-content: center; transition: border-color .2s, background .2s; }
+    .btn-fav:hover { border-color: var(--dorado); background: var(--blanco); }
+    .btn-fav svg { stroke: var(--gris); transition: stroke .2s; }
+    .btn-fav.active svg { stroke: var(--dorado); fill: var(--dorado); }
+
+    /* key stats bar */
+    .key-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: var(--borde); border: 1px solid var(--borde); margin-bottom: 48px; opacity: 0; animation: slideUp .7s .35s forwards; }
+    .ks-item { background: var(--blanco); padding: 20px 22px; }
+    .ks-icon { font-size: 18px; margin-bottom: 8px; display: block; line-height: 1; }
+    .ks-val  { font-family: 'Playfair Display', serif; font-size: 22px; font-weight: 400; color: var(--verde); line-height: 1; }
+    .ks-lbl  { font-size: 9.5px; font-weight: 400; letter-spacing: 2px; text-transform: uppercase; color: var(--gris); margin-top: 4px; }
+
+    /* ─── CONTENT SECTIONS ─── */
+    .content-section { padding: 40px 0; border-top: 1px solid var(--borde); opacity: 0; animation: slideUp .7s forwards; }
+    .cs-title { font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 400; color: var(--verde); margin-bottom: 22px; display: flex; align-items: center; gap: 14px; }
+    .cs-title::before { content: ''; display: block; width: 20px; height: 1px; background: var(--dorado); flex-shrink: 0; }
+
+    .description { font-size: 15px; font-weight: 300; color: #444; line-height: 1.95; max-width: 680px; }
+    .detail-table { width: 100%; border-collapse: collapse; }
+    .detail-table tr { border-bottom: 1px solid var(--borde); }
+    .detail-table td { padding: 14px 0; font-size: 13.5px; }
+    .detail-table td:first-child { font-weight: 400; color: var(--gris); width: 48%; }
+    .detail-table td:last-child  { font-weight: 300; color: var(--negro); }
+    .detail-table td:last-child strong { font-weight: 500; color: var(--verde); }
+
+    /* ─── SIDEBAR RIGHT (sticky) ─── */
+    .prop-sidebar { display: flex; flex-direction: column; gap: 2px; position: sticky; top: 84px; opacity: 0; animation: slideUp .8s .3s forwards; }
+    .contact-card { background: var(--verde); padding: 36px 32px; border: 1px solid rgba(198,161,91,.12); }
+    .cc-eyebrow { font-size: 9px; font-weight: 500; letter-spacing: 3.5px; text-transform: uppercase; color: var(--dorado); margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+    .cc-eyebrow::before { content: ''; display: block; width: 18px; height: 1px; background: var(--dorado); }
+    .cc-title { font-family: 'Playfair Display', serif; font-size: 22px; font-weight: 400; color: var(--blanco); line-height: 1.2; margin-bottom: 8px; }
+    .cc-sub { font-size: 13px; font-weight: 300; color: rgba(255,255,255,.45); margin-bottom: 28px; line-height: 1.7; }
+
+    .cc-field { display: flex; flex-direction: column; margin-bottom: 18px; }
+    .cc-field label { font-size: 8.5px; font-weight: 500; letter-spacing: 3px; text-transform: uppercase; color: rgba(198,161,91,.7); margin-bottom: 8px; }
+    .cc-field input, .cc-field textarea { background: rgba(255,255,255,.06); border: none; border-bottom: 1px solid rgba(255,255,255,.12); padding: 10px 0; color: rgba(255,255,255,.85); font-family: 'Jost', sans-serif; font-size: 14px; font-weight: 300; outline: none; transition: border-color .25s; width: 100%; }
+    .cc-field input:focus, .cc-field textarea:focus { border-bottom-color: var(--dorado); }
+
+    .cc-btn { width: 100%; background: var(--dorado); color: var(--blanco); font-family: 'Jost', sans-serif; font-size: 11px; font-weight: 500; letter-spacing: 2.5px; text-transform: uppercase; padding: 16px; border: none; transition: background .25s; margin-top: 6px; }
+    .cc-btn:hover { background: #b08b45; }
+
+    .agent-card { background: var(--blanco); border: 1px solid var(--borde); padding: 26px 28px; display: flex; align-items: center; gap: 18px; }
+    .agent-avatar { width: 52px; height: 52px; border-radius: 50%; background: var(--verde); flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-family: 'Playfair Display', serif; font-size: 18px; color: var(--dorado); }
+    .agent-name { font-family: 'Playfair Display', serif; font-size: 17px; font-weight: 400; color: var(--verde); margin-bottom: 3px; }
+    .agent-role { font-size: 10.5px; font-weight: 300; color: var(--gris); }
+
+    .ref-code { background: var(--warm); border: 1px solid var(--borde); border-top: none; padding: 13px 22px; display: flex; align-items: center; justify-content: space-between; font-size: 10.5px; font-weight: 300; color: var(--gris); }
+
+    footer { background: var(--verde); border-top: 1px solid rgba(198,161,91,.1); padding: 40px 64px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; }
+    .foot-logo { font-family:'Playfair Display',serif; font-size:15px; font-weight:500; letter-spacing:3px; text-transform:uppercase; color:var(--blanco); }
+
+    @media (max-width:1100px) {
+      nav,.breadcrumb,footer { padding-left:36px; padding-right:36px; }
+      .wrap { padding:0 36px; }
+      .prop-layout { grid-template-columns:1fr; gap:40px; }
+      .prop-sidebar { position:static; }
+    }
+    @media (max-width:780px) {
+      .gallery-grid { grid-template-columns:1fr; grid-template-rows:320px; }
+      .gallery-thumb { display:none; }
+      .key-stats { grid-template-columns:repeat(2,1fr); }
+    }
+  </style>
+</head>
+<body>
+
+<div id="cursor"></div>
+
+<!-- ═══ NAV ═══ -->
+<nav id="mainNav">
+  <a href="{% url 'index2' %}" class="nav-logo">Marín Moya<span>Inversiones</span></a>
+  <ul class="nav-links">
+    <li><a href="{% url 'index2' %}">Inicio</a></li>
+    <li><a href="{% url 'inmuebles_listado' %}">Portafolio</a></li>
+    <li><a href="{% url 'index2' %}#categorias">Categorías</a></li>
+    <li><a href="{% url 'index2' %}#contacto">Contacto</a></li>
+  </ul>
+  <div class="nav-right">
+    {% if user.is_authenticated %}
+      <span class="nav-login" style="pointer-events: none; color: var(--verde); margin-right: 15px;">Hola, {{ user.first_name|default:user.username }}</span>
+      <a href="{% url 'mis_inmuebles' %}" class="nav-btn">Ir a mi panel →</a>
+    {% else %}
+      <a href="{% url 'login' %}" class="nav-btn">Acceder al portal →</a>
+    {% endif %}
+  </div>
+</nav>
+
+<!-- ─── BREADCRUMB ─── -->
+<div class="breadcrumb">
+  <a href="{% url 'index2' %}" class="bc-link">Inicio</a>
+  <span class="bc-sep">/</span>
+  <a href="{% url 'inmuebles_listado' %}" class="bc-link">Portafolio</a>
+  <span class="bc-sep">/</span>
+  <span class="bc-current">{{ inmueble.titulo }}</span>
 </div>
-{% endblock %}
+
+<!-- ═══ GALLERY ═══ -->
+<div class="gallery-section">
+  <div class="wrap">
+    <div class="gallery-grid">
+      <!-- main image -->
+      <div class="gallery-main">
+        {% if inmueble.imagen1 %}
+          <img src="{{ inmueble.imagen1.url }}" alt="{{ inmueble.titulo }}" style="width:100%; height:100%; object-fit:cover;">
+        {% else %}
+          <div class="gallery-img-mock"><span class="mock-label">M²</span></div>
+        {% endif %}
+        <div class="gallery-op venta">{{ inmueble.get_operacion_display }}</div>
+        <div class="gallery-badge">Vista Principal</div>
+      </div>
+
+      <!-- thumbnails -->
+      <div class="gallery-thumb">
+        {% if inmueble.imagen2 %}<img src="{{ inmueble.imagen2.url }}" style="width:100%; height:100%; object-fit:cover;">
+        {% else %}<div class="gallery-img-mock"><span class="mock-label">M²</span></div>{% endif %}
+      </div>
+      <div class="gallery-thumb">
+        {% if inmueble.imagen3 %}<img src="{{ inmueble.imagen3.url }}" style="width:100%; height:100%; object-fit:cover;">
+        {% else %}<div class="gallery-img-mock"><span class="mock-label">M²</span></div>{% endif %}
+      </div>
+      <div class="gallery-thumb">
+        {% if inmueble.imagen4 %}<img src="{{ inmueble.imagen4.url }}" style="width:100%; height:100%; object-fit:cover;">
+        {% else %}<div class="gallery-img-mock"><span class="mock-label">M²</span></div>{% endif %}
+      </div>
+      <div class="gallery-thumb" style="position:relative;">
+        <div class="gallery-img-mock"><span class="mock-label">M²</span></div>
+        <div style="position:absolute; inset:0; background:rgba(14,42,42,.7); display:flex; align-items:center; justify-content:center; color:white; font-style:italic;">Galería completa</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ PROPERTY CONTENT ═══ -->
+<div class="wrap">
+  <div class="prop-layout">
+    <div class="prop-main">
+      <div class="prop-header">
+        <div class="prop-tags">
+          <span class="prop-tag-item tag-tipo">{{ inmueble.get_tipo_display }}</span>
+          <span class="prop-tag-item tag-op">{{ inmueble.get_operacion_display }}</span>
+          {% if inmueble.destacado %}<span class="prop-tag-item tag-nuevo">Destacado</span>{% endif %}
+          <span class="prop-tag-item tag-ref">REF: {{ inmueble.codigo }}</span>
+        </div>
+        <h1 class="prop-title">{{ inmueble.titulo }}</h1>
+        <div class="prop-location">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="var(--dorado)" stroke-width="1.3"><path d="M7 1C4.8 1 3 2.8 3 5c0 3.5 4 8 4 8s4-4.5 4-8c0-2.2-1.8-4-4-4z"/><circle cx="7" cy="5" r="1.3"/></svg>
+          {{ inmueble.ciudad }}, {{ inmueble.departamento }} · {{ inmueble.barrio }} · Estrato {{ inmueble.estrato|default:"N/A" }}
+        </div>
+      </div>
+
+      <div class="price-block">
+        <div class="price-main">
+          <div class="price-label">Precio de {{ inmueble.get_operacion_display|lower }}</div>
+          <div class="price-cop">{{ inmueble.moneda }} $ {{ inmueble.precio|intcomma }}</div>
+          <div class="price-m2">$ {% widthratio inmueble.precio inmueble.area_m2 1 %}/m² · {{ inmueble.area_m2 }} m² construidos</div>
+        </div>
+        <div class="price-actions">
+          <button class="btn-fav" id="favBtn" onclick="toggleFav()" title="Guardar en favoritos"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d="M8 13.5S2 9.5 2 5.5A3.5 3.5 0 0 1 8 3.9 3.5 3.5 0 0 1 14 5.5c0 4-6 8-6 8z"/></svg></button>
+        </div>
+      </div>
+
+      <div class="key-stats">
+        <div class="ks-item"><span class="ks-icon">🛏</span><div class="ks-val">{{ inmueble.habitaciones }}</div><div class="ks-lbl">Habitaciones</div></div>
+        <div class="ks-item"><span class="ks-icon">🚿</span><div class="ks-val">{{ inmueble.banos }}</div><div class="ks-lbl">Baños</div></div>
+        <div class="ks-item"><span class="ks-icon">📐</span><div class="ks-val">{{ inmueble.area_m2|floatformat:0 }} m²</div><div class="ks-lbl">Área total</div></div>
+        <div class="ks-item"><span class="ks-icon">🚗</span><div class="ks-val">{{ inmueble.parqueaderos }}</div><div class="ks-lbl">Parqueaderos</div></div>
+      </div>
+
+      <div class="content-section">
+        <div class="cs-title">Descripción</div>
+        <div class="description">{{ inmueble.descripcion|linebreaks }}</div>
+      </div>
+
+      <div class="content-section">
+        <div class="cs-title">Ficha técnica</div>
+        <table class="detail-table">
+          <tr><td>Tipo de inmueble</td><td><strong>{{ inmueble.get_tipo_display }}</strong></td></tr>
+          <tr><td>Operación</td><td><strong>{{ inmueble.get_operacion_display }}</strong></td></tr>
+          <tr><td>Área construida</td><td>{{ inmueble.area_m2 }} m²</td></tr>
+          <tr><td>Estado físico</td><td>{{ inmueble.get_estado_display }}</td></tr>
+          <tr><td>Habitaciones</td><td>{{ inmueble.habitaciones }}</td></tr>
+          <tr><td>Baños</td><td>{{ inmueble.banos }}</td></tr>
+          <tr><td>Estrato</td><td>{{ inmueble.estrato|default:"N/A" }}</td></tr>
+          <tr><td>Ciudad</td><td>{{ inmueble.ciudad }}</td></tr>
+          <tr><td>Código de referencia</td><td><strong>{{ inmueble.codigo }}</strong></td></tr>
+          <tr><td>Publicado</td><td>{{ inmueble.fecha_publicacion|date:"d F, Y" }}</td></tr>
+        </table>
+      </div>
+
+      <div class="content-section">
+        <div class="cs-title">Ubicación</div>
+        <div class="map-placeholder">
+          <div class="map-pin"><div class="pin-dot"></div><div class="pin-line"></div></div>
+          <div class="map-address">{{ inmueble.ciudad }}, {{ inmueble.barrio }}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─── SIDEBAR RIGHT ─── -->
+    <div class="prop-sidebar">
+      <div class="contact-card">
+        <div class="cc-eyebrow">¿Te interesa?</div>
+        <div class="cc-title">Solicitar información</div>
+        <div class="cc-sub">Dejá tus datos y te contactamos a la brevedad.</div>
+        <form onsubmit="handleContact(event)">
+          <div class="cc-field"><label>Tu nombre</label><input type="text" placeholder="Nombre completo" required/></div>
+          <div class="cc-field"><label>Teléfono / WhatsApp</label><input type="tel" placeholder="+57" required/></div>
+          <button type="submit" class="cc-btn" id="ccBtn">Enviar consulta</button>
+        </form>
+      </div>
+
+      <div class="agent-card">
+        <div class="agent-avatar">{{ inmueble.nombre_contacto|slice:":2"|upper }}</div>
+        <div>
+          <div class="agent-name">{{ inmueble.nombre_contacto }}</div>
+          <div class="agent-role">Asesor encargado</div>
+          <p style="font-size:12px; color:var(--gris);">{{ inmueble.telefono_contacto }}</p>
+        </div>
+      </div>
+
+      <div class="ref-code">Código: <strong>{{ inmueble.codigo }}</strong></div>
+    </div>
+  </div>
+</div>
+
+<footer>
+  <div class="foot-logo">Marín Moya<span>Inversiones</span></div>
+  <p>© 2026 Marín Moya Inversiones · Armenia, Colombia</p>
+</footer>
+
+<!-- ─── LIGHTBOX ─── -->
+<div class="lightbox" id="lightbox" onclick="if(event.target === this) closeLightbox()">
+  <button class="lightbox-close" onclick="closeLightbox()">&times;</button>
+  <div class="lightbox-content">
+    <img src="" alt="Vista Inmueble" class="lightbox-img" id="lightboxImg">
+  </div>
+  <div class="lightbox-nav">
+    <button class="lightbox-btn" onclick="changeLightboxSlide(-1)">❮</button>
+    <button class="lightbox-btn" onclick="changeLightboxSlide(1)">❯</button>
+  </div>
+  <div class="lightbox-counter" id="lightboxCounter">1 / 1</div>
+</div>
+
+<script>
+  const cursor = document.getElementById('cursor');
+  document.addEventListener('mousemove', e => { cursor.style.left = e.clientX + 'px'; cursor.style.top  = e.clientY + 'px'; });
+  document.querySelectorAll('a, button, input, select, textarea, .gallery-slide, .carousel-btn, .indicator').forEach(el => {
+    el.addEventListener('mouseenter', () => cursor.classList.add('grow'));
+    el.addEventListener('mouseleave', () => cursor.classList.remove('grow'));
+  });
+  window.addEventListener('scroll', () => { document.getElementById('mainNav').classList.toggle('scrolled', window.scrollY > 20); });
+
+  function toggleFav() { document.getElementById('favBtn').classList.toggle('active'); }
+  function handleContact(e) { e.preventDefault(); const btn = document.getElementById('ccBtn'); btn.textContent = 'Enviando...'; setTimeout(() => { btn.textContent = '✓ Enviado'; btn.style.background = '#2d7a5a'; }, 1200); }
+
+  /* ─── GALLERY CAROUSEL LOGIC ─── */
+  let currentGalleryIdx = 0;
+  const galleryTrack = document.getElementById('galleryTrack');
+  const galleryIndicators = document.getElementById('galleryIndicators');
+  const gallerySlides = document.querySelectorAll('.gallery-slide');
+  const totalGallerySlides = gallerySlides.length;
+
+  function initGallery() {
+    if (totalGallerySlides <= 1) {
+      if (document.getElementById('galleryNav')) document.getElementById('galleryNav').style.display = 'none';
+      return;
+    }
+    for (let i = 0; i < totalGallerySlides; i++) {
+      const dot = document.createElement('div');
+      dot.className = 'indicator' + (i === 0 ? ' active' : '');
+      dot.onclick = () => { currentGalleryIdx = i; updateGallery(); };
+      galleryIndicators.appendChild(dot);
+    }
+  }
+
+  function moveGallery(dir) {
+    currentGalleryIdx = (currentGalleryIdx + dir + totalGallerySlides) % totalGallerySlides;
+    updateGallery();
+  }
+
+  function updateGallery() {
+    galleryTrack.style.transform = `translateX(-${currentGalleryIdx * 100}%)`;
+    document.querySelectorAll('.indicator').forEach((dot, i) => dot.classList.toggle('active', i === currentGalleryIdx));
+  }
+
+  initGallery();
+
+  /* ─── LIGHTBOX LOGIC ─── */
+  const lightboxImages = [];
+  {% if inmueble.imagen1 %}lightboxImages.push("{{ inmueble.imagen1.url }}");{% endif %}
+  {% if inmueble.imagen2 %}lightboxImages.push("{{ inmueble.imagen2.url }}");{% endif %}
+  {% if inmueble.imagen3 %}lightboxImages.push("{{ inmueble.imagen3.url }}");{% endif %}
+  {% if inmueble.imagen4 %}lightboxImages.push("{{ inmueble.imagen4.url }}");{% endif %}
+
+  let currentLightboxIdx = 0;
+
+  function openLightbox(index) {
+    if (lightboxImages.length === 0) return;
+    currentLightboxIdx = index;
+    updateLightbox();
+    document.getElementById('lightbox').classList.add('active');
+  }
+
+  function closeLightbox() { document.getElementById('lightbox').classList.remove('active'); }
+
+  function changeLightboxSlide(dir) {
+    currentLightboxIdx = (currentLightboxIdx + dir + lightboxImages.length) % lightboxImages.length;
+    updateLightbox();
+  }
+
+  function updateLightbox() {
+    document.getElementById('lightboxImg').src = lightboxImages[currentLightboxIdx];
+    document.getElementById('lightboxCounter').textContent = `${currentLightboxIdx + 1} / ${lightboxImages.length}`;
+    
+    // Ocultar flechas si solo hay una imagen
+    const nav = document.querySelector('.lightbox-nav');
+    if (nav) nav.style.display = lightboxImages.length > 1 ? 'flex' : 'none';
+  }
+
+  document.addEventListener('keydown', e => {
+    if (!document.getElementById('lightbox').classList.contains('active')) return;
+    if (e.key === 'Escape') closeLightbox();
+    if (e.key === 'ArrowRight') changeLightboxSlide(1);
+    if (e.key === 'ArrowLeft') changeLightboxSlide(-1);
+  });
+</script>
+</body>
+</html>
