@@ -67,31 +67,43 @@
     /* ─── MAIN LAYOUT ─── */
     .wrap { max-width: 1280px; margin: 0 auto; padding: 0 64px; }
 
-    /* ─── GALLERY SECTION ─── */
-    .gallery-section { background: var(--blanco); padding: 40px 0 0; }
-    .gallery-container {
-      position: relative;
-      height: 600px;
-      overflow: hidden;
-      background: var(--verde);
+    /* ─── NEW PREMIUM GALLERY ─── */
+    .gallery-section { background: var(--blanco); padding: 40px 0; }
+    .property-carousel { max-width: 1152px; margin: 0 auto; display: flex; flex-direction: column; gap: 12px; }
+    .carousel-main { position: relative; height: 550px; background: var(--verde); overflow: hidden; }
+    .carousel-track { display: flex; height: 100%; transition: transform 0.6s cubic-bezier(0.23, 1, 0.32, 1); }
+    .carousel-slide { flex: 0 0 100%; height: 100%; }
+    .carousel-slide img { width: 100%; height: 100%; object-fit: cover; }
+    .carousel-arrow {
+      position: absolute; top: 50%; transform: translateY(-50%);
+      width: 48px; height: 48px; background: rgba(14, 42, 42, 0.7);
+      color: var(--dorado); border: 1px solid rgba(198, 161, 91, 0.3);
+      border-radius: 50%; display: flex; align-items: center; justify-content: center;
+      font-size: 24px; z-index: 10; cursor: none; transition: all 0.3s; backdrop-filter: blur(4px);
     }
-    .gallery-track {
-      display: flex;
-      height: 100%;
-      transition: transform 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+    .carousel-arrow:hover { background: var(--dorado); color: var(--blanco); border-color: var(--dorado); }
+    .carousel-prev { left: 20px; }
+    .carousel-next { right: 20px; }
+    .carousel-arrow:disabled { opacity: 0; pointer-events: none; }
+
+    .carousel-thumbs {
+      display: flex; gap: 12px; overflow-x: auto; padding-bottom: 8px;
+      scrollbar-width: thin; scrollbar-color: var(--dorado) var(--marfil);
     }
-    .gallery-slide {
-      flex: 0 0 100%;
-      height: 100%;
-      position: relative;
-      overflow: hidden;
+    .carousel-thumbs::-webkit-scrollbar { height: 4px; }
+    .carousel-thumbs::-webkit-scrollbar-track { background: var(--marfil); }
+    .carousel-thumbs::-webkit-scrollbar-thumb { background: var(--dorado); }
+
+    .thumb-item { flex: 0 0 120px; height: 80px; border: 2px solid transparent; cursor: none; transition: all 0.3s; opacity: 0.6; }
+    .thumb-item img { width: 100%; height: 100%; object-fit: cover; }
+    .thumb-item:hover { opacity: 1; }
+    .thumb-item.active { border-color: var(--dorado); opacity: 1; }
+
+    .gallery-op {
+      position: absolute; top: 20px; left: 20px; z-index: 5;
+      font-size: 10px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase;
+      padding: 6px 16px; background: var(--dorado); color: var(--blanco);
     }
-    .gallery-slide img {
-      width: 100%; height: 100%;
-      object-fit: cover;
-      transition: transform .8s ease;
-    }
-    .gallery-slide:hover img { transform: scale(1.04); }
 
     .gallery-img-mock {
       width: 100%; height: 100%;
@@ -104,37 +116,10 @@
       color: rgba(255,255,255,.05); user-select: none;
     }
 
-    .carousel-nav-main {
-      position: absolute; top: 50%; left: 40px; right: 40px;
-      display: flex; justify-content: space-between;
-      transform: translateY(-50%); pointer-events: none; z-index: 10;
-    }
-    .carousel-btn {
-      width: 54px; height: 54px;
-      background: rgba(14, 42, 42, 0.8); color: var(--dorado);
-      border: 1px solid rgba(198, 161, 91, 0.3); border-radius: 50%;
-      display: flex; align-items: center; justify-content: center;
-      cursor: none; pointer-events: auto; transition: all 0.3s;
-      backdrop-filter: blur(4px);
-    }
-    .carousel-btn:hover { background: var(--dorado); color: white; border-color: var(--dorado); }
-
-    .gallery-indicators {
-      position: absolute; bottom: 30px; left: 50%;
-      transform: translateX(-50%); display: flex; gap: 10px; z-index: 10;
-    }
-    .indicator {
-      width: 6px; height: 6px; border-radius: 50%;
-      background: rgba(255,255,255,0.3); cursor: none;
-      transition: all 0.3s;
-    }
-    .indicator.active { background: var(--dorado); transform: scale(1.5); }
-
-    .gallery-op {
-      position: absolute; top: 30px; left: 40px; z-index: 4;
-      font-size: 10px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase;
-      padding: 7px 18px;
-      background: var(--dorado); color: var(--blanco);
+    @media (max-width: 768px) {
+      .carousel-main { height: 350px; }
+      .thumb-item { flex: 0 0 80px; height: 60px; }
+      .carousel-arrow { width: 36px; height: 36px; font-size: 18px; }
     }
 
     /* ─── PROPERTY LAYOUT ─── */
@@ -170,6 +155,7 @@
     }
     .price-label { font-size: 9px; font-weight: 600; letter-spacing: 3px; text-transform: uppercase; color: var(--gris); margin-bottom: 8px; }
     .price-cop { font-family: 'Playfair Display', serif; font-size: 42px; font-weight: 400; color: var(--negro); line-height: 1; }
+    .price-usd { font-size: 16px; font-weight: 400; color: var(--dorado); margin-top: 4px; }
     .price-m2  { font-size: 13px; font-weight: 300; color: var(--gris); margin-top: 4px; }
 
     .price-actions { display: flex; flex-direction: column; gap: 10px; align-items: flex-end; }
@@ -274,40 +260,39 @@
 </div>
 
 <!-- ═══ GALLERY ═══ -->
-<div class="gallery-section">
-  <div class="wrap">
-    <div class="gallery-grid">
-      <!-- main image -->
-      <div class="gallery-main">
+<section class="gallery-section">
+  <div class="property-carousel" data-carousel>
+    <div class="carousel-main">
+      <button class="carousel-arrow carousel-prev" type="button" aria-label="Imagen anterior">‹</button>
+      <div class="carousel-track">
         {% if inmueble.imagen1 %}
-          <img src="{{ inmueble.imagen1.url }}" alt="{{ inmueble.titulo }}" style="width:100%; height:100%; object-fit:cover;">
-        {% else %}
-          <div class="gallery-img-mock"><span class="mock-label">M²</span></div>
+          <div class="carousel-slide"><img src="{{ inmueble.imagen1.url }}" alt="{{ inmueble.titulo }}"></div>
         {% endif %}
-        <div class="gallery-op venta">{{ inmueble.get_operacion_display }}</div>
-        <div class="gallery-badge">Vista Principal</div>
+        {% if inmueble.imagen2 %}
+          <div class="carousel-slide"><img src="{{ inmueble.imagen2.url }}" alt="{{ inmueble.titulo }}"></div>
+        {% endif %}
+        {% if inmueble.imagen3 %}
+          <div class="carousel-slide"><img src="{{ inmueble.imagen3.url }}" alt="{{ inmueble.titulo }}"></div>
+        {% endif %}
+        {% if inmueble.imagen4 %}
+          <div class="carousel-slide"><img src="{{ inmueble.imagen4.url }}" alt="{{ inmueble.titulo }}"></div>
+        {% endif %}
+        {% if not inmueble.imagen1 and not inmueble.imagen2 and not inmueble.imagen3 and not inmueble.imagen4 %}
+           <div class="carousel-slide"><div class="gallery-img-mock"><span class="mock-label">M²</span></div></div>
+        {% endif %}
       </div>
+      <button class="carousel-arrow carousel-next" type="button" aria-label="Imagen siguiente">›</button>
+      <div class="gallery-op">{{ inmueble.get_operacion_display }}</div>
+    </div>
 
-      <!-- thumbnails -->
-      <div class="gallery-thumb">
-        {% if inmueble.imagen2 %}<img src="{{ inmueble.imagen2.url }}" style="width:100%; height:100%; object-fit:cover;">
-        {% else %}<div class="gallery-img-mock"><span class="mock-label">M²</span></div>{% endif %}
-      </div>
-      <div class="gallery-thumb">
-        {% if inmueble.imagen3 %}<img src="{{ inmueble.imagen3.url }}" style="width:100%; height:100%; object-fit:cover;">
-        {% else %}<div class="gallery-img-mock"><span class="mock-label">M²</span></div>{% endif %}
-      </div>
-      <div class="gallery-thumb">
-        {% if inmueble.imagen4 %}<img src="{{ inmueble.imagen4.url }}" style="width:100%; height:100%; object-fit:cover;">
-        {% else %}<div class="gallery-img-mock"><span class="mock-label">M²</span></div>{% endif %}
-      </div>
-      <div class="gallery-thumb" style="position:relative;">
-        <div class="gallery-img-mock"><span class="mock-label">M²</span></div>
-        <div style="position:absolute; inset:0; background:rgba(14,42,42,.7); display:flex; align-items:center; justify-content:center; color:white; font-style:italic;">Galería completa</div>
-      </div>
+    <div class="carousel-thumbs">
+      {% if inmueble.imagen1 %}<div class="thumb-item active"><img src="{{ inmueble.imagen1.url }}" alt="Vista 1"></div>{% endif %}
+      {% if inmueble.imagen2 %}<div class="thumb-item"><img src="{{ inmueble.imagen2.url }}" alt="Vista 2"></div>{% endif %}
+      {% if inmueble.imagen3 %}<div class="thumb-item"><img src="{{ inmueble.imagen3.url }}" alt="Vista 3"></div>{% endif %}
+      {% if inmueble.imagen4 %}<div class="thumb-item"><img src="{{ inmueble.imagen4.url }}" alt="Vista 4"></div>{% endif %}
     </div>
   </div>
-</div>
+</section>
 
 <!-- ═══ PROPERTY CONTENT ═══ -->
 <div class="wrap">
@@ -330,7 +315,14 @@
       <div class="price-block">
         <div class="price-main">
           <div class="price-label">Precio de {{ inmueble.get_operacion_display|lower }}</div>
-          <div class="price-cop">{{ inmueble.moneda }} $ {{ inmueble.precio|intcomma }}</div>
+          {% if inmueble.moneda == 'COP' %}
+            <div class="price-cop">COP $ {{ inmueble.precio|intcomma }}</div>
+            <div class="price-usd">USD $ <span class="convert-price" data-value="{{ inmueble.precio }}" data-from="COP"></span></div>
+          {% else %}
+            <div class="price-cop">COP $ <span class="convert-price" data-value="{{ inmueble.precio }}" data-from="USD"></span></div>
+            <div class="price-usd">USD $ {{ inmueble.precio|intcomma }}</div>
+          {% endif %}
+          
           <div class="price-m2">$ {% widthratio inmueble.precio inmueble.area_m2 1 %}/m² · {{ inmueble.area_m2 }} m² construidos</div>
         </div>
         <div class="price-actions">
@@ -432,37 +424,68 @@
   function toggleFav() { document.getElementById('favBtn').classList.toggle('active'); }
   function handleContact(e) { e.preventDefault(); const btn = document.getElementById('ccBtn'); btn.textContent = 'Enviando...'; setTimeout(() => { btn.textContent = '✓ Enviado'; btn.style.background = '#2d7a5a'; }, 1200); }
 
-  /* ─── GALLERY CAROUSEL LOGIC ─── */
-  let currentGalleryIdx = 0;
-  const galleryTrack = document.getElementById('galleryTrack');
-  const galleryIndicators = document.getElementById('galleryIndicators');
-  const gallerySlides = document.querySelectorAll('.gallery-slide');
-  const totalGallerySlides = gallerySlides.length;
+  /* ─── PRICE CONVERSION ─── */
+  const TRM_ESTIMATE = 4000; // Valor estimado de la TRM
+  document.querySelectorAll('.convert-price').forEach(el => {
+    const val = parseFloat(el.dataset.value);
+    const from = el.dataset.from;
+    let result = 0;
+    
+    if (from === 'COP') {
+      result = val / TRM_ESTIMATE;
+    } else {
+      result = val * TRM_ESTIMATE;
+    }
+    
+    // Formatear con separadores de miles
+    el.textContent = Math.round(result).toLocaleString('es-CO');
+  });
 
-  function initGallery() {
-    if (totalGallerySlides <= 1) {
-      if (document.getElementById('galleryNav')) document.getElementById('galleryNav').style.display = 'none';
+  /* ─── NEW CAROUSEL LOGIC ─── */
+  document.querySelectorAll('[data-carousel]').forEach(carousel => {
+    const track = carousel.querySelector('.carousel-track');
+    const slides = Array.from(track.children);
+    const nextBtn = carousel.querySelector('.carousel-next');
+    const prevBtn = carousel.querySelector('.carousel-prev');
+    const thumbItems = carousel.querySelectorAll('.thumb-item');
+    let currentIndex = 0;
+
+    if (slides.length <= 1) {
+      if (nextBtn) nextBtn.style.display = 'none';
+      if (prevBtn) prevBtn.style.display = 'none';
+      const thumbs = carousel.querySelector('.carousel-thumbs');
+      if (thumbs) thumbs.style.display = 'none';
       return;
     }
-    for (let i = 0; i < totalGallerySlides; i++) {
-      const dot = document.createElement('div');
-      dot.className = 'indicator' + (i === 0 ? ' active' : '');
-      dot.onclick = () => { currentGalleryIdx = i; updateGallery(); };
-      galleryIndicators.appendChild(dot);
-    }
-  }
 
-  function moveGallery(dir) {
-    currentGalleryIdx = (currentGalleryIdx + dir + totalGallerySlides) % totalGallerySlides;
-    updateGallery();
-  }
+    const updateCarousel = (index) => {
+      currentIndex = index;
+      track.style.transform = `translateX(-${currentIndex * 100}%)`;
+      thumbItems.forEach((thumb, i) => thumb.classList.toggle('active', i === currentIndex));
+      if (prevBtn) prevBtn.disabled = currentIndex === 0;
+      if (nextBtn) nextBtn.disabled = currentIndex === slides.length - 1;
+    };
 
-  function updateGallery() {
-    galleryTrack.style.transform = `translateX(-${currentGalleryIdx * 100}%)`;
-    document.querySelectorAll('.indicator').forEach((dot, i) => dot.classList.toggle('active', i === currentGalleryIdx));
-  }
+    if (nextBtn) nextBtn.addEventListener('click', () => updateCarousel(currentIndex + 1));
+    if (prevBtn) prevBtn.addEventListener('click', () => updateCarousel(currentIndex - 1));
 
-  initGallery();
+    thumbItems.forEach((thumb, i) => {
+      thumb.addEventListener('click', () => updateCarousel(i));
+    });
+
+    let startX = 0;
+    carousel.addEventListener('touchstart', e => startX = e.touches[0].clientX, {passive: true});
+    carousel.addEventListener('touchend', e => {
+      const endX = e.changedTouches[0].clientX;
+      const diff = startX - endX;
+      if (Math.abs(diff) > 50) {
+        if (diff > 0 && currentIndex < slides.length - 1) updateCarousel(currentIndex + 1);
+        else if (diff < 0 && currentIndex > 0) updateCarousel(currentIndex - 1);
+      }
+    }, {passive: true});
+
+    updateCarousel(0);
+  });
 
   /* ─── LIGHTBOX LOGIC ─── */
   const lightboxImages = [];

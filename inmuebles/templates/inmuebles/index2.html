@@ -184,6 +184,7 @@
     .prop-card:hover .prop-title { color: var(--dorado); } /* Efecto hover para el título */
     .prop-body { padding: 28px; }
     .prop-price { font-family: 'Playfair Display', serif; font-size: 22px; }
+    .prop-price-usd { font-size: 11px; color: var(--dorado); margin-top: 2px; display: block; }
     .footer-top { display: grid; grid-template-columns: 1.6fr 1fr 1fr; gap: 60px; padding: 70px 64px; background: #080f0f; color: white; }
     @media (max-width: 960px) { .hero, .strip, .port-grid, .cats-grid { grid-template-columns: 1fr; } .cats-inner { padding: 80px 28px; } }
   </style>
@@ -320,7 +321,15 @@
             <h4 class="prop-title" style="font-family:'Playfair Display'; font-size:20px; color:var(--verde); margin-bottom:8px;">{{ inmueble.titulo }}</h4>
             <p style="font-size:12px; color:var(--gris); margin-bottom:24px;">{{ inmueble.ciudad }}, {{ inmueble.departamento }}</p>
             <div style="display:flex; justify-content:space-between; align-items:center; padding-top:20px; border-top:1px solid var(--borde);">
-              <div class="prop-price"><small style="display:block; font-size:9px; color:var(--gris);">{{ inmueble.moneda }}</small>$ {{ inmueble.precio|intcomma }}</div>
+              <div class="prop-price">
+                {% if inmueble.moneda == 'COP' %}
+                  <small style="display:block; font-size:9px; color:var(--gris);">COP</small>$ {{ inmueble.precio|intcomma }}
+                  <span class="prop-price-usd">USD $ <span class="convert-price" data-value="{{ inmueble.precio }}" data-from="COP"></span></span>
+                {% else %}
+                  <small style="display:block; font-size:9px; color:var(--gris);">COP</small>$ <span class="convert-price" data-value="{{ inmueble.precio }}" data-from="USD"></span>
+                  <span class="prop-price-usd">USD $ {{ inmueble.precio|intcomma }}</span>
+                {% endif %}
+              </div>
               <div style="font-size:11px; color:var(--gris);">{{ inmueble.area_m2 }} m²</div>
             </div>
           </div>
@@ -495,6 +504,21 @@
     document.getElementById('navbar').classList.toggle('scrolled', window.scrollY > 60);
   });
 
+  /* ─── PRICE CONVERSION ─── */
+  const TRM_ESTIMATE = 4000;
+  function updateConversions() {
+    document.querySelectorAll('.convert-price').forEach(el => {
+      const val = parseFloat(el.dataset.value);
+      const from = el.dataset.from;
+      let result = 0;
+      
+      if (from === 'COP') result = val / TRM_ESTIMATE;
+      else result = val * TRM_ESTIMATE;
+      
+      el.textContent = Math.round(result).toLocaleString('es-CO');
+    });
+  }
+
   // Intersection Observer para animaciones suaves al bajar
   const io = new IntersectionObserver((entries) => {
     entries.forEach((e, i) => {
@@ -549,6 +573,7 @@
 
   window.addEventListener('resize', () => { pIdx = 0; slideP(0); });
   window.addEventListener('load', () => {
+    updateConversions();
     slideP(0);
     startAutoPlay();
     
