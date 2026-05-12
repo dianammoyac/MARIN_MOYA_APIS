@@ -661,7 +661,28 @@
           <button class="filter-tab" onclick="filterCards('pausado', this)">Pausados</button>
           <button class="filter-tab" onclick="filterCards('vendido', this)">Vendidos</button>
         </div>
+        
         <div class="toolbar-right">
+          {% if es_agente %}
+          <!-- Buscador de usuario exclusivo para Agentes -->
+          <form method="GET" action="{% url 'mis_inmuebles' %}" style="display: flex; gap: 8px; align-items: center; margin-right: 20px;">
+            <div style="position: relative;">
+              <input type="text" name="usuario_filtro" list="owners" placeholder="Filtrar por propietario..." value="{{ request.GET.usuario_filtro|default:'' }}" class="sort-select" style="padding-right: 35px; width: 220px;">
+              <datalist id="owners">
+                {% for username in lista_propietarios %}
+                  <option value="{{ username }}">
+                {% endfor %}
+              </datalist>
+              {% if request.GET.usuario_filtro %}
+                <a href="{% url 'mis_inmuebles' %}" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); color: var(--gris); font-size: 16px; text-decoration: none;">&times;</a>
+              {% endif %}
+            </div>
+            <button type="submit" class="card-btn" style="background: var(--verde); border: none; cursor: pointer;">
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="white" stroke-width="1.3" stroke-linecap="round"><circle cx="6" cy="6" r="4"/><line x1="9" y1="9" x2="13" y2="13"/></svg>
+            </button>
+          </form>
+          {% endif %}
+
           <select class="sort-select">
             <option>Más recientes</option>
             <option>Mayor precio</option>
@@ -695,6 +716,10 @@
           </div>
           <div class="card-body">
             <div class="card-tipo">{{ i.get_tipo_display }}</div>
+            {% if es_agente and i.usuario != user %}
+              <div style="font-size: 9px; font-weight: 500; letter-spacing: 1px; color: var(--dorado); margin-bottom: 5px; text-transform: uppercase;">PROPIETARIO: {{ i.usuario.username }}</div>
+            {% endif %}
+            
             <div class="card-title"><a href="{% url 'inmuebles_detalle' i.id %}">{{ i.titulo }}</a></div>
             <div class="card-loc">{{ i.ciudad }}, {{ i.departamento }} · Estrato {{ i.estrato|default:"N/A" }}</div>
             <div class="card-prices">
@@ -708,6 +733,7 @@
                 <span>📐 {{ i.area_m2|floatformat:0 }} m²</span>
               </div>
               <div class="card-btns">
+                {% if i.usuario == user or user.username == 'dianamoya' %}
                 <a href="{% url 'inmuebles_editar' i.id %}" class="card-btn edit" title="Editar">
                   <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M9.5 2.5l2 2L4 12H2v-2L9.5 2.5z"/>
@@ -724,6 +750,9 @@
                     <path d="M2 3.5h10M5 3.5V2.5h4v1M5.5 6v4M8.5 6v4M3 3.5l.7 8h6.6l.7-8"/>
                   </svg>
                 </button>
+                {% else %}
+                <span style="font-size: 8px; color: var(--gris); letter-spacing: 1.5px; text-transform: uppercase; margin-right: 5px; font-weight: 500;">MODO LECTURA</span>
+                {% endif %}
               </div>
             </div>
           </div>

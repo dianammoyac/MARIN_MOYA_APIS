@@ -76,14 +76,35 @@ def inmuebles_listado(request):
 
 @login_required
 def mis_inmuebles(request):
-    inmuebles_query = Inmueble.objects.filter(usuario=request.user).order_by("-id")
+    # El Agente es is_staff=True pero is_superuser=False
+    es_agente = request.user.is_staff and not request.user.is_superuser
+    lista_propietarios = []
+
+    if es_agente:
+        # Los agentes ven todos los inmuebles para supervisión
+        inmuebles_query = Inmueble.objects.all().order_by("-id")
+        # Obtener lista de nombres de usuario únicos que tienen inmuebles para las sugerencias
+        lista_propietarios = Inmueble.objects.exclude(usuario__isnull=True).values_list('usuario__username', flat=True).distinct()
+
+        usuario_filtro = request.GET.get('usuario_filtro')
+        if usuario_filtro:
+            inmuebles_query = inmuebles_query.filter(usuario__username__icontains=usuario_filtro)
+    else:
+        # Usuarios normales solo ven su inventario personal
+        inmuebles_query = Inmueble.objects.filter(usuario=request.user).order_by("-id")
+
     stats = {
         'total': inmuebles_query.count(),
         'activos': inmuebles_query.filter(estatus='DISPONIBLE').count(),
         'pausados': inmuebles_query.filter(estatus='INACTIVO').count(),
         'finalizados': inmuebles_query.filter(estatus__in=['VENDIDO', 'ARRENDADO']).count(),
     }
-    return render(request, "inmuebles/dashboard.html", {"inmuebles": inmuebles_query, "stats": stats})
+    return render(request, "inmuebles/dashboard.html", {
+        "inmuebles": inmuebles_query, 
+        "stats": stats, 
+        "es_agente": es_agente,
+        "lista_propietarios": lista_propietarios
+    })
 
 
 @login_required
@@ -118,6 +139,12 @@ def inmuebles_crear(request):
 @login_required
 def inmuebles_editar(request, pk):
     inmueble = get_object_or_404(Inmueble, pk=pk)
+
+    # Seguridad: Aunque el agente vea el inmueble, solo el dueño o Diana pueden editar
+    if inmueble.usuario != request.user and request.user.username != 'dianamoya':
+        messages.error(request, "No tienes permiso para editar un inmueble que no te pertenece.")
+        return redirect("mis_inmuebles")
+
     if request.method == "POST":
         form = InmuebleForm(request.POST, request.FILES, instance=inmueble)
         if form.is_valid():
@@ -134,6 +161,12 @@ def inmuebles_editar(request, pk):
 @login_required
 def inmuebles_eliminar(request, pk):
     inmueble = get_object_or_404(Inmueble, pk=pk)
+
+    # Seguridad: Solo el dueño o Diana pueden eliminar
+    if inmueble.usuario != request.user and request.user.username != 'dianamoya':
+        messages.error(request, "No tienes permiso para eliminar un inmueble que no te pertenece.")
+        return redirect("mis_inmuebles")
+
     if request.method == "POST":
         inmueble.delete()
         messages.success(request, "Inmueble eliminado correctamente.")
