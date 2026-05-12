@@ -1,0 +1,341 @@
+{% load static %}
+{% load humanize %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Panel de Administración — Marín Moya Inversiones</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,700;1,400;1,500&family=Jost:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --negro:  #0d0d0d;
+      --verde:  #0e2a2a;
+      --verde2: #162c2c;
+      --dorado: #c6a15b;
+      --dorado2:#e8c97a;
+      --marfil: #f9f6f1;
+      --warm:   #f2ede6;
+      --gris:   #888;
+      --borde:  #e2ddd6;
+      --blanco: #ffffff;
+      --ok:     #2d7a5a;
+      --alerta: #b89020;
+      --error:  #b84040;
+      --info:   #2a5a8a;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body { font-family: 'Jost', sans-serif; font-weight: 300; background: var(--marfil); color: var(--negro); overflow-x: hidden; min-height: 100vh; }
+
+    /* ─── CURSOR ─── */
+    * { cursor: none; }
+    #cursor { width:10px; height:10px; background:var(--dorado); border-radius:50%; position:fixed; top:0; left:0; pointer-events:none; z-index:9999; transform:translate(-50%,-50%); display:none; transition:width .3s,height .3s,background .3s; }
+    #cursor.grow { width:40px; height:40px; background:transparent; border:1px solid var(--dorado); }
+    @media (hover:hover) and (pointer:fine) { #cursor { display:block; } }
+
+    /* ─── TOP BAR ─── */
+    .topbar {
+      position: fixed; top:0; left:0; right:0; z-index:600;
+      background: var(--verde2); border-bottom: 1px solid rgba(198,161,91,.15);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 28px 0 0; height: 64px;
+    }
+
+    .topbar-brand {
+      height: 64px; width: 240px; flex-shrink:0; background: var(--verde);
+      border-right: 1px solid rgba(198,161,91,.12); text-decoration: none;
+      display: flex; align-items: center; padding: 0 28px; gap: 12px;
+    }
+    .brand-badge {
+      width: 32px; height: 32px; background: rgba(198,161,91,.15);
+      border: 1px solid rgba(198,161,91,.3); border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Playfair Display', serif; font-size: 13px; font-style:italic; color: var(--dorado);
+    }
+    .brand-name { font-family:'Playfair Display',serif; font-size:13px; font-weight:500; letter-spacing:2px; text-transform:uppercase; color:var(--blanco); }
+
+    .topbar-right { display:flex; align-items:center; gap:20px; }
+    .tb-admin { display:flex; align-items:center; gap:10px; }
+    .tb-avatar { width:36px; height:36px; background:rgba(198,161,91,.2); border:1px solid rgba(198,161,91,.35); border-radius:50%; display:flex; align-items:center; justify-content:center; font-family:'Playfair Display',serif; font-size:13px; font-style:italic; color:var(--dorado); }
+    .tb-name { font-size:12px; font-weight:400; color:rgba(255,255,255,.65); }
+    .tb-logout { font-size:10px; letter-spacing:2px; text-transform:uppercase; color:rgba(255,255,255,.35); text-decoration:none; transition:color .2s; }
+    .tb-logout:hover { color:var(--dorado); }
+
+    /* ─── LAYOUT ─── */
+    .layout { padding-top:64px; display:grid; grid-template-columns:240px 1fr; min-height:100vh; }
+
+    .sidebar { background:var(--verde2); border-right:1px solid rgba(198,161,91,.1); padding-top: 28px; }
+    .sb-link {
+      display:flex; align-items:center; gap:12px; padding:13px 24px; font-size:11px;
+      letter-spacing:1.5px; text-transform:uppercase; color:rgba(255,255,255,.4); text-decoration:none;
+      transition: .2s; border-left:2px solid transparent;
+    }
+    .sb-link:hover, .sb-link.active { color:var(--dorado); background:rgba(198,161,91,.07); border-left-color:var(--dorado); }
+
+    .main { padding:44px 56px 100px; background:var(--marfil); }
+
+    /* ─── KPI STRIP ─── */
+    .kpi-strip { display:grid; grid-template-columns:repeat(4,1fr); gap:1px; background:var(--borde); border:1px solid var(--borde); margin-bottom:40px; }
+    .kpi { background:var(--blanco); padding:24px 26px; }
+    .kpi-val { font-family:'Playfair Display',serif; font-size:32px; color:var(--verde); }
+    .kpi-lbl { font-size:9px; font-weight:600; letter-spacing:2.5px; text-transform:uppercase; color:var(--gris); }
+
+    /* ─── TABS ─── */
+    .section-tabs { display:flex; border-bottom:1px solid var(--borde); margin-bottom:40px; }
+    .tab-btn { padding:16px 24px; font-family:'Jost',sans-serif; font-size:11px; letter-spacing:2px; text-transform:uppercase; color:var(--gris); background:transparent; border:none; border-bottom:2px solid transparent; cursor: pointer; }
+    .tab-btn.active { color:var(--verde); border-bottom-color:var(--dorado); }
+    .tab-panel { display:none; }
+    .tab-panel.active { display:block; }
+
+    /* ─── TABLES ─── */
+    .panel { background:var(--blanco); border:1px solid var(--borde); margin-bottom: 2px; }
+    .panel-head { padding:22px 28px; border-bottom:1px solid var(--borde); }
+    .panel-title { font-family:'Playfair Display',serif; font-size:17px; color:var(--verde); }
+    .data-table { width:100%; border-collapse:collapse; }
+    .data-table thead tr { background:var(--verde); }
+    .data-table th { padding:13px 18px; font-size:8.5px; font-weight:600; letter-spacing:3px; text-transform:uppercase; color:rgba(255,255,255,.5); text-align:left; }
+    .data-table td { padding:14px 18px; font-size:13px; color:var(--negro); border-bottom: 1px solid var(--borde); }
+
+    .status-badge { font-size:9px; font-weight:600; letter-spacing:2px; text-transform:uppercase; padding:4px 11px; }
+    .status-active { background:rgba(45,122,90,.1); color:var(--ok); border:1px solid rgba(45,122,90,.2); }
+
+    .ra-btn { width:32px; height:32px; display:flex; align-items:center; justify-content:center; background:var(--verde); border:none; cursor: pointer; transition: .2s; }
+    .ra-btn:hover { background:var(--dorado); }
+    .sort-select { background:var(--marfil); border:1px solid var(--borde); padding:5px; font-family:'Jost'; font-size:12px; }
+
+    /* Mensajes */
+    .messages { list-style: none; margin-bottom: 20px; }
+    .messages li { padding: 15px; margin-bottom: 10px; font-size: 13px; }
+    .messages .success { background: rgba(45,122,90,.1); color: var(--ok); border: 1px solid var(--ok); }
+    .messages .error { background: rgba(184,64,64,.1); color: var(--error); border: 1px solid var(--error); }
+  </style>
+</head>
+<body>
+
+<div id="cursor"></div>
+
+<header class="topbar">
+  <a href="{% url 'index2' %}" class="topbar-brand">
+    <div class="brand-badge">M²</div>
+    <div class="brand-name">Marín Moya</div>
+  </a>
+
+  <div class="topbar-right">
+    <div class="tb-admin">
+      <div class="tb-avatar">D</div>
+      <div class="tb-name">Diana Moya</div>
+    </div>
+    <div style="width:1px; height:20px; background:rgba(255,255,255,.1);"></div>
+    <a href="{% url 'logout' %}" class="tb-logout">Salir</a>
+  </div>
+</header>
+
+<div class="layout">
+  <aside class="sidebar">
+    <a href="#" class="sb-link active" onclick="showTab('dashboard',this); return false;">Dashboard</a>
+    <a href="#" class="sb-link" onclick="showTab('usuarios',this); return false;">Usuarios</a>
+    <a href="#" class="sb-link" onclick="showTab('inmuebles',this); return false;">Inmuebles</a>
+    <a href="#" class="sb-link" onclick="showTab('reportes',this); return false;">Reportes</a>
+  </aside>
+
+  <main class="main">
+    {% if messages %}
+      <ul class="messages">
+        {% for message in messages %}
+          <li class="{{ message.tags }}">{{ message }}</li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+
+    <div style="margin-bottom: 40px">
+      <h1 style="font-family:'Playfair Display',serif; font-size:42px; color:var(--verde)">Dashboard <em>Premium</em></h1>
+      <p id="dateDisplay" style="color:var(--gris); font-size:12px"></p>
+    </div>
+
+    <!-- KPI STRIP -->
+    <div class="kpi-strip">
+      <div class="kpi"><div class="kpi-val">{{ total_usuarios }}</div><div class="kpi-lbl">Usuarios Registrados</div></div>
+      <div class="kpi"><div class="kpi-val">{{ total_activos }}</div><div class="kpi-lbl">Inmuebles Disponibles</div></div>
+      <div class="kpi"><div class="kpi-val">{{ total_vendidos }}</div><div class="kpi-lbl">Propiedades Vendidas</div></div>
+      <div class="kpi"><div class="kpi-val">{{ total_pendientes }}</div><div class="kpi-lbl">En Pausa / Inactivos</div></div>
+    </div>
+
+    <div class="section-tabs">
+      <button class="tab-btn active" onclick="showTab('dashboard',this)">Resumen</button>
+      <button class="tab-btn" onclick="showTab('usuarios',this)">Gestión de Usuarios</button>
+      <button class="tab-btn" onclick="showTab('inmuebles',this)">Gestión de Propiedades</button>
+      <button class="tab-btn" onclick="showTab('reportes',this)">Reportes</button>
+    </div>
+
+    <!-- ══ DASHBOARD TAB ══ -->
+    <div id="tab-dashboard" class="tab-panel active">
+      <div class="panel">
+        <div class="panel-head"><div class="panel-title">Actividad Reciente</div></div>
+        <div class="panel-body" style="padding:0">
+          <table class="data-table">
+            <thead><tr><th>Código</th><th>Inmueble</th><th>Ciudad</th><th>Precio</th><th>Propietario</th></tr></thead>
+            <tbody>
+              {% for inmueble in actividad %}
+              <tr>
+                <td>{{ inmueble.codigo }}</td>
+                <td>{{ inmueble.titulo }}</td>
+                <td>{{ inmueble.ciudad }}</td>
+                <td>{{ inmueble.moneda }} {{ inmueble.precio|intcomma }}</td>
+                <td>{{ inmueble.usuario.username }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ USUARIOS TAB (GESTIÓN DE ROLES) ══ -->
+    <div id="tab-usuarios" class="tab-panel">
+      <div class="panel">
+        <div class="panel-head"><div class="panel-title">Listado Maestro de Usuarios</div></div>
+        <div class="panel-body" style="padding:0">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Usuario</th>
+                <th>Nombre Real</th>
+                <th>Email</th>
+                <th>Rol Actual</th>
+                <th>Asignar Nuevo Rol</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for u in usuarios %}
+              <tr>
+                <td><strong>{{ u.username }}</strong></td>
+                <td>{{ u.get_full_name|default:"---" }}</td>
+                <td>{{ u.email }}</td>
+                <td>
+                  {% if u.is_superuser %}Admin{% elif u.is_staff %}Agente{% else %}Usuario{% endif %}
+                </td>
+                <td>
+                  {% if u.username != 'dianamoya' %}
+                  <form action="{% url 'update_user_role' u.id %}" method="POST" style="display:flex; gap:5px;">
+                    {% csrf_token %}
+                    <select name="role" class="sort-select">
+                      <option value="usuario" {% if not u.is_staff %}selected{% endif %}>Usuario</option>
+                      <option value="agente" {% if u.is_staff and not u.is_superuser %}selected{% endif %}>Agente</option>
+                      <option value="admin" {% if u.is_superuser %}selected{% endif %}>Admin</option>
+                    </select>
+                    <button type="submit" class="ra-btn" title="Guardar Rol">
+                      <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="white" stroke-width="1.5">
+                        <polyline points="2 6 5 9 10 3"></polyline>
+                      </svg>
+                    </button>
+                  </form>
+                  {% else %}
+                    <span style="color:var(--dorado); font-size:10px; letter-spacing:1px;">PROPIETARIO DEL PROYECTO</span>
+                  {% endif %}
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ INMUEBLES TAB ══ -->
+    <div id="tab-inmuebles" class="tab-panel">
+      <div class="panel">
+        <div class="panel-head"><div class="panel-title">Todas las Propiedades</div></div>
+        <div class="panel-body" style="padding:0">
+          <table class="data-table">
+            <thead><tr><th>Código</th><th>Inmueble</th><th>Tipo</th><th>Precio</th><th>Estado</th><th>Acciones</th></tr></thead>
+            <tbody>
+              {% for i in inmuebles %}
+              <tr>
+                <td>{{ i.codigo }}</td>
+                <td>{{ i.titulo }}</td>
+                <td>{{ i.get_tipo_display }}</td>
+                <td>{{ i.moneda }} {{ i.precio|intcomma }}</td>
+                <td><span class="status-badge status-active">{{ i.get_estatus_display }}</span></td>
+                <td>
+                    <a href="{% url 'inmuebles_editar' i.id %}" class="ra-btn" style="text-decoration:none; display:inline-flex;">
+                        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="white" stroke-width="1.5">
+                            <path d="M8 1.5l2.5 2.5L3 11.5H.5V9L8 1.5z"></path>
+                        </svg>
+                    </a>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══ REPORTES TAB ══ -->
+    <div id="tab-reportes" class="tab-panel">
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 2px; background:var(--borde); border:1px solid var(--borde);">
+            <div class="panel" style="margin-bottom:0">
+                <div class="panel-head"><div class="panel-title">Distribución por Tipo</div></div>
+                <div class="panel-body">
+                    {% for item in dist_tipo %}
+                    <div style="margin-bottom:20px">
+                        <div style="display:flex; justify-content:space-between; margin-bottom:8px">
+                            <span style="font-size:11px; letter-spacing:1px; text-transform:uppercase">{{ item.tipo }}</span>
+                            <span style="font-weight:500">{{ item.total }}</span>
+                        </div>
+                        <div style="height:4px; background:var(--marfil); border:1px solid var(--borde)">
+                            <div style="height:100%; width:{{ item.total }}0%; background:var(--dorado)"></div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            <div class="panel" style="margin-bottom:0">
+                <div class="panel-head"><div class="panel-title">Por Ciudad</div></div>
+                <div class="panel-body">
+                    {% for item in dist_ciudad %}
+                    <div style="margin-bottom:20px">
+                        <div style="display:flex; justify-content:space-between; margin-bottom:8px">
+                            <span style="font-size:11px; letter-spacing:1px; text-transform:uppercase">{{ item.ciudad }}</span>
+                            <span style="font-weight:500">{{ item.total }}</span>
+                        </div>
+                        <div style="height:4px; background:var(--marfil); border:1px solid var(--borde)">
+                            <div style="height:100%; width:{{ item.total }}0%; background:var(--verde)"></div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+  </main>
+</div>
+
+<footer style="background:var(--verde2); border-top:1px solid rgba(198,161,91,.1); padding:24px 56px; color:rgba(255,255,255,.2); font-size:10px; display:flex; justify-content:space-between">
+  <p>© 2026 Marín Moya Inversiones · Panel de Administración</p>
+  <p>v1.0.0 · Diana Moya Camacho</p>
+</footer>
+
+<script>
+  const cursor = document.getElementById('cursor');
+  document.addEventListener('mousemove', e => { cursor.style.left = e.clientX+'px'; cursor.style.top = e.clientY+'px'; });
+  document.querySelectorAll('a, button, input, select').forEach(el => {
+    el.addEventListener('mouseenter', () => cursor.classList.add('grow'));
+    el.addEventListener('mouseleave', () => cursor.classList.remove('grow'));
+  });
+  
+  const d = new Date();
+  document.getElementById('dateDisplay').textContent = d.toLocaleDateString('es-CO', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+
+  function showTab(id, btn) {
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.tab-btn, .sb-link').forEach(b => b.classList.remove('active'));
+    document.getElementById('tab-' + id).classList.add('active');
+    if (btn) btn.classList.add('active');
+  }
+</script>
+</body>
+</html>

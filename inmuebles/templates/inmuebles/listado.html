@@ -291,7 +291,11 @@
   <div class="nav-right">
     {% if user.is_authenticated %}
       <span class="nav-login" style="pointer-events: none; color: var(--verde); margin-right: 15px;">Hola, {{ user.first_name|default:user.username }}</span>
-      <a href="{% url 'mis_inmuebles' %}" class="nav-btn">Ir a mi panel →</a>
+      {% if user.username == 'dianamoya' %}
+        <a href="{% url 'admin_dashboard' %}" class="nav-btn">Ir al panel Admin →</a>
+      {% else %}
+        <a href="{% url 'mis_inmuebles' %}" class="nav-btn">Ir a mi panel →</a>
+      {% endif %}
     {% else %}
       <a href="{% url 'login' %}" class="nav-btn">Acceder al portal →</a>
     {% endif %}

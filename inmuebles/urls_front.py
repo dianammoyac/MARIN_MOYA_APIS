@@ -1,5 +1,6 @@
 from django.urls import path
 from . import views
+from .views_admin import admin_dashboard, update_user_role
 
 urlpatterns = [
     path("", views.login_view, name="login"),
@@ -13,4 +14,6 @@ urlpatterns = [
     path("inmuebles/<int:pk>/", views.inmuebles_detalle, name="inmuebles_detalle"),
     path("inmuebles/<int:pk>/editar/", views.inmuebles_editar, name="inmuebles_editar"),
     path("inmuebles/<int:pk>/eliminar/", views.inmuebles_eliminar, name="inmuebles_eliminar"),
+    path("admin-panel/", admin_dashboard, name="admin_dashboard"),
+    path("admin-panel/update-role/<int:user_id>/", update_user_role, name="update_user_role"),
 ]

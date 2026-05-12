@@ -22,6 +22,8 @@ def index2_view(request):
 
 def login_view(request):
     if request.user.is_authenticated:
+        if request.user.username == 'dianamoya':
+            return redirect("admin_dashboard")
         return redirect("mis_inmuebles")
 
     form = LoginForm(request.POST or None)
@@ -35,6 +37,8 @@ def login_view(request):
         if user is not None:
             login(request, user)
             messages.success(request, "Bienvenido al sistema.")
+            if user.username == 'dianamoya':
+                return redirect("admin_dashboard")
             return redirect("mis_inmuebles")
 
         messages.error(request, "Usuario o contraseña incorrectos.")
@@ -62,7 +66,7 @@ def register_view(request):
 def logout_view(request):
     logout(request)
     messages.success(request, "Sesión cerrada correctamente.")
-    return redirect("inmuebles_listado")
+    return redirect("index2")
 
 
 def inmuebles_listado(request):
@@ -80,6 +84,16 @@ def mis_inmuebles(request):
         'finalizados': inmuebles_query.filter(estatus__in=['VENDIDO', 'ARRENDADO']).count(),
     }
     return render(request, "inmuebles/dashboard.html", {"inmuebles": inmuebles_query, "stats": stats})
+
+
+@login_required
+def perfil_view(request):
+    inmuebles_user = Inmueble.objects.filter(usuario=request.user)
+    stats = {
+        'total': inmuebles_user.count(),
+        'activos': inmuebles_user.filter(estatus='DISPONIBLE').count(),
+    }
+    return render(request, "inmuebles/perfil.html", {"stats": stats})
 
 
 def inmuebles_detalle(request, pk):
