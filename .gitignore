@@ -3,8 +3,13 @@ __pycache__/
 .venv/
 venv/
 ENV/
+*.py[cod]
+*$py.class
+.env
 db.sqlite3
 *.log
+media/
+staticfiles/
 .vscode/
 .idea/
 staticfiles/
@@ -13,3 +18,5 @@ media/inmuebles/
 local_settings.py
 db_marinmoya_inversiones.sql
 *.bak
+venv/
+mysql_data/
