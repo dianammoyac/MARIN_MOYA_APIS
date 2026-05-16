@@ -6,7 +6,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Marín Moya Inversiones{% endblock %}</title>
     <link rel="stylesheet" href="{% static 'inmuebles/styles.css' %}">
-    <link rel="stylesheet" href="{% static 'inmuebles/chatbot.css' %}">
 </head>
 <body>
     <div class="header">
@@ -36,22 +35,5 @@
 
     {% block content %}{% endblock %}
 
-    <!-- Chatbot Widget -->
-    <div id="chat-widget">
-        <button id="chat-button" onclick="toggleChat()">💬 ¿Necesitas ayuda?</button>
-        <div id="chat" style="display: none;">
-            <div class="chat-header">
-                <strong>Asistente M²</strong>
-                <span onclick="toggleChat()" style="cursor:pointer; float:right;">&times;</span>
-            </div>
-            <div id="messages"></div>
-            <div class="chat-input-area">
-                <input type="text" id="userInput" placeholder="Escribe tu pregunta..." onkeypress="if(event.key === 'Enter') sendMessage()">
-                <button onclick="sendMessage()">➤</button>
-            </div>
-        </div>
-    </div>
-
-    <script src="{% static 'inmuebles/chatbot.js' %}"></script>
 </body>
 </html>

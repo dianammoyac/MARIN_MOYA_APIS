@@ -8,10 +8,22 @@
   --verde-oscuro: #0e2a2a;
   --azul-petroleo: #1f3a4a;
   --dorado: #c6a15b;
+  --verde: #0e2a2a;
+  --verde2: #162c2c;
+  --dorado2: #e8c97a;
+  --marfil: #f9f6f1;
+  --warm: #f2ede6;
+  --gris: #888;
+  --borde: #e2ddd6;
+  --negro: #0d0d0d;
   --gris-fondo: #f5f6f7;
   --gris-texto: #2f2f2f;
   --blanco: #ffffff;
 }
+
+@keyframes slideUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+@keyframes fadeIn { from{opacity:0} to{opacity:1} }
+@keyframes popIn { from{opacity:0;transform:scale(.88)} to{opacity:1;transform:scale(1)} }
 
 * {
   box-sizing: border-box;
@@ -373,78 +385,15 @@ input:focus ~ .helptext {
   display: block;
 }
 
-/* =====================
-   CHATBOT FLOTANTE
-   ===================== */
-#chat-widget {
-  position: fixed;
-  bottom: 25px;
-  right: 25px;
-  z-index: 1000;
+/* ─── CURSOR ─── */
+#cursor {
+  width: 10px; height: 10px;
+  background: var(--dorado); border-radius: 50%;
+  position: fixed; top: 0; left: 0;
+  pointer-events: none; z-index: 99999;
+  transform: translate(-50%,-50%);
+  display: none;
+  transition: width .25s, height .25s, background .25s;
 }
-
-#chat-button {
-  background: var(--azul-petroleo);
-  color: var(--blanco);
-  border: none;
-  padding: 14px 22px;
-  border-radius: 50px;
-  font-weight: 600;
-  cursor: pointer;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
-  transition: transform 0.3s ease;
-}
-
-#chat-button:hover {
-  transform: scale(1.05);
-  background: var(--verde-oscuro);
-}
-
-#chat {
-  position: absolute;
-  bottom: 75px;
-  right: 0;
-  width: 320px;
-  height: 450px;
-  background: var(--blanco);
-  border-radius: 15px;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  border: 1px solid #eee;
-}
-
-.chat-header {
-  background: var(--verde-oscuro);
-  color: var(--blanco);
-  padding: 15px;
-  font-size: 16px;
-}
-
-#messages {
-  flex: 1;
-  padding: 15px;
-  overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  font-size: 14px;
-}
-
-.chat-input-area {
-  display: flex;
-  padding: 12px;
-  border-top: 1px solid #eee;
-  gap: 8px;
-}
-
-.chat-input-area input {
-  margin: 0;
-  max-width: none;
-  padding: 8px;
-}
-
-.chat-input-area button {
-  padding: 8px 15px;
-}
+#cursor.grow { width: 36px; height: 36px; background: transparent; border: 1px solid var(--dorado); }
+@media (hover:hover) and (pointer:fine) { #cursor { display: block; } }
