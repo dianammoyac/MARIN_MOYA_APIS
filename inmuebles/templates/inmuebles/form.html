@@ -479,8 +479,8 @@
               <div class="tipo-grid" id="tipoGrid">
                 {% for code, name in form.fields.tipo.choices %}
                   {% if code %}
-                  <div class="tipo-opt {% if form.tipo.value == code %}selected{% endif %}" onclick="selectTipo(this, '{{ code }}')">
-                    <input type="radio" name="tipo" value="{{ code }}" {% if form.tipo.value == code %}checked{% endif %}/>
+                  <div class="tipo-opt {% if form.tipo.value|stringformat:'s' == code|stringformat:'s' %}selected{% endif %}" onclick="selectTipo(this, '{{ code }}')">
+                    <input type="radio" name="tipo" value="{{ code }}" {% if form.tipo.value|stringformat:'s' == code|stringformat:'s' %}checked{% endif %}/>
                     <div class="tipo-icon">{{ name|slice:":2" }}</div>
                     <div class="tipo-name">{{ name }}</div>
                   </div>
@@ -491,9 +491,9 @@
             <div class="field">
               <label>Tipo de operación</label>
               <div class="op-group">
-                <button type="button" class="op-btn {% if form.operacion.value == 'VENTA' or not form.operacion.value %}active{% endif %}" onclick="selectOp(this, 'VENTA')">Venta</button>
-                <button type="button" class="op-btn {% if form.operacion.value == 'ARRIENDO' %}active{% endif %}" onclick="selectOp(this, 'ARRIENDO')">Arriendo</button>
-                <button type="button" class="op-btn {% if form.operacion.value == 'CESION' %}active{% endif %}" onclick="selectOp(this, 'CESION')">Cesión</button>
+                <button type="button" class="op-btn {% if form.operacion.value|stringformat:'s' == 'VENTA' or not form.operacion.value %}active{% endif %}" onclick="selectOp(this, 'VENTA')">Venta</button>
+                <button type="button" class="op-btn {% if form.operacion.value|stringformat:'s' == 'ARRIENDO' %}active{% endif %}" onclick="selectOp(this, 'ARRIENDO')">Arriendo</button>
+                <button type="button" class="op-btn {% if form.operacion.value|stringformat:'s' == 'CESION' %}active{% endif %}" onclick="selectOp(this, 'CESION')">Cesión</button>
               </div>
               <input type="hidden" name="operacion" id="operacionInput" value="{{ form.operacion.value|default:'VENTA' }}"/>
             </div>
@@ -501,9 +501,9 @@
             <div class="field" style="margin-top: 24px;">
               <label>Estado físico</label>
               <div class="op-group">
-                <button type="button" class="op-btn {% if form.estado.value == 'NUEVO' %}active{% endif %}" onclick="selectEstado(this, 'NUEVO')">Nuevo</button>
-                <button type="button" class="op-btn {% if form.estado.value == 'USADO' or not form.estado.value %}active{% endif %}" onclick="selectEstado(this, 'USADO')">Usado</button>
-                <button type="button" class="op-btn {% if form.estado.value == 'EN_CONSTRUCCION' %}active{% endif %}" onclick="selectEstado(this, 'EN_CONSTRUCCION')">En obra</button>
+                <button type="button" class="op-btn {% if form.estado.value|stringformat:'s' == 'NUEVO' %}active{% endif %}" onclick="selectEstado(this, 'NUEVO')">Nuevo</button>
+                <button type="button" class="op-btn {% if form.estado.value|stringformat:'s' == 'USADO' or not form.estado.value %}active{% endif %}" onclick="selectEstado(this, 'USADO')">Usado</button>
+                <button type="button" class="op-btn {% if form.estado.value|stringformat:'s' == 'EN_CONSTRUCCION' %}active{% endif %}" onclick="selectEstado(this, 'EN_CONSTRUCCION')">En obra</button>
               </div>
               <input type="hidden" name="estado" id="estadoInput" value="{{ form.estado.value|default:'USADO' }}"/>
             </div>
@@ -532,7 +532,7 @@
                 </select>
               </div>
               <div class="field"><label>Precio *</label>
-                <div class="input-group"><span class="input-prefix">$</span><input type="number" name="precio" value="{{ form.precio.value|default:'' }}" required/></div>
+                <div class="input-group"><span class="input-prefix">$</span><input type="number" name="precio" value="{{ form.precio.value|stringformat:'s'|default:'' }}" step="any" required/></div>
               </div>
               <div class="field"><label>Estrato</label><input type="number" name="estrato" value="{{ form.estrato.value|default:'' }}"/></div>
             </div>
@@ -545,7 +545,7 @@
           <div class="fs-header"><div class="fs-num">III</div><div><div class="fs-title">Características</div><div class="fs-sub">Área, habitaciones y baños</div></div></div>
           <div class="fs-body">
             <div class="form-row three">
-              <div class="field"><label>Área construida (m²) *</label><input type="number" name="area_m2" value="{{ form.area_m2.value|default:'' }}" required/></div>
+              <div class="field"><label>Área construida (m²) *</label><input type="number" name="area_m2" value="{{ form.area_m2.value|stringformat:'s'|default:'' }}" step="any" required/></div>
               <div class="field"><label>Parqueaderos</label><input type="number" name="parqueaderos" value="{{ form.parqueaderos.value|default:'0' }}"/></div>
               <div class="field"><label>Piso</label><input type="number" name="piso" value="{{ form.piso.value|default:'' }}"/></div>
             </div>
