@@ -8,4 +8,5 @@ staticfiles/
 .vscode/
 .idea/
 venv/
+.venv/
 mysql_data/
