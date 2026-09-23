@@ -33,7 +33,7 @@ function toggleChat() {
             btn.classList.add('open');
             if (dot) dot.classList.add('hidden');
             if (messages.length === 0) {
-                setTimeout(() => botMessage('¡Hola! Soy el asistente de Marín Moya Inversiones. ¿En qué puedo ayudarte hoy?'), 400);
+                setTimeout(() => botMessage('¡Hola! Soy el asistente de Raizenta. ¿En qué puedo ayudarte hoy?'), 400);
             }
         } else {
             win.classList.remove('open');
@@ -112,8 +112,8 @@ function getResponse(input) {
     const i = input.toLowerCase()
         .normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 
-    if (/(empresa|portal|quienes|marin moya|plataforma|que es|quiénes)/.test(i))
-        return 'Marín Moya Inversiones (M²) es un portal inmobiliario colombiano que centraliza la publicación y gestión de propiedades para conectar compradores, arrendatarios e inversores con los mejores inmuebles del país.';
+    if (/(empresa|portal|quienes|raizenta|plataforma|que es|quiénes)/.test(i))
+        return 'Raizenta es un portal inmobiliario colombiano que centraliza la publicación y gestión de propiedades para conectar compradores, arrendatarios e inversores con los mejores inmuebles del país.';
     
     if (/(tipo|tipos|inmueble|que manejan|que tienen|que ofrecen|que vendes|que venden)/.test(i))
         return 'Manejamos <strong>apartamentos, casas, locales comerciales, oficinas, lotes y bodegas</strong>. Cada propiedad incluye precio en COP y USD, ubicación, fotos y descripción completa.';
@@ -155,7 +155,7 @@ function getResponse(input) {
         return '¡Con gusto! Si tenés más preguntas sobre propiedades o el portal, estoy aquí. 🏡';
 
     if (/(hola|buenas|buenos dias|buenos días|buenas tardes|buenas noches|hey|hi)/.test(i))
-        return '¡Hola! Soy el asistente virtual de Marín Moya Inversiones. Podés preguntarme sobre inmuebles, precios, ciudades, cómo publicar o cómo registrarte.';
+        return '¡Hola! Soy el asistente virtual de Raizenta. Podés preguntarme sobre inmuebles, precios, ciudades, cómo publicar o cómo registrarte.';
 
     return 'No entendí bien tu pregunta. Podés consultarme sobre: <strong>tipos de inmueble, ciudades, venta, arriendo, cesión, precios, cómo publicar, registro o contacto</strong>.';
 }
