@@ -7,7 +7,14 @@ SECRET_KEY = 'django-insecure-*ib+7z6d+9^ta!m68tp&_dh%b0clwfsuq+xzysgqq$_$8kz&3*
 
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    '3.208.22.207',
+    '54.243.200.132',
+    'raizenta.com',
+    'www.raizenta.com',
+    'localhost',
+    '127.0.0.1',
+]
 
 INSTALLED_APPS = [
     'django.contrib.admin',
