@@ -234,13 +234,15 @@ def simular(request, identificador):
             uso_guia = True
         if recursos is None or aporte is None:
             return error('Indique recursos y aporte mensual para simular la cuota inicial.')
-        recursos_cop = a_cop(recursos, moneda_perfil, referencia_cambio)
+        recursos_cop = decimal_campo(a_cop(recursos, moneda_perfil, referencia_cambio), 'recursos')
         aporte_cop = a_cop(aporte, moneda_perfil, referencia_cambio)
         meses = entrada.get('meses_inicial', 0)
-        separacion_cop = a_cop(entrada.get('separacion', 0), moneda_perfil, referencia_cambio)
+        separacion_cop = decimal_campo(a_cop(entrada.get('separacion', 0), moneda_perfil, referencia_cambio), 'separacion')
         incluye_separacion = entrada.get('separacion_incluida_en_recursos')
-        if separacion_cop > 0 and incluye_separacion not in ('SI', 'NO'):
+        if separacion_cop > 0 and recursos_cop > 0 and incluye_separacion not in ('SI', 'NO'):
             return error('Indique si los recursos disponibles incluyen el dinero de la separación.')
+        if separacion_cop > 0 and recursos_cop == 0:
+            incluye_separacion = 'SI'
         cuota_inicial = inicial(precio_cop, porcentaje, recursos_cop, meses, aporte_cop,
                                 separacion_cop, separacion_incluida_en_recursos=(incluye_separacion == 'SI'))
         pago = valor(p.respuestas, 'pago')

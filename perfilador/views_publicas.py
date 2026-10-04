@@ -123,10 +123,15 @@ def calcular_escenario(respuestas, entrada, inmueble):
     else:
         origen_separacion = 'HIPOTESIS'
         separacion_cop = a_cop(separacion if separacion is not None else 0, moneda_perfil, cambio)
+    separacion_cop = decimal_campo(separacion_cop, 'separacion')
+    recursos_cop = decimal_campo(a_cop(recursos, moneda_perfil, cambio), 'recursos')
     incluye_separacion = entrada.get('separacion_incluida_en_recursos')
-    if separacion_cop > 0 and incluye_separacion not in ('SI', 'NO'):
+    if separacion_cop > 0 and recursos_cop > 0 and incluye_separacion not in ('SI', 'NO'):
         raise ValueError('Indique si los recursos disponibles incluyen el dinero de la separación.')
-    plan = inicial(precio_cop, porcentaje, a_cop(recursos, moneda_perfil, cambio),
+    # Sin recursos no se puede dar la separación por cubierta con dinero aparte.
+    if separacion_cop > 0 and recursos_cop == 0:
+        incluye_separacion = 'SI'
+    plan = inicial(precio_cop, porcentaje, recursos_cop,
                    meses, a_cop(aporte, moneda_perfil, cambio),
                    separacion_cop, separacion_incluida_en_recursos=(incluye_separacion == 'SI'))
     pago = valor(respuestas, 'pago')

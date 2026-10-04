@@ -481,6 +481,27 @@ class ApiTests(TestCase):
         self.assertEqual(inicial_adicional['cuota_mensual'], '24000000')
         self.assertFalse(Perfilacion.objects.exists())
 
+    def test_sin_recursos_no_exige_pregunta_y_muestra_separacion_pendiente(self):
+        from .servicios.preguntas import VERSION
+        casa = vivienda(1, estado='EN_CONSTRUCCION', modalidad_entrega='SOBRE_PLANOS',
+                        meses_entrega=5, porcentaje_inicial_exigido=Decimal('30'),
+                        valor_separacion=Decimal('5000000'))
+        entrada = {'version': VERSION, 'respuestas': normalizar_respuestas(base_perfil(), {}),
+                   'inmueble': casa.pk, 'porcentaje_inicial': '30', 'separacion': '5000000',
+                   'recursos': '0', 'aporte_mensual': '2000000'}
+        ruta = '/api/perfilador/simular/'
+        sin_respuesta = self.enviar(self.a, ruta, entrada, self.csrf_a)
+        self.assertEqual(sin_respuesta.status_code, 200, sin_respuesta.content)
+        plan = sin_respuesta.json()['resultado']['inicial']
+        self.assertEqual(plan['faltante_separacion'], '5000000')
+        self.assertEqual(plan['cuota_mensual'], '29000000')
+        self.assertEqual(plan['faltante'], '140000000')
+        self.assertTrue(plan['separacion_incluida_en_recursos'])
+        # Un cliente no debe poder afirmar fondos independientes sin haberlos declarado.
+        contradictorio = self.enviar(self.a, ruta, {**entrada, 'separacion_incluida_en_recursos': 'NO'}, self.csrf_a)
+        self.assertEqual(contradictorio.status_code, 200, contradictorio.content)
+        self.assertEqual(contradictorio.json()['resultado']['inicial'], plan)
+
     def crear(self):
         r = self.enviar(self.a, '/api/perfilador/perfilaciones/', {}, self.csrf_a)
         self.assertEqual(r.status_code, 201)

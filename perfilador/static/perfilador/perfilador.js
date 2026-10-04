@@ -355,8 +355,8 @@
           separacionPrefill=monedaPerfil()==='USD'?separacionCop/Number(cambio.cop_por_usd):separacionCop;
         }
         $('form-simular').elements.separacion.value=o.valor_separacion!=null?separacionPrefill:'';
-        actualizarPreguntaSeparacion(true);
         $('form-simular').elements.recursos.value=valor('recursos')||'';
+        actualizarPreguntaSeparacion(true);
         $('form-simular').elements.aporte_mensual.value=valor('aporte_mensual')||'';
         document.querySelectorAll('.sim-moneda').forEach(el=>el.textContent=`(${monedaPerfil()})`);
         $('meses-fijados').textContent=o.modalidad_entrega==='SOBRE_PLANOS'&&o.meses_entrega!=null?`Entrega declarada en ${o.meses_entrega} meses. Al calcular se usan los meses restantes en vivo (la fecha de entrega queda fija).`:'Entrega inmediata: la cuota inicial debe cubrirse con los recursos actuales (0 meses para aportar).';
@@ -372,10 +372,11 @@
   }
   $('form-simular').elements.porcentaje_inicial.addEventListener('input',()=>{$('porcentaje-es-proyecto').value='NO';});
   $('form-simular').elements.separacion.addEventListener('input',()=>{$('separacion-es-proyecto').value='NO';actualizarPreguntaSeparacion(true);});
+  $('form-simular').elements.recursos.addEventListener('input',()=>actualizarPreguntaSeparacion());
   function actualizarPreguntaSeparacion(limpiarRespuesta=false){
     const form=$('form-simular');
     if(!form)return;
-    const aplica=Number(form.elements.separacion.value||0)>0;
+    const aplica=Number(form.elements.separacion.value||0)>0 && Number(form.elements.recursos.value||0)>0;
     const selector=form.elements.separacion_incluida_en_recursos;
     $('incluye-separacion-contenedor').hidden=!aplica;
     selector.required=aplica;
@@ -406,7 +407,9 @@
       fila('Meses para la inicial',`${x.meses_inicial} (${origenMeses})`);
       fila(x.origen_porcentaje_inicial==='EXIGIDO_PROYECTO'?'Inicial exigida por el proyecto':'Inicial hipotética',money(x.inicial.cuota_inicial));
       fila('(−) Separación (cuota 0)',money(x.inicial.separacion_incluida_en_inicial)+(x.origen_separacion==='EXIGIDO_PROYECTO'?' (exigida por el proyecto)':''));
-      if(x.inicial.separacion_incluida_en_recursos){
+      if(Number(x.inicial.recursos_declarados)===0){
+        fila('Recursos disponibles',money(0));
+      }else if(x.inicial.separacion_incluida_en_recursos){
         fila('Recursos declarados (incluyen separación)',money(x.inicial.recursos_declarados));
         fila('(−) Separación cubierta con esos recursos',money(x.inicial.separacion_desde_recursos));
         fila('Recursos restantes para las cuotas',money(x.inicial.recursos_aplicables));
