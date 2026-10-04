@@ -270,6 +270,24 @@ class CatalogoYMotorTests(TestCase):
         self.assertIn('Fecha de entrega', sin_dato['pendientes_catalogo'])
         self.assertNotIn('Fecha de entrega', planos['pendientes_catalogo'])
 
+    def test_pendientes_de_inicial_solo_si_falta_dato_real(self):
+        from .servicios.catalogo import ficha
+        completo = ficha(vivienda(1, modalidad_entrega='SOBRE_PLANOS', meses_entrega=9,
+                                 porcentaje_inicial_exigido=Decimal('30'), valor_separacion=Decimal('5000000')))
+        incompleto = ficha(vivienda(2, modalidad_entrega='SOBRE_PLANOS', meses_entrega=9))
+        terminado = ficha(vivienda(3))
+        self.assertEqual(completo['pendientes_catalogo'], [])
+        self.assertEqual(terminado['pendientes_catalogo'], [])
+        self.assertIn('Porcentaje de cuota inicial pendiente de publicar', incompleto['pendientes_catalogo'])
+        self.assertIn('Valor de separación pendiente de publicar', incompleto['pendientes_catalogo'])
+
+    def test_vivir_no_genera_pendiente_generico_de_proposito(self):
+        vivienda(1)
+        perfil = normalizar_respuestas({'proposito': respuesta('VIVIR')}, {})
+        evaluacion = evaluar_perfil(perfil)
+        self.assertEqual(evaluacion['opciones'][0]['pendientes'], [])
+        self.assertEqual(evaluacion['opciones'][0]['pendientes_catalogo'], [])
+
     def test_modalidad_entrega_exige_coherencia(self):
         from django.core.exceptions import ValidationError
         casa = vivienda(1, estado='EN_CONSTRUCCION', modalidad_entrega='SOBRE_PLANOS')
@@ -304,7 +322,7 @@ class CatalogoYMotorTests(TestCase):
         respuestas = normalizar_respuestas(base, {})
         planos = vivienda(1, modalidad_entrega='SOBRE_PLANOS', meses_entrega=12,
                           porcentaje_inicial_exigido=Decimal('30'), valor_separacion=Decimal('2000000'))
-        entrada = {'recursos': '60000000', 'aporte_mensual': '4000000'}
+        entrada = {'recursos': '60000000', 'aporte_mensual': '4000000', 'separacion_incluida_en_recursos': 'SI'}
         resultado = calcular_escenario(respuestas, dict(entrada), planos)
         self.assertEqual(resultado['porcentaje_inicial'], '30')
         self.assertEqual(resultado['origen_porcentaje_inicial'], 'EXIGIDO_PROYECTO')
@@ -313,6 +331,21 @@ class CatalogoYMotorTests(TestCase):
         personal = calcular_escenario(respuestas, {**entrada, 'porcentaje_inicial': 20, 'separacion': '500000'}, planos)
         self.assertEqual(personal['origen_porcentaje_inicial'], 'HIPOTESIS')
         self.assertEqual(personal['origen_separacion'], 'HIPOTESIS')
+
+    def test_separacion_del_proyecto_se_convierte_desde_su_moneda(self):
+        from .views_publicas import calcular_escenario
+        ReferenciaCambio.objects.create(cop_por_usd=Decimal('4000'), fecha=date.today(),
+                                        fuente='https://example.org/trm')
+        respuestas = normalizar_respuestas(base_perfil(), {})
+        inmueble = vivienda(1, precio=Decimal('100000'), moneda='USD',
+                            modalidad_entrega='SOBRE_PLANOS', meses_entrega=5,
+                            valor_separacion=Decimal('1000'))
+        resultado = calcular_escenario(respuestas, {
+            'porcentaje_inicial': '30', 'recursos': '12000000', 'aporte_mensual': '2000000',
+            'separacion_es_proyecto': 'SI', 'separacion_incluida_en_recursos': 'NO',
+        }, inmueble)
+        self.assertEqual(resultado['inicial']['separacion_incluida_en_inicial'], '4000000')
+        self.assertEqual(resultado['inicial']['recursos_aplicables'], '12000000')
 
     def test_simulador_fija_meses_segun_entrega_del_inmueble(self):
         from .views_publicas import calcular_escenario
@@ -365,13 +398,34 @@ class FinanzasTests(TestCase):
 
     def test_hitos_separacion_y_plazo_cero(self):
         x = inicial(500000000, 30, 60000000, 24, 4000000, separacion=70000000,
-                    hitos=[{'mes': 1, 'monto': 70000000}])
+                    hitos=[{'mes': 1, 'monto': 70000000}], separacion_incluida_en_recursos=True)
         self.assertEqual(x['cuota_inicial'], '150000000')
         self.assertEqual(x['faltante'], '0')
-        self.assertEqual((x['cuota_mensual'], x['faltante_mensual']), ('833333', '0'))
+        self.assertEqual((x['faltante_separacion'], x['cuota_mensual']), ('10000000', '3333333'))
         self.assertTrue(x['alertas'])
         self.assertEqual(inicial(100, 20, 30, 0, 0)['faltante'], '0')
         self.assertEqual(inicial(100, 20, 0, 0, 0)['cuota_mensual'], '20')
+
+    def test_separacion_cuota_cero_y_recursos_sin_doble_conteo(self):
+        dentro = inicial(500000000, 30, 25000000, 5, 0, separacion=5000000,
+                         separacion_incluida_en_recursos=True)
+        fuera = inicial(500000000, 30, 25000000, 5, 0, separacion=5000000,
+                        separacion_incluida_en_recursos=False)
+        self.assertEqual(dentro['separacion_desde_recursos'], '5000000')
+        self.assertEqual(dentro['recursos_aplicables'], '20000000')
+        self.assertEqual((dentro['por_reunir'], dentro['cuota_mensual']), ('125000000', '25000000'))
+        self.assertEqual(fuera['separacion_desde_recursos'], '0')
+        self.assertEqual(fuera['recursos_aplicables'], '25000000')
+        self.assertEqual((fuera['por_reunir'], fuera['cuota_mensual']), ('120000000', '24000000'))
+
+    def test_separacion_cuota_cero_insuficiente_se_advierte_y_no_se_duplica(self):
+        plan = inicial(500000000, 30, 3000000, 5, 2000000, separacion=5000000,
+                       separacion_incluida_en_recursos=True)
+        self.assertEqual(plan['faltante_separacion'], '2000000')
+        self.assertEqual(plan['recursos_aplicables'], '0')
+        self.assertEqual(plan['cuota_mensual'], '29000000')
+        self.assertEqual(plan['faltante'], '137000000')
+        self.assertTrue(any(hito['mes'] == 0 for hito in plan['alertas']))
 
     def test_cuenta_regresiva_desde_fecha_fija(self):
         from datetime import date
@@ -403,6 +457,29 @@ class ApiTests(TestCase):
 
     def enviar(self, cliente, ruta, cuerpo, csrf, metodo='post'):
         return getattr(cliente, metodo)(ruta, data=json.dumps(cuerpo), content_type='application/json', HTTP_X_CSRFTOKEN=csrf)
+
+    def test_simulacion_publica_exige_aclarar_si_recursos_incluyen_separacion(self):
+        from .servicios.preguntas import VERSION
+        casa = vivienda(1, estado='EN_CONSTRUCCION', modalidad_entrega='SOBRE_PLANOS',
+                        meses_entrega=5, porcentaje_inicial_exigido=Decimal('30'),
+                        valor_separacion=Decimal('5000000'))
+        base = {'version': VERSION, 'respuestas': normalizar_respuestas(base_perfil(), {}),
+                'inmueble': casa.pk, 'porcentaje_inicial': '30', 'separacion': '5000000',
+                'recursos': '25000000', 'aporte_mensual': '2000000'}
+        ruta = '/api/perfilador/simular/'
+        falta = self.enviar(self.a, ruta, base, self.csrf_a)
+        self.assertEqual(falta.status_code, 400)
+        self.assertIn('incluyen', falta.json()['error'])
+        incluido = self.enviar(self.a, ruta, {**base, 'separacion_incluida_en_recursos': 'SI'}, self.csrf_a)
+        adicional = self.enviar(self.a, ruta, {**base, 'separacion_incluida_en_recursos': 'NO'}, self.csrf_a)
+        self.assertEqual(incluido.status_code, 200, incluido.content)
+        self.assertEqual(adicional.status_code, 200, adicional.content)
+        inicial_incluida = incluido.json()['resultado']['inicial']
+        inicial_adicional = adicional.json()['resultado']['inicial']
+        self.assertEqual(inicial_incluida['separacion_desde_recursos'], '5000000')
+        self.assertEqual(inicial_incluida['cuota_mensual'], '25000000')
+        self.assertEqual(inicial_adicional['cuota_mensual'], '24000000')
+        self.assertFalse(Perfilacion.objects.exists())
 
     def crear(self):
         r = self.enviar(self.a, '/api/perfilador/perfilaciones/', {}, self.csrf_a)

@@ -237,8 +237,12 @@ def simular(request, identificador):
         recursos_cop = a_cop(recursos, moneda_perfil, referencia_cambio)
         aporte_cop = a_cop(aporte, moneda_perfil, referencia_cambio)
         meses = entrada.get('meses_inicial', 0)
+        separacion_cop = a_cop(entrada.get('separacion', 0), moneda_perfil, referencia_cambio)
+        incluye_separacion = entrada.get('separacion_incluida_en_recursos')
+        if separacion_cop > 0 and incluye_separacion not in ('SI', 'NO'):
+            return error('Indique si los recursos disponibles incluyen el dinero de la separación.')
         cuota_inicial = inicial(precio_cop, porcentaje, recursos_cop, meses, aporte_cop,
-                                a_cop(entrada.get('separacion', 0), moneda_perfil, referencia_cambio))
+                                separacion_cop, separacion_incluida_en_recursos=(incluye_separacion == 'SI'))
         pago = valor(p.respuestas, 'pago')
         if pago == 'CONTADO' and decimal_campo(porcentaje, 'porcentaje_inicial', Decimal('100')) != 100:
             return error('Para compra de contado indique el 100 % del precio como aporte a la compra.')

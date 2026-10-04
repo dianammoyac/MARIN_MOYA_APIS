@@ -345,9 +345,17 @@
       const detalle=document.createElement('a');detalle.href=o.url;detalle.textContent='Ver inmueble ↗';acciones.append(detalle);
       const sim=document.createElement('button');sim.type='button';sim.className='secundario';sim.textContent='Simular compra';sim.onclick=()=>{
         inmuebleElegido=o.id;$('simular-titulo').textContent=`${o.titulo} · ${precioOpcion(o,cambio)}`;
+        $('porcentaje-es-proyecto').value=o.porcentaje_inicial_exigido!=null?'SI':'NO';
         if(o.porcentaje_inicial_exigido!=null)$('form-simular').elements.porcentaje_inicial.value=o.porcentaje_inicial_exigido;
-        if(valor('pago')==='CONTADO')$('form-simular').elements.porcentaje_inicial.value='100';
-        $('form-simular').elements.separacion.value=o.valor_separacion||'';
+        if(valor('pago')==='CONTADO'){$('form-simular').elements.porcentaje_inicial.value='100';$('porcentaje-es-proyecto').value='NO';}
+        $('separacion-es-proyecto').value=o.valor_separacion!=null?'SI':'NO';
+        let separacionPrefill=Number(o.valor_separacion||0);
+        if(o.valor_separacion!=null&&o.moneda!==monedaPerfil()&&cambio){
+          const separacionCop=o.moneda==='USD'?separacionPrefill*Number(cambio.cop_por_usd):separacionPrefill;
+          separacionPrefill=monedaPerfil()==='USD'?separacionCop/Number(cambio.cop_por_usd):separacionCop;
+        }
+        $('form-simular').elements.separacion.value=o.valor_separacion!=null?separacionPrefill:'';
+        actualizarPreguntaSeparacion(true);
         $('form-simular').elements.recursos.value=valor('recursos')||'';
         $('form-simular').elements.aporte_mensual.value=valor('aporte_mensual')||'';
         document.querySelectorAll('.sim-moneda').forEach(el=>el.textContent=`(${monedaPerfil()})`);
@@ -362,6 +370,17 @@
     if(datosCliente.celular){$('form-asesoria').elements.telefono.value=datosCliente.celular;$('form-asesoria').elements.preferencia_contacto.value='TELEFONO';}
     $('asesoria').hidden=false;
   }
+  $('form-simular').elements.porcentaje_inicial.addEventListener('input',()=>{$('porcentaje-es-proyecto').value='NO';});
+  $('form-simular').elements.separacion.addEventListener('input',()=>{$('separacion-es-proyecto').value='NO';actualizarPreguntaSeparacion(true);});
+  function actualizarPreguntaSeparacion(limpiarRespuesta=false){
+    const form=$('form-simular');
+    if(!form)return;
+    const aplica=Number(form.elements.separacion.value||0)>0;
+    const selector=form.elements.separacion_incluida_en_recursos;
+    $('incluye-separacion-contenedor').hidden=!aplica;
+    selector.required=aplica;
+    if(!aplica||limpiarRespuesta)selector.value='';
+  }
   function mostrarComparacion(){
     const ids=[...document.querySelectorAll('.comparar:checked')].map(x=>Number(x.value));
     if(ids.length!==2){estado('Selecciona exactamente dos opciones para comparar.');return;}
@@ -375,7 +394,7 @@
     datos.usar_aporte_orientativo=f.has('usar_aporte_orientativo');
     if(datos.usar_aporte_orientativo && !datos.aporte_mensual)delete datos.aporte_mensual;
     if(!datos.tasa_ea||datos.referencia)delete datos.tasa_ea;if(!datos.referencia)delete datos.referencia;
-    if(!datos.recursos)delete datos.recursos;if(!datos.aporte_mensual)delete datos.aporte_mensual;if(!datos.separacion)delete datos.separacion;if(!datos.porcentaje_inicial)delete datos.porcentaje_inicial;
+    if(!datos.recursos)delete datos.recursos;if(!datos.aporte_mensual)delete datos.aporte_mensual;if(!datos.separacion){delete datos.separacion;delete datos.separacion_incluida_en_recursos;}if(!datos.porcentaje_inicial)delete datos.porcentaje_inicial;
     estado('Calculando el escenario…');
     try{const r=await pedir('simular/','POST',datos),x=r.resultado;
       const money=v=>formatear(v,x.moneda_perfil,x.cambio);
@@ -385,9 +404,16 @@
       const tabla=document.createElement('table');tabla.className='tabla';
       const fila=(c,v)=>{const tr=document.createElement('tr');const a=document.createElement('td');a.textContent=c;const b=document.createElement('td');b.textContent=v;tr.append(a,b);tabla.append(tr);};
       fila('Meses para la inicial',`${x.meses_inicial} (${origenMeses})`);
-      fila('Inicial hipotética',money(x.inicial.cuota_inicial)+(x.origen_porcentaje_inicial==='EXIGIDO_PROYECTO'?' (exigida por el proyecto)':''));
-      fila('(−) Separación',money(x.inicial.separacion_incluida_en_inicial)+(x.origen_separacion==='EXIGIDO_PROYECTO'?' (exigida por el proyecto)':''));
-      fila('(−) Recursos disponibles',money(x.inicial.recursos_aplicables));
+      fila(x.origen_porcentaje_inicial==='EXIGIDO_PROYECTO'?'Inicial exigida por el proyecto':'Inicial hipotética',money(x.inicial.cuota_inicial));
+      fila('(−) Separación (cuota 0)',money(x.inicial.separacion_incluida_en_inicial)+(x.origen_separacion==='EXIGIDO_PROYECTO'?' (exigida por el proyecto)':''));
+      if(x.inicial.separacion_incluida_en_recursos){
+        fila('Recursos declarados (incluyen separación)',money(x.inicial.recursos_declarados));
+        fila('(−) Separación cubierta con esos recursos',money(x.inicial.separacion_desde_recursos));
+        fila('Recursos restantes para las cuotas',money(x.inicial.recursos_aplicables));
+      }else{
+        fila('(−) Recursos disponibles aparte de la separación',money(x.inicial.recursos_aplicables));
+      }
+      if(Number(x.inicial.faltante_separacion)>0)fila('Faltante inmediato para completar la separación',money(x.inicial.faltante_separacion));
       fila('(=) Por reunir',money(x.inicial.por_reunir));
       fila('Cuota mensual requerida',money(x.inicial.cuota_mensual)+(x.meses_inicial==='0'?' (pago único)':` durante ${x.meses_inicial} meses`));
       fila('Faltante mensual con tu aporte',money(x.inicial.faltante_mensual));

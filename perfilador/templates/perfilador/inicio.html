@@ -9,7 +9,7 @@
   <style>.campo-dinero{border:1px solid var(--borde);background:#fff}.campo-dinero label{margin:0;padding:12px 12px 4px}.campo-dinero input{border:none!important;margin-top:4px}.campo-dinero input:focus-visible{outline-offset:-3px}.vista-moneda{margin:0;padding:0 12px 12px;font-weight:500}.resumen-fuentes{font-weight:500;margin:14px 0 0}.grupo-opciones{display:flex;flex-direction:column;gap:10px;margin-top:8px}.opcion-fila{display:flex;align-items:center;gap:12px;border:1px solid var(--borde);background:#fff;padding:12px 14px;cursor:pointer}.opcion-fila:hover{border-color:var(--dorado)}.opcion-fila input{accent-color:var(--dorado);width:18px;height:18px;flex-shrink:0}.opcion-fila label{margin:0;font-weight:400;cursor:pointer}</style>
   <style>.resumen-perfil{border-bottom:1px solid var(--borde);padding-bottom:22px;margin-bottom:30px}.resumen-perfil h2{margin-bottom:8px}.resumen-perfil dl{display:grid;grid-template-columns:minmax(110px,38%) minmax(0,1fr);gap:12px 16px;margin:20px 0 0;font-size:14px}.resumen-perfil dt{color:var(--gris)}.resumen-perfil dd{margin:0;font-weight:500;overflow-wrap:anywhere}.resumen-perfil .nota{margin:0}@media(max-width:420px){.resumen-perfil dl{grid-template-columns:1fr;gap:3px}.resumen-perfil dd{margin-bottom:10px}}</style>
   <style>.datos-opcionales{border-bottom:1px solid var(--borde);padding-bottom:22px;margin-bottom:28px}.datos-opcionales h2{font-size:23px;margin:8px 0}.datos-opcionales .nota{margin:4px 0 12px}.datos-opcionales button{margin-top:8px}</style>
-  <script src="{% static 'perfilador/perfilador.js' %}?v=15" defer></script>
+  <script src="{% static 'perfilador/perfilador.js' %}?v=16" defer></script>
 </head>
 <body>
   <header class="barra"><a class="marca" href="{% url 'index2' %}">RAIZENTA <small>INVERSIONES</small></a>
@@ -63,10 +63,16 @@
             <h3>Explore cómo cambiaría su plan de compra</h3><p id="simular-titulo"></p>
             <form id="form-simular">
               <p class="nota" id="meses-fijados" aria-live="polite"></p>
-              <div class="campos-grid"><label>Inicial hipotética (%)<input name="porcentaje_inicial" type="number" min="0" max="100" step="1" value="30" required></label>
-                <label>Separación (opcional)<input name="separacion" type="number" min="0" step="1"></label>
+              <div class="campos-grid"><label>Inicial indicada por el proyecto o hipotética (%)<input name="porcentaje_inicial" type="number" min="0" max="100" step="1" value="30" required></label>
+                <input name="porcentaje_es_proyecto" id="porcentaje-es-proyecto" type="hidden" value="NO">
+                <label>Separación (cuota 0) <span id="separacion-moneda" class="sim-moneda"></span><input name="separacion" type="number" min="0" step="1"></label>
+                <input name="separacion_es_proyecto" id="separacion-es-proyecto" type="hidden" value="NO">
                 <label>Recursos disponibles <span class="sim-moneda"></span><input name="recursos" type="number" min="0" step="1"></label>
                 <label>Aporte mensual <span class="sim-moneda"></span><input name="aporte_mensual" type="number" min="0" step="1"></label>
+                <label id="incluye-separacion-contenedor" hidden>¿Tus recursos disponibles incluyen la separación?
+                  <select name="separacion_incluida_en_recursos" id="separacion-incluida"><option value="">Elige una opción</option><option value="SI">Sí, está incluida</option><option value="NO">No, es dinero aparte</option></select>
+                  <span class="nota">Si respondes «Sí», reservamos primero la cuota 0 y el resto reduce tus mensualidades. Si respondes «No», los recursos indicados son adicionales a la separación.</span>
+                </label>
                 <label>Referencia vigente (opcional)<select name="referencia" id="referencia"><option value="">Sin referencia verificada</option></select></label>
                 <label>Tasa hipotética E.A. (decimal, si no elige referencia)<input name="tasa_ea" type="number" min="0" max="1" step="0.0001" placeholder="Ej.: 0.10"></label>
                 <label>Plazo de crédito (años)<input name="anos" type="number" min="1" max="50" value="20"></label></div>

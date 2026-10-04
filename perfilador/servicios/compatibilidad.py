@@ -4,7 +4,7 @@ from .moneda import a_cop
 from .ubicaciones import coincide_ubicacion
 
 PESOS = {'presupuesto': 25, 'entrega': 20, 'habitaciones': 10, 'area_m2': 10,
-         'ciudad': 15, 'proposito': 10, 'parqueadero': 10}
+         'ciudad': 25, 'parqueadero': 10}
 PESOS_INVERSION = {'presupuesto': 25, 'entrega': 20, 'area_m2': 10,
                    'ciudad': 15, 'objetivo_inversion': 10, 'parqueadero': 5, 'prioridad_inversion': 15}
 PESOS_AMBAS = {'presupuesto': 25, 'entrega': 20, 'habitaciones': 8, 'area_m2': 10,

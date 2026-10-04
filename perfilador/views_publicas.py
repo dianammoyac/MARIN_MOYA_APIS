@@ -69,7 +69,10 @@ def calcular_escenario(respuestas, entrada, inmueble):
     if entrada.get('precio_visto') is not None and str(inmueble.precio) != str(entrada['precio_visto']):
         raise ValueError('El precio del inmueble cambió. Recalcule las recomendaciones.')
     porcentaje = entrada.get('porcentaje_inicial')
-    if porcentaje is None and inmueble.porcentaje_inicial_exigido is not None:
+    if entrada.get('porcentaje_es_proyecto') == 'SI' and inmueble.porcentaje_inicial_exigido is not None:
+        porcentaje = inmueble.porcentaje_inicial_exigido
+        origen_porcentaje = 'EXIGIDO_PROYECTO'
+    elif porcentaje is None and inmueble.porcentaje_inicial_exigido is not None:
         porcentaje = inmueble.porcentaje_inicial_exigido
         origen_porcentaje = 'EXIGIDO_PROYECTO'
     else:
@@ -109,14 +112,23 @@ def calcular_escenario(respuestas, entrada, inmueble):
         meses = int(Decimal(str(deseo)))
         origen_meses = 'DESEO_CLIENTE_POR_CONFIRMAR'
     separacion = entrada.get('separacion')
-    if separacion is None and inmueble.valor_separacion is not None:
+    if entrada.get('separacion_es_proyecto') == 'SI' and inmueble.valor_separacion is not None:
         separacion = inmueble.valor_separacion
         origen_separacion = 'EXIGIDO_PROYECTO'
+        separacion_cop = a_cop(separacion, inmueble.moneda, cambio)
+    elif separacion is None and inmueble.valor_separacion is not None:
+        separacion = inmueble.valor_separacion
+        origen_separacion = 'EXIGIDO_PROYECTO'
+        separacion_cop = a_cop(separacion, inmueble.moneda, cambio)
     else:
         origen_separacion = 'HIPOTESIS'
+        separacion_cop = a_cop(separacion if separacion is not None else 0, moneda_perfil, cambio)
+    incluye_separacion = entrada.get('separacion_incluida_en_recursos')
+    if separacion_cop > 0 and incluye_separacion not in ('SI', 'NO'):
+        raise ValueError('Indique si los recursos disponibles incluyen el dinero de la separación.')
     plan = inicial(precio_cop, porcentaje, a_cop(recursos, moneda_perfil, cambio),
                    meses, a_cop(aporte, moneda_perfil, cambio),
-                   a_cop(separacion if separacion is not None else 0, moneda_perfil, cambio))
+                   separacion_cop, separacion_incluida_en_recursos=(incluye_separacion == 'SI'))
     pago = valor(respuestas, 'pago')
     if pago == 'CONTADO' and decimal_campo(porcentaje, 'porcentaje_inicial', Decimal('100')) != 100:
         raise ValueError('Para compra de contado indique el 100 % del precio.')

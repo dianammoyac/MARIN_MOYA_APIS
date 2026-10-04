@@ -28,8 +28,9 @@ def pesos(valor):
     return str(valor.quantize(PESO, rounding=ROUND_HALF_UP))
 
 
-def inicial(precio, porcentaje, recursos, meses, aporte, separacion=0, hitos=None):
-    """Cuota mensual = (inicial - separación - recursos) / meses; el aporte declarado es capacidad."""
+def inicial(precio, porcentaje, recursos, meses, aporte, separacion=0, hitos=None,
+            separacion_incluida_en_recursos=False):
+    """Separa la cuota 0 antes de distribuir el saldo entre meses, sin duplicar recursos."""
     precio = decimal_campo(precio, 'precio')
     porcentaje = decimal_campo(porcentaje, 'porcentaje', Decimal('100'))
     recursos = decimal_campo(recursos, 'recursos')
@@ -42,16 +43,24 @@ def inicial(precio, porcentaje, recursos, meses, aporte, separacion=0, hitos=Non
     cuota = precio * porcentaje / 100
     if separacion > cuota:
         raise ValueError('separacion: no puede superar la cuota inicial.')
-    saldo = max(Decimal('0'), cuota - recursos)
-    disponibles = min(recursos, cuota)
-    por_reunir = max(Decimal('0'), cuota - disponibles - separacion)
+    if separacion_incluida_en_recursos:
+        separacion_desde_recursos = min(separacion, recursos)
+        faltante_separacion = max(Decimal('0'), separacion - recursos)
+        recursos_cuotas = min(max(Decimal('0'), recursos - separacion), max(Decimal('0'), cuota - separacion))
+    else:
+        separacion_desde_recursos = Decimal('0')
+        faltante_separacion = Decimal('0')
+        recursos_cuotas = min(recursos, max(Decimal('0'), cuota - separacion))
+    por_reunir = max(Decimal('0'), cuota - separacion - recursos_cuotas)
     cuota_mensual = por_reunir / meses if meses else por_reunir
-    previstos = disponibles + separacion + aporte * meses
+    separacion_aplicada = separacion_desde_recursos if separacion_incluida_en_recursos else separacion
+    recursos_totales_aplicables = min(cuota, separacion_aplicada + recursos_cuotas)
+    previstos = recursos_totales_aplicables + aporte * meses
     faltante = max(Decimal('0'), cuota - previstos)
     faltante_mensual = max(Decimal('0'), cuota_mensual - aporte) if meses else faltante
     alertas = []
-    if separacion > disponibles:
-        alertas.append({'mes': 0, 'faltante': pesos(separacion - disponibles), 'motivo': 'Separación inmediata'})
+    if faltante_separacion:
+        alertas.append({'mes': 0, 'faltante': pesos(faltante_separacion), 'motivo': 'Separación inmediata'})
     if hitos:
         acumulado = Decimal('0')
         for hito in hitos:
@@ -59,11 +68,17 @@ def inicial(precio, porcentaje, recursos, meses, aporte, separacion=0, hitos=Non
             if mes != int(mes):
                 raise ValueError('hito.mes: indique un entero.')
             acumulado += decimal_campo(hito['monto'], 'hito.monto')
-            disponible = disponibles + aporte * int(mes)
+            disponible = recursos_cuotas + aporte * int(mes)
             if acumulado > disponible:
                 alertas.append({'mes': int(mes), 'faltante': pesos(acumulado - disponible), 'motivo': 'Hito de pago'})
-    return {'cuota_inicial': pesos(cuota), 'recursos_aplicables': pesos(disponibles),
-            'saldo_inicial': pesos(saldo), 'cuota_mensual': pesos(cuota_mensual),
+    return {'cuota_inicial': pesos(cuota), 'recursos_aplicables': pesos(recursos_cuotas),
+            'recursos_declarados': pesos(recursos),
+            'recursos_totales_aplicables': pesos(recursos_totales_aplicables),
+            'separacion_desde_recursos': pesos(separacion_desde_recursos),
+            'faltante_separacion': pesos(faltante_separacion),
+            'separacion_incluida_en_recursos': bool(separacion_incluida_en_recursos),
+            'saldo_inicial': pesos(max(Decimal('0'), cuota - recursos_totales_aplicables)),
+            'cuota_mensual': pesos(cuota_mensual),
             'por_reunir': pesos(por_reunir),
             'recursos_previstos': pesos(previstos), 'faltante': pesos(faltante),
             'faltante_mensual': pesos(faltante_mensual),

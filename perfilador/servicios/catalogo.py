@@ -39,9 +39,13 @@ def ficha(inmueble):
                              'la inicial debe cubrirse con los recursos actuales')
     else:
         entrega_texto = 'Entrega inmediata (proyecto terminado)'
-    pendientes = ['Condición de cuota inicial', 'Inclusiones y gastos de compra']
+    pendientes = []
     if modalidad == 'SOBRE_PLANOS' and meses is None:
         pendientes.insert(0, 'Fecha de entrega')
+    if modalidad == 'SOBRE_PLANOS' and inmueble.porcentaje_inicial_exigido is None:
+        pendientes.append('Porcentaje de cuota inicial pendiente de publicar')
+    if modalidad == 'SOBRE_PLANOS' and inmueble.valor_separacion is None:
+        pendientes.append('Valor de separación pendiente de publicar')
     return {
         'id': inmueble.pk, 'titulo': inmueble.titulo, 'tipo': inmueble.get_tipo_display(),
         'departamento': inmueble.departamento, 'ciudad': inmueble.ciudad, 'barrio': inmueble.barrio,
