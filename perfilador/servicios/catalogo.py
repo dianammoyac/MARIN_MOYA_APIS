@@ -9,6 +9,17 @@ def obtener_catalogo_publico():
 
 
 def ficha(inmueble):
+    modalidad = getattr(inmueble, 'modalidad_entrega', 'TERMINADO') or 'TERMINADO'
+    meses = getattr(inmueble, 'meses_entrega', None)
+    if modalidad == 'SOBRE_PLANOS' and meses is None:
+        entrega_texto = 'Entrega por confirmar con la constructora'
+    elif modalidad == 'SOBRE_PLANOS':
+        entrega_texto = f'Sobre planos: entrega declarada en {int(meses)} meses'
+    else:
+        entrega_texto = 'Entrega inmediata (proyecto terminado)'
+    pendientes = ['Condición de cuota inicial', 'Inclusiones y gastos de compra']
+    if modalidad == 'SOBRE_PLANOS' and meses is None:
+        pendientes.insert(0, 'Fecha de entrega')
     return {
         'id': inmueble.pk, 'titulo': inmueble.titulo, 'tipo': inmueble.get_tipo_display(),
         'departamento': inmueble.departamento, 'ciudad': inmueble.ciudad, 'barrio': inmueble.barrio,
@@ -18,5 +29,6 @@ def ficha(inmueble):
         'moneda': inmueble.moneda, 'imagen': inmueble.imagen1.url if inmueble.imagen1 else None,
         'actualizado': inmueble.fecha_actualizacion.isoformat() if inmueble.fecha_actualizacion else None,
         'url': f'/inmuebles/{inmueble.pk}/',
-        'pendientes_catalogo': ['Fecha de entrega', 'Condición de cuota inicial', 'Inclusiones y gastos de compra'],
+        'modalidad_entrega': modalidad, 'meses_entrega': meses, 'entrega_texto': entrega_texto,
+        'pendientes_catalogo': pendientes,
     }

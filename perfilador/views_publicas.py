@@ -87,8 +87,22 @@ def calcular_escenario(respuestas, entrada, inmueble):
         uso_guia = True
     if recursos is None or aporte is None:
         raise ValueError('Indique recursos y aporte mensual para simular la cuota inicial.')
+    modalidad = getattr(inmueble, 'modalidad_entrega', 'TERMINADO') or 'TERMINADO'
+    meses_inmueble = getattr(inmueble, 'meses_entrega', None)
+    if modalidad == 'SOBRE_PLANOS' and meses_inmueble is not None:
+        meses = int(meses_inmueble)
+        origen_meses = 'ENTREGA_INMUEBLE'
+    elif modalidad == 'TERMINADO':
+        meses = 0
+        origen_meses = 'ENTREGA_INMUEBLE'
+    else:
+        deseo = valor(respuestas, 'entrega')
+        if deseo is None:
+            raise ValueError('La entrega del inmueble está por confirmar; indique los meses deseados para simular.')
+        meses = int(Decimal(str(deseo)))
+        origen_meses = 'DESEO_CLIENTE_POR_CONFIRMAR'
     plan = inicial(precio_cop, porcentaje, a_cop(recursos, moneda_perfil, cambio),
-                   entrada.get('meses_inicial', 0), a_cop(aporte, moneda_perfil, cambio),
+                   meses, a_cop(aporte, moneda_perfil, cambio),
                    a_cop(entrada.get('separacion', 0), moneda_perfil, cambio))
     pago = valor(respuestas, 'pago')
     if pago == 'CONTADO' and decimal_campo(porcentaje, 'porcentaje_inicial', Decimal('100')) != 100:
@@ -116,6 +130,7 @@ def calcular_escenario(respuestas, entrada, inmueble):
                 prestamo['pendientes'].append('Crédito necesario supera el máximo orientativo de la referencia')
         prestamo['capacidad_pago'] = 'PENDIENTE_VERIFICACION'
     return {'inicial': plan, 'credito': prestamo, 'producto': pago or 'NO_DECLARADO',
+            'meses_inicial': str(meses), 'origen_meses_inicial': origen_meses,
             'precio_referencia': str(inmueble.precio), 'moneda_precio': inmueble.moneda,
             'precio_referencia_cop': str(precio_cop), 'moneda_perfil': moneda_perfil,
             'cambio': {'cop_por_usd': str(cambio.cop_por_usd), 'fecha': cambio.fecha.isoformat(), 'fuente': cambio.fuente} if cambio else None,

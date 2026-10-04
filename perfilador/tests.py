@@ -203,11 +203,72 @@ class CatalogoYMotorTests(TestCase):
         self.assertEqual(normalizar_respuestas({'recursos': respuesta('0')}, {})['recursos']['valor'], '0')
 
     def test_datos_no_existentes_del_inmueble_no_generan_entrega_verificada(self):
-        vivienda(1)
+        vivienda(1, modalidad_entrega='SOBRE_PLANOS')
         p = normalizar_respuestas({'entrega': respuesta('3'), 'proposito': respuesta('INVERTIR'), 'objetivo_inversion': respuesta('REVENTA')}, {})
         opcion = evaluar_perfil(p)['opciones'][0]
         self.assertIsNone(opcion['afinidad'])
         self.assertEqual(len(opcion['pendientes']), 2)
+        self.assertTrue(any('constructora' in x for x in opcion['pendientes']))
+
+    def test_entrega_inmediata_excluye_sobre_planos(self):
+        vivienda(1)
+        vivienda(2, modalidad_entrega='SOBRE_PLANOS', meses_entrega=12)
+        p = normalizar_respuestas({'entrega': respuesta('0'), 'proposito': respuesta('VIVIR')}, {})
+        resultado = evaluar_perfil(p)
+        self.assertEqual(resultado['estado'], 'PRELIMINAR')
+        self.assertEqual(resultado['total_opciones'], 1)
+        self.assertEqual(resultado['excluidas_requisitos'], 1)
+        razones = {r['criterio']: r for r in resultado['opciones'][0]['razones']}
+        self.assertIn('inmediata', razones['entrega']['razon'].lower())
+
+    def test_entrega_en_meses_puntua_segun_plazo_declarado(self):
+        p = normalizar_respuestas({'entrega': respuesta('12'), 'proposito': respuesta('VIVIR')}, {})
+        pronto = vivienda(1, modalidad_entrega='SOBRE_PLANOS', meses_entrega=6)
+        tarde = vivienda(2, modalidad_entrega='SOBRE_PLANOS', meses_entrega=24)
+        listo = vivienda(3)
+        razones = {o['id']: {r['criterio']: r for r in o['razones']} for o in evaluar_perfil(p)['opciones']}
+        self.assertEqual(razones[pronto.id]['entrega']['puntuacion'], 1)
+        self.assertEqual(razones[listo.id]['entrega']['puntuacion'], 1)
+        self.assertAlmostEqual(razones[tarde.id]['entrega']['puntuacion'], 0.5)
+        self.assertIn('24 meses', razones[tarde.id]['entrega']['razon'])
+
+    def test_ficha_muestra_modalidad_y_meses_de_entrega(self):
+        from .servicios.catalogo import ficha
+        inmediato = ficha(vivienda(1))
+        planos = ficha(vivienda(2, modalidad_entrega='SOBRE_PLANOS', meses_entrega=9))
+        sin_dato = ficha(vivienda(3, modalidad_entrega='SOBRE_PLANOS'))
+        self.assertEqual(inmediato['entrega_texto'], 'Entrega inmediata (proyecto terminado)')
+        self.assertIn('9 meses', planos['entrega_texto'])
+        self.assertIn('confirmar', sin_dato['entrega_texto'])
+        self.assertIn('Fecha de entrega', sin_dato['pendientes_catalogo'])
+        self.assertNotIn('Fecha de entrega', planos['pendientes_catalogo'])
+
+    def test_modalidad_entrega_exige_coherencia(self):
+        from django.core.exceptions import ValidationError
+        casa = vivienda(1, modalidad_entrega='SOBRE_PLANOS')
+        with self.assertRaises(ValidationError):
+            casa.full_clean()
+        casa.meses_entrega = 12
+        casa.full_clean()
+        casa.modalidad_entrega = 'TERMINADO'
+        with self.assertRaises(ValidationError):
+            casa.full_clean()
+
+    def test_simulador_fija_meses_segun_entrega_del_inmueble(self):
+        from .views_publicas import calcular_escenario
+        base = base_perfil()
+        base['entrega'] = respuesta('6')
+        respuestas = normalizar_respuestas(base, {})
+        entrada = {'porcentaje_inicial': 30, 'recursos': '60000000', 'aporte_mensual': '4000000'}
+        listo = vivienda(1)
+        planos = vivienda(2, modalidad_entrega='SOBRE_PLANOS', meses_entrega=12)
+        sin_dato = vivienda(3, modalidad_entrega='SOBRE_PLANOS')
+        r1 = calcular_escenario(respuestas, dict(entrada), listo)
+        self.assertEqual((r1['meses_inicial'], r1['origen_meses_inicial']), ('0', 'ENTREGA_INMUEBLE'))
+        r2 = calcular_escenario(respuestas, dict(entrada), planos)
+        self.assertEqual((r2['meses_inicial'], r2['origen_meses_inicial']), ('12', 'ENTREGA_INMUEBLE'))
+        r3 = calcular_escenario(respuestas, dict(entrada), sin_dato)
+        self.assertEqual((r3['meses_inicial'], r3['origen_meses_inicial']), ('6', 'DESEO_CLIENTE_POR_CONFIRMAR'))
 
 
 class FinanzasTests(TestCase):

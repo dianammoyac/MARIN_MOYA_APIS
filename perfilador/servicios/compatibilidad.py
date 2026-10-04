@@ -53,6 +53,20 @@ def criterio(clave, preferencia, inmueble, cambio=None, respuestas=None):
             return None, 'Parqueadero por confirmar', None
         coincide = inmueble.parqueaderos > 0
         return Decimal(int(coincide)), 'Tiene parqueadero registrado (inclusión por confirmar)' if coincide else 'No tiene parqueadero registrado', {'parqueaderos': inmueble.parqueaderos}
+    if clave == 'entrega':
+        deseo = int(Decimal(str(preferencia)))
+        modalidad = getattr(inmueble, 'modalidad_entrega', 'TERMINADO') or 'TERMINADO'
+        meses = getattr(inmueble, 'meses_entrega', None)
+        datos = {'modalidad': modalidad, 'meses_entrega': meses, 'deseo_meses': deseo}
+        if modalidad == 'SOBRE_PLANOS' and meses is None:
+            return None, 'Meses de entrega por confirmar con la constructora', None
+        reales = int(meses or 0)
+        if deseo == 0:
+            return Decimal('1'), 'Entrega inmediata disponible', datos
+        if reales <= deseo:
+            razon = 'Entrega inmediata disponible' if reales == 0 else f'Entrega declarada en {reales} meses, dentro del plazo deseado'
+            return Decimal('1'), razon, datos
+        return (Decimal(deseo) / Decimal(reales)), f'Entrega declarada en {reales} meses, posterior al plazo deseado de {deseo}', datos
     if clave == 'prioridad_inversion':
         mapa = {'MENOR_INVERSION': 'presupuesto', 'UBICACION': 'ciudad', 'ESPACIO': 'area_m2'}
         base = mapa.get(preferencia)
@@ -64,7 +78,7 @@ def criterio(clave, preferencia, inmueble, cambio=None, respuestas=None):
         if preferencia == 'RENTA_CORTA':
             return None, 'Renta corta tipo Airbnb: alquiler por días en plataformas; requiere verificar reglamento y autorización, no se afirma por el solo propósito', None
         return None, 'Información comercial pendiente para comparar', None
-    # Inmueble no registra fecha de entrega ni aptitud verificable de inversión.
+    # La aptitud de inversión no es verificable con datos del inmueble.
     return None, 'Información comercial pendiente para comparar', None
 
 
@@ -74,6 +88,12 @@ def evaluar_inmueble(respuestas, inmueble, cambio=None):
     total = 0
     proposito = valor(respuestas, 'proposito')
     pesos = PESOS_INVERSION if proposito == 'INVERTIR' else PESOS_AMBAS if proposito == 'AMBAS' else PESOS
+    deseo_entrega = valor(respuestas, 'entrega')
+    if deseo_entrega is not None and int(Decimal(str(deseo_entrega))) == 0:
+        modalidad = getattr(inmueble, 'modalidad_entrega', 'TERMINADO') or 'TERMINADO'
+        if modalidad == 'SOBRE_PLANOS':
+            return {'afinidad': None, 'peso_evaluable': 0, 'razones': [], 'pendientes': [],
+                    'exclusiones': ['entrega: requiere entrega inmediata; inmueble sobre planos']}
     for clave, peso in pesos.items():
         preferencia = valor(respuestas, clave)
         inferencia_hogar = False

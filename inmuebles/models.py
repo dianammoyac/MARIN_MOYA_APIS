@@ -1,3 +1,4 @@
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.contrib.auth.models import User
 
@@ -22,6 +23,11 @@ class Inmueble(models.Model):
         ('NUEVO', 'Nuevo'),
         ('USADO', 'Usado'),
         ('EN_CONSTRUCCION', 'En construcción'),
+    ]
+
+    MODALIDAD_ENTREGA = [
+        ('TERMINADO', 'Terminada / entrega inmediata'),
+        ('SOBRE_PLANOS', 'Sobre planos'),
     ]
 
     ESTATUS_PUBLICACION = [
@@ -62,6 +68,10 @@ class Inmueble(models.Model):
     piso = models.IntegerField(null=True, blank=True)
     ano_construccion = models.IntegerField(null=True, blank=True)
 
+    # Entrega (para diferenciar proyecto terminado de sobre planos en el perfilador)
+    modalidad_entrega = models.CharField(max_length=15, choices=MODALIDAD_ENTREGA, default='TERMINADO')
+    meses_entrega = models.PositiveIntegerField(null=True, blank=True)
+
     # Valores
     precio = models.DecimalField(max_digits=14, decimal_places=2)
     administracion = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
@@ -90,6 +100,12 @@ class Inmueble(models.Model):
         db_table = 'inmuebles'
         verbose_name = "Inmueble"
         verbose_name_plural = "Inmuebles"
+
+    def clean(self):
+        if self.modalidad_entrega == 'SOBRE_PLANOS' and not self.meses_entrega:
+            raise ValidationError({'meses_entrega': 'Indique en cuántos meses está la entrega del proyecto sobre planos.'})
+        if self.modalidad_entrega == 'TERMINADO' and self.meses_entrega:
+            raise ValidationError({'meses_entrega': 'Un proyecto terminado se entrega de inmediato; deje los meses vacíos.'})
 
     def __str__(self):
         return f"{self.codigo} - {self.titulo}"

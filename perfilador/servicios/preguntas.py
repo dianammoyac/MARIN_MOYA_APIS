@@ -1,7 +1,7 @@
 from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 from .ubicaciones import obtener_ubicaciones
 
-VERSION = '3'
+VERSION = '4'
 ESTADOS = ('RESPONDIDA', 'SIN_PREFERENCIA', 'NO_SE', 'PREFIERO_DESPUES', 'OMITIDA')
 FUENTES = ('CLIENTE', 'ACOMPANAMIENTO')
 
@@ -14,7 +14,7 @@ PREGUNTAS = {
     'experiencia_inversion': {'texto': '¿Es su primera inversión inmobiliaria?', 'tipo': 'opcion', 'opciones': ['PRIMERA', 'YA_INVIERTO'], 'peso': 3, 'obligatoria': False, 'alternativas': ['NO_SE', 'PREFIERO_DESPUES', 'OMITIDA']},
     'gestion_inversion': {'texto': '¿Cómo piensa administrar la propiedad?', 'tipo': 'opcion', 'opciones': ['DIRECTA', 'DELEGADA', 'POR_DEFINIR'], 'peso': 3, 'obligatoria': False, 'alternativas': ['NO_SE', 'PREFIERO_DESPUES', 'OMITIDA']},
     'ciudad': {'texto': '¿En qué departamento y ciudad desea buscar?', 'tipo': 'ubicacion', 'peso': 10, 'obligatoria': True, 'alternativas': ['SIN_PREFERENCIA', 'NO_SE']},
-    'entrega': {'texto': '¿Cuándo le gustaría recibir el inmueble? (meses)', 'tipo': 'numero', 'peso': 6, 'obligatoria': True, 'alternativas': ['NO_SE']},
+    'entrega': {'texto': '¿En cuántos meses desea que le entreguen el inmueble? (0 = entrega inmediata)', 'tipo': 'numero', 'peso': 6, 'obligatoria': True, 'alternativas': ['NO_SE']},
     'habitaciones': {'texto': '¿Cuántas habitaciones necesita?', 'tipo': 'numero', 'peso': 10, 'obligatoria': True, 'alternativas': ['NO_SE']},
     'familia': {'texto': 'Si aún no sabe cuántas habitaciones necesita, ¿cómo está conformado su hogar?', 'tipo': 'familia', 'peso': 8, 'obligatoria': True, 'alternativas': ['NO_SE']},
     'area_m2': {'texto': '¿Qué área mínima busca? (m²)', 'tipo': 'numero', 'peso': 8, 'obligatoria': True, 'alternativas': ['NO_SE']},
@@ -79,7 +79,7 @@ def normalizar_respuestas(datos, actuales):
         if fuente not in FUENTES:
             raise ValueError(f'{clave}: fuente inválida.')
         indispensable = entrada.get('indispensable', False)
-        if type(indispensable) is not bool or (indispensable and clave not in {'ciudad', 'habitaciones', 'area_m2', 'parqueadero', 'presupuesto'}):
+        if type(indispensable) is not bool or (indispensable and clave not in {'ciudad', 'habitaciones', 'area_m2', 'parqueadero', 'presupuesto', 'entrega'}):
             raise ValueError(f'{clave}: requisito indispensable inválido.')
         dato = {'estado': estado, 'fuente': fuente, 'indispensable': indispensable if estado == 'RESPONDIDA' else False}
         if estado == 'RESPONDIDA':

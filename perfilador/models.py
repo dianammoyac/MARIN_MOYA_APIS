@@ -11,7 +11,7 @@ class Perfilacion(models.Model):
     clave_sesion = models.CharField(max_length=40, db_index=True)
     respuestas = models.JSONField(default=dict)
     revision = models.PositiveIntegerField(default=0)
-    version_preguntas = models.CharField(max_length=12, default='3')
+    version_preguntas = models.CharField(max_length=12, default='4')
     estado = models.CharField(max_length=24, default='EXPLORACION', choices=[('EXPLORACION', 'Exploración'), ('PRELIMINAR', 'Resultado preliminar'), ('SOLICITUD', 'Solicitud registrada')])
     creado = models.DateTimeField(auto_now_add=True)
     actualizado = models.DateTimeField(auto_now=True)

@@ -46,7 +46,7 @@
       `${['Cesantías','CDT','Cuenta','Otros'][i]}: ${mostrarIngresado(dato.montos[k],dato.moneda)} (${dato.porcentajes[k]} %)`
     ).join(' · ');
     if(['recursos','aporte_mensual','ingresos','obligaciones'].includes(clave))return mostrarIngresado(dato,monedaPerfil());
-    if(clave==='entrega')return Number(dato)===0?'Lo antes posible':`En ${dato} meses`;
+    if(clave==='entrega')return Number(dato)===0?'Entrega inmediata':`En ${dato} meses`;
     if(clave==='habitaciones')return `${dato} habitaciones`;
     if(clave==='area_m2')return `${dato} m²`;
     return nombresOpciones[dato]||String(dato);
@@ -218,9 +218,10 @@
     }else{
       control=document.createElement('input');control.id='valor';control.type='number';control.min='0';control.step=['habitaciones','entrega'].includes(clave)?'1':'any';control.value=previo||'';
       campo.append(etiquetar('Tu respuesta',control));
+      if(clave==='entrega'){const ya=document.createElement('button');ya.type='button';ya.className='secundario';ya.textContent='La necesito con entrega inmediata';ya.onclick=()=>guardar('RESPONDIDA','0');campo.append(ya);}
     }
     $('indispensable').checked=!!respuestas[clave]?.indispensable;
-    $('envoltorio-indispensable').hidden=!['ciudad','habitaciones','area_m2','parqueadero','presupuesto'].includes(clave);
+    $('envoltorio-indispensable').hidden=!['ciudad','habitaciones','area_m2','parqueadero','presupuesto','entrega'].includes(clave);
     document.querySelectorAll('[data-estado]').forEach(b=>{
       b.hidden=!pregunta.alternativas.includes(b.dataset.estado);
       if(clave==='ciudad' && b.dataset.estado==='SIN_PREFERENCIA')b.textContent='Sin preferencia de ciudad: quiero ver opciones en cualquier lugar';
@@ -314,6 +315,7 @@
       const titulo=document.createElement('h3');titulo.textContent=o.titulo;card.append(titulo);
       linea(`${o.tipo} · ${o.ciudad} (${o.departamento}) · ${o.barrio}`);
       linea(`${precioOpcion(o,cambio)} · ${o.area_m2} m² · ${o.habitaciones} habitaciones · ${o.parqueaderos} parqueaderos`);
+      linea(o.entrega_texto);
       linea(`Afinidad orientativa: ${o.afinidad==null?'No calculable':o.afinidad+' %'} · Cobertura: ${resultado.cobertura} %`);
       linea(`Por qué encaja: ${o.razones.filter(r=>r.puntuacion===1).map(r=>r.razon).join('; ') || 'Aún faltan datos comparables.'}`);
       linea(`Por revisar: ${[...o.pendientes,...o.pendientes_catalogo,...o.razones.filter(r=>r.puntuacion<1).map(r=>r.razon)].join('; ')}`,'pendiente');
@@ -325,6 +327,7 @@
         $('form-simular').elements.recursos.value=valor('recursos')||'';
         $('form-simular').elements.aporte_mensual.value=valor('aporte_mensual')||'';
         document.querySelectorAll('.sim-moneda').forEach(el=>el.textContent=`(${monedaPerfil()})`);
+        $('meses-fijados').textContent=o.modalidad_entrega==='SOBRE_PLANOS'&&o.meses_entrega!=null?`Meses fijados por la entrega declarada: ${o.meses_entrega} para completar la cuota inicial.`:'Entrega inmediata: la cuota inicial debe cubrirse con los recursos actuales (0 meses para aportar).';
         $('usar-guia-contenedor').hidden=!(respuestas.aporte_mensual?.estado==='NO_SE' && valor('ingresos')!=null);
         $('simulador').hidden=false;$('simulador').scrollIntoView({behavior:'smooth'});
       };acciones.append(sim);
@@ -340,10 +343,11 @@
     if(ids.length!==2){estado('Selecciona exactamente dos opciones para comparar.');return;}
     const opciones=ids.map(x=>resultado.opciones.find(o=>o.id===x));const div=$('comparacion');div.replaceChildren();
     const h=document.createElement('h3');h.textContent='Comparación con las mismas respuestas';div.append(h);const tabla=document.createElement('table');tabla.className='tabla';
-    [['Criterio',...opciones.map(o=>o.titulo)],['Precio',...opciones.map(o=>precioOpcion(o,resultado.cambio))],['Área',...opciones.map(o=>o.area_m2+' m²')],['Habitaciones',...opciones.map(o=>o.habitaciones)],['Ciudad',...opciones.map(o=>o.ciudad)],['Afinidad',...opciones.map(o=>o.afinidad==null?'No calculable':o.afinidad+' %')],['Pendientes',...opciones.map(o=>o.pendientes_catalogo.join('; '))]].forEach(fila=>{const tr=document.createElement('tr');fila.forEach(c=>{const celda=document.createElement('td');celda.textContent=c;tr.append(celda);});tabla.append(tr);});div.append(tabla);div.hidden=false;div.scrollIntoView({behavior:'smooth'});
+    [['Criterio',...opciones.map(o=>o.titulo)],['Precio',...opciones.map(o=>precioOpcion(o,resultado.cambio))],['Área',...opciones.map(o=>o.area_m2+' m²')],['Habitaciones',...opciones.map(o=>o.habitaciones)],['Ciudad',...opciones.map(o=>o.ciudad)],['Entrega',...opciones.map(o=>o.entrega_texto)],['Afinidad',...opciones.map(o=>o.afinidad==null?'No calculable':o.afinidad+' %')],['Pendientes',...opciones.map(o=>o.pendientes_catalogo.join('; '))]].forEach(fila=>{const tr=document.createElement('tr');fila.forEach(c=>{const celda=document.createElement('td');celda.textContent=c;tr.append(celda);});tabla.append(tr);});div.append(tabla);div.hidden=false;div.scrollIntoView({behavior:'smooth'});
   }
   $('form-simular').onsubmit=async e=>{
     e.preventDefault();const f=new FormData(e.target);const datos={version:versionPreguntas,respuestas,inmueble:inmuebleElegido,precio_visto:resultado.opciones.find(o=>o.id===inmuebleElegido)?.precio,...Object.fromEntries(f.entries())};
+    delete datos.meses_inicial;
     datos.usar_aporte_orientativo=f.has('usar_aporte_orientativo');
     if(datos.usar_aporte_orientativo && !datos.aporte_mensual)delete datos.aporte_mensual;
     if(!datos.tasa_ea||datos.referencia)delete datos.tasa_ea;if(!datos.referencia)delete datos.referencia;
@@ -351,7 +355,7 @@
     estado('Calculando el escenario…');
     try{const r=await pedir('simular/','POST',datos),x=r.resultado;
       const money=v=>formatear(v,x.moneda_perfil,x.cambio);
-      $('resultado-simulacion').textContent=`Inicial hipotética: ${money(x.inicial.cuota_inicial)}. Recursos: ${money(x.inicial.recursos_aplicables)}. Saldo: ${money(x.inicial.saldo_inicial)}. Aporte orientativo: ${money(x.inicial.aporte_mensual_orientativo)} al mes. Faltante previsto: ${money(x.inicial.faltante)}. ${x.credito?'Cuota estimada de capital e intereses: '+money(x.credito.cuota_capital_intereses)+' al mes. Total mensual incompleto: faltan seguros y otros gastos.':'Sin cálculo hipotecario: falta una referencia de tasa o es una compra de contado.'} ${x.aporte_orientativo_30?'El aporte del 30 % es una hipótesis elegida expresamente, no un límite legal.':''} Condiciones por confirmar.`;
+      $('resultado-simulacion').textContent=`Meses para la inicial: ${x.meses_inicial} (${x.origen_meses_inicial==='ENTREGA_INMUEBLE'?'fijados por la entrega declarada del inmueble':'según tu deseo; entrega del inmueble por confirmar'}). Inicial hipotética: ${money(x.inicial.cuota_inicial)}. Recursos: ${money(x.inicial.recursos_aplicables)}. Saldo: ${money(x.inicial.saldo_inicial)}. Aporte orientativo: ${money(x.inicial.aporte_mensual_orientativo)} al mes. Faltante previsto: ${money(x.inicial.faltante)}. ${x.credito?'Cuota estimada de capital e intereses: '+money(x.credito.cuota_capital_intereses)+' al mes. Total mensual incompleto: faltan seguros y otros gastos.':'Sin cálculo hipotecario: falta una referencia de tasa o es una compra de contado.'} ${x.aporte_orientativo_30?'El aporte del 30 % es una hipótesis elegida expresamente, no un límite legal.':''} Condiciones por confirmar.`;
       estado('Escenario calculado para esta visita.');
     }catch(err){estado(`No se pudo simular: ${err.message}`);}
   };
