@@ -245,7 +245,7 @@ class CatalogoYMotorTests(TestCase):
 
     def test_modalidad_entrega_exige_coherencia(self):
         from django.core.exceptions import ValidationError
-        casa = vivienda(1, modalidad_entrega='SOBRE_PLANOS')
+        casa = vivienda(1, estado='EN_CONSTRUCCION', modalidad_entrega='SOBRE_PLANOS')
         with self.assertRaises(ValidationError):
             casa.full_clean()
         casa.meses_entrega = 12
@@ -253,6 +253,39 @@ class CatalogoYMotorTests(TestCase):
         casa.modalidad_entrega = 'TERMINADO'
         with self.assertRaises(ValidationError):
             casa.full_clean()
+
+    def test_ficha_muestra_empresa_y_origen_de_entrega(self):
+        from .servicios.catalogo import ficha
+        obra = ficha(vivienda(1, modalidad_entrega='SOBRE_PLANOS', meses_entrega=9, empresa='Uraki Constructora'))
+        nueva = ficha(vivienda(2, empresa='Uraki Constructora'))
+        anonimo = ficha(vivienda(3))
+        self.assertEqual(obra['origen_texto'], 'Proyecto de Uraki Constructora')
+        self.assertEqual(nueva['origen_texto'], 'Comercializado por Uraki Constructora')
+        self.assertIsNone(anonimo['origen_texto'])
+        self.assertEqual(obra['porcentaje_inicial_exigido'], None)
+        self.assertEqual(obra['valor_separacion'], None)
+        from datetime import date
+        entregada = ficha(vivienda(4, estado='NUEVO', empresa='Uraki Constructora',
+                                   fecha_entrega_constructora=date(2026, 3, 10)))
+        self.assertEqual(entregada['origen_texto'], 'Construido por Uraki Constructora, entregado en marzo de 2026')
+
+    def test_simulador_usa_condiciones_exigidas_por_el_proyecto(self):
+        from decimal import Decimal
+        from .views_publicas import calcular_escenario
+        base = base_perfil()
+        base['entrega'] = respuesta('12')
+        respuestas = normalizar_respuestas(base, {})
+        planos = vivienda(1, modalidad_entrega='SOBRE_PLANOS', meses_entrega=12,
+                          porcentaje_inicial_exigido=Decimal('30'), valor_separacion=Decimal('2000000'))
+        entrada = {'recursos': '60000000', 'aporte_mensual': '4000000'}
+        resultado = calcular_escenario(respuestas, dict(entrada), planos)
+        self.assertEqual(resultado['porcentaje_inicial'], '30')
+        self.assertEqual(resultado['origen_porcentaje_inicial'], 'EXIGIDO_PROYECTO')
+        self.assertEqual(resultado['inicial']['separacion_incluida_en_inicial'], '2000000')
+        self.assertEqual(resultado['origen_separacion'], 'EXIGIDO_PROYECTO')
+        personal = calcular_escenario(respuestas, {**entrada, 'porcentaje_inicial': 20, 'separacion': '500000'}, planos)
+        self.assertEqual(personal['origen_porcentaje_inicial'], 'HIPOTESIS')
+        self.assertEqual(personal['origen_separacion'], 'HIPOTESIS')
 
     def test_simulador_fija_meses_segun_entrega_del_inmueble(self):
         from .views_publicas import calcular_escenario

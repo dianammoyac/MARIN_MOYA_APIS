@@ -503,9 +503,32 @@
               <div class="op-group">
                 <button type="button" class="op-btn {% if form.estado.value|stringformat:'s' == 'NUEVO' %}active{% endif %}" onclick="selectEstado(this, 'NUEVO')">Nuevo</button>
                 <button type="button" class="op-btn {% if form.estado.value|stringformat:'s' == 'USADO' or not form.estado.value %}active{% endif %}" onclick="selectEstado(this, 'USADO')">Usado</button>
-                <button type="button" class="op-btn {% if form.estado.value|stringformat:'s' == 'EN_CONSTRUCCION' %}active{% endif %}" onclick="selectEstado(this, 'EN_CONSTRUCCION')">En obra</button>
+                <button type="button" class="op-btn {% if form.estado.value|stringformat:'s' == 'EN_CONSTRUCCION' %}active{% endif %}" onclick="selectEstado(this, 'EN_CONSTRUCCION')">Sobre planos</button>
               </div>
               <input type="hidden" name="estado" id="estadoInput" value="{{ form.estado.value|default:'USADO' }}"/>
+            </div>
+
+            <div class="field" style="margin-top: 24px;">
+              <label>Entrega del proyecto</label>
+              <div class="op-group">
+                <button type="button" class="op-btn" id="btnTerminada" onclick="selectModalidad(this, 'TERMINADO')">Terminada</button>
+                <button type="button" class="op-btn" id="btnPlanos" onclick="selectModalidad(this, 'SOBRE_PLANOS')">Sobre planos</button>
+              </div>
+              <input type="hidden" name="modalidad_entrega" id="modalidadInput" value="{{ form.modalidad_entrega.value|default:'TERMINADO' }}"/>
+            </div>
+            <div id="bloque-planos" style="margin-top: 16px;">
+              <div class="form-row three">
+                <div class="field"><label>Meses para la entrega *</label><input type="number" name="meses_entrega" id="mesesInput" min="1" max="120" step="1" value="{{ form.meses_entrega.value|default:'' }}"/></div>
+                <div class="field"><label>% inicial exigido (opcional)</label><input type="number" name="porcentaje_inicial_exigido" id="pctInput" min="0" max="100" step="0.01" value="{{ form.porcentaje_inicial_exigido.value|default:'' }}"/></div>
+                <div class="field"><label>Separación (opcional)</label><input type="number" name="valor_separacion" id="sepInput" min="0" step="1" value="{{ form.valor_separacion.value|default:'' }}"/></div>
+              </div>
+              <p class="nota">Solo los proyectos sobre planos tienen meses de entrega y condiciones de inicial. Estos datos alimentan la recomendación y la simulación del perfilador.</p>
+            </div>
+            <div id="bloque-fecha" style="margin-top: 16px;">
+              <div class="form-row">
+                <div class="field"><label>Fecha de entrega por constructora (si es nuevo)</label><input type="date" name="fecha_entrega_constructora" id="fechaInput" value="{{ form.fecha_entrega_constructora.value|date:'Y-m-d' }}"/></div>
+              </div>
+              <p class="nota" id="aviso-nuevo" style="display:none;">Lleva más de un año entregado: considere marcarlo como Usado. Nuevo significa menos de 1 año de entregado por la constructora.</p>
             </div>
           </div>
         </div>
@@ -588,6 +611,7 @@
               <div class="field"><label>Teléfono *</label><input type="tel" name="telefono_contacto" value="{{ form.telefono_contacto.value|default:'' }}" required/></div>
             </div>
             <div class="form-row full"><div class="field"><label>Email</label><input type="email" name="email_contacto" value="{{ form.email_contacto.value|default:'' }}"/></div></div>
+            <div class="form-row full"><div class="field"><label>Empresa o constructora (opcional)</label><input type="text" name="empresa" maxlength="120" value="{{ form.empresa.value|default:'' }}" placeholder="Ej.: Uraki Constructora"/></div></div>
           </div>
         </div>
 
@@ -627,7 +651,61 @@
       group.querySelectorAll('.op-btn').forEach(b => b.classList.remove('active'));
       el.classList.add('active');
       document.getElementById('estadoInput').value = val;
+      if (val === 'USADO') {
+        selectModalidad(document.getElementById('btnTerminada'), 'TERMINADO');
+        document.getElementById('btnPlanos').disabled = true;
+      } else {
+        document.getElementById('btnPlanos').disabled = false;
+        if (val === 'EN_CONSTRUCCION') selectModalidad(document.getElementById('btnPlanos'), 'SOBRE_PLANOS');
+      }
+      actualizarEntrega();
     }
+
+    function selectModalidad(el, val) {
+      if (el.disabled) return;
+      const group = el.closest('.op-group');
+      group.querySelectorAll('.op-btn').forEach(b => b.classList.remove('active'));
+      el.classList.add('active');
+      document.getElementById('modalidadInput').value = val;
+      actualizarEntrega();
+    }
+
+    function actualizarEntrega() {
+      const mod = document.getElementById('modalidadInput').value;
+      const planos = mod === 'SOBRE_PLANOS';
+      document.getElementById('bloque-planos').style.display = planos ? '' : 'none';
+      document.getElementById('bloque-fecha').style.display = planos ? 'none' : '';
+      document.getElementById('mesesInput').required = planos;
+      if (!planos) {
+        document.getElementById('mesesInput').value = '';
+        document.getElementById('pctInput').value = '';
+        document.getElementById('sepInput').value = '';
+      } else {
+        document.getElementById('fechaInput').value = '';
+      }
+      avisarNuevo();
+    }
+
+    function avisarNuevo() {
+      const aviso = document.getElementById('aviso-nuevo');
+      const estado = document.getElementById('estadoInput').value;
+      const fecha = document.getElementById('fechaInput').value;
+      let viejo = false;
+      if (estado === 'NUEVO' && fecha) {
+        const limite = new Date();
+        limite.setFullYear(limite.getFullYear() - 1);
+        viejo = new Date(fecha + 'T00:00:00') < limite;
+      }
+      aviso.style.display = viejo ? '' : 'none';
+    }
+    document.getElementById('fechaInput').addEventListener('change', avisarNuevo);
+    (function initEntrega() {
+      const mod = document.getElementById('modalidadInput').value || 'TERMINADO';
+      const btn = mod === 'SOBRE_PLANOS' ? document.getElementById('btnPlanos') : document.getElementById('btnTerminada');
+      btn.classList.add('active');
+      if (document.getElementById('estadoInput').value === 'USADO') document.getElementById('btnPlanos').disabled = true;
+      actualizarEntrega();
+    })();
 
     function increment(id) {
       const el = document.getElementById(id);

@@ -69,6 +69,11 @@ def calcular_escenario(respuestas, entrada, inmueble):
     if entrada.get('precio_visto') is not None and str(inmueble.precio) != str(entrada['precio_visto']):
         raise ValueError('El precio del inmueble cambió. Recalcule las recomendaciones.')
     porcentaje = entrada.get('porcentaje_inicial')
+    if porcentaje is None and inmueble.porcentaje_inicial_exigido is not None:
+        porcentaje = inmueble.porcentaje_inicial_exigido
+        origen_porcentaje = 'EXIGIDO_PROYECTO'
+    else:
+        origen_porcentaje = 'HIPOTESIS'
     if porcentaje is None:
         raise ValueError('porcentaje_inicial: indique un porcentaje hipotético.')
     moneda_perfil = valor(respuestas, 'presupuesto')['moneda']
@@ -101,9 +106,15 @@ def calcular_escenario(respuestas, entrada, inmueble):
             raise ValueError('La entrega del inmueble está por confirmar; indique los meses deseados para simular.')
         meses = int(Decimal(str(deseo)))
         origen_meses = 'DESEO_CLIENTE_POR_CONFIRMAR'
+    separacion = entrada.get('separacion')
+    if separacion is None and inmueble.valor_separacion is not None:
+        separacion = inmueble.valor_separacion
+        origen_separacion = 'EXIGIDO_PROYECTO'
+    else:
+        origen_separacion = 'HIPOTESIS'
     plan = inicial(precio_cop, porcentaje, a_cop(recursos, moneda_perfil, cambio),
                    meses, a_cop(aporte, moneda_perfil, cambio),
-                   a_cop(entrada.get('separacion', 0), moneda_perfil, cambio))
+                   a_cop(separacion if separacion is not None else 0, moneda_perfil, cambio))
     pago = valor(respuestas, 'pago')
     if pago == 'CONTADO' and decimal_campo(porcentaje, 'porcentaje_inicial', Decimal('100')) != 100:
         raise ValueError('Para compra de contado indique el 100 % del precio.')
@@ -131,6 +142,7 @@ def calcular_escenario(respuestas, entrada, inmueble):
         prestamo['capacidad_pago'] = 'PENDIENTE_VERIFICACION'
     return {'inicial': plan, 'credito': prestamo, 'producto': pago or 'NO_DECLARADO',
             'meses_inicial': str(meses), 'origen_meses_inicial': origen_meses,
+            'origen_porcentaje_inicial': origen_porcentaje, 'origen_separacion': origen_separacion,
             'precio_referencia': str(inmueble.precio), 'moneda_precio': inmueble.moneda,
             'precio_referencia_cop': str(precio_cop), 'moneda_perfil': moneda_perfil,
             'cambio': {'cop_por_usd': str(cambio.cop_por_usd), 'fecha': cambio.fecha.isoformat(), 'fuente': cambio.fuente} if cambio else None,

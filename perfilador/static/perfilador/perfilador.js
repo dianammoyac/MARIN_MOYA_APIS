@@ -316,6 +316,8 @@
       linea(`${o.tipo} · ${o.ciudad} (${o.departamento}) · ${o.barrio}`);
       linea(`${precioOpcion(o,cambio)} · ${o.area_m2} m² · ${o.habitaciones} habitaciones · ${o.parqueaderos} parqueaderos`);
       linea(o.entrega_texto);
+      if(o.origen_texto)linea(o.origen_texto);
+      if(o.porcentaje_inicial_exigido!=null)linea(`Inicial exigida por el proyecto: ${o.porcentaje_inicial_exigido} %${o.valor_separacion!=null?` · Separación: ${formatear(o.valor_separacion,o.moneda,cambio)}`:''}`);
       linea(`Afinidad orientativa: ${o.afinidad==null?'No calculable':o.afinidad+' %'} · Cobertura: ${resultado.cobertura} %`);
       linea(`Por qué encaja: ${o.razones.filter(r=>r.puntuacion===1).map(r=>r.razon).join('; ') || 'Aún faltan datos comparables.'}`);
       linea(`Por revisar: ${[...o.pendientes,...o.pendientes_catalogo,...o.razones.filter(r=>r.puntuacion<1).map(r=>r.razon)].join('; ')}`,'pendiente');
@@ -323,7 +325,9 @@
       const detalle=document.createElement('a');detalle.href=o.url;detalle.textContent='Ver inmueble ↗';acciones.append(detalle);
       const sim=document.createElement('button');sim.type='button';sim.className='secundario';sim.textContent='Simular compra';sim.onclick=()=>{
         inmuebleElegido=o.id;$('simular-titulo').textContent=`${o.titulo} · ${precioOpcion(o,cambio)}`;
+        if(o.porcentaje_inicial_exigido!=null)$('form-simular').elements.porcentaje_inicial.value=o.porcentaje_inicial_exigido;
         if(valor('pago')==='CONTADO')$('form-simular').elements.porcentaje_inicial.value='100';
+        $('form-simular').elements.separacion.value=o.valor_separacion||'';
         $('form-simular').elements.recursos.value=valor('recursos')||'';
         $('form-simular').elements.aporte_mensual.value=valor('aporte_mensual')||'';
         document.querySelectorAll('.sim-moneda').forEach(el=>el.textContent=`(${monedaPerfil()})`);
@@ -351,11 +355,11 @@
     datos.usar_aporte_orientativo=f.has('usar_aporte_orientativo');
     if(datos.usar_aporte_orientativo && !datos.aporte_mensual)delete datos.aporte_mensual;
     if(!datos.tasa_ea||datos.referencia)delete datos.tasa_ea;if(!datos.referencia)delete datos.referencia;
-    if(!datos.recursos)delete datos.recursos;if(!datos.aporte_mensual)delete datos.aporte_mensual;
+    if(!datos.recursos)delete datos.recursos;if(!datos.aporte_mensual)delete datos.aporte_mensual;if(!datos.separacion)delete datos.separacion;if(!datos.porcentaje_inicial)delete datos.porcentaje_inicial;
     estado('Calculando el escenario…');
     try{const r=await pedir('simular/','POST',datos),x=r.resultado;
       const money=v=>formatear(v,x.moneda_perfil,x.cambio);
-      $('resultado-simulacion').textContent=`Meses para la inicial: ${x.meses_inicial} (${x.origen_meses_inicial==='ENTREGA_INMUEBLE'?'fijados por la entrega declarada del inmueble':'según tu deseo; entrega del inmueble por confirmar'}). Inicial hipotética: ${money(x.inicial.cuota_inicial)}. Recursos: ${money(x.inicial.recursos_aplicables)}. Saldo: ${money(x.inicial.saldo_inicial)}. Aporte orientativo: ${money(x.inicial.aporte_mensual_orientativo)} al mes. Faltante previsto: ${money(x.inicial.faltante)}. ${x.credito?'Cuota estimada de capital e intereses: '+money(x.credito.cuota_capital_intereses)+' al mes. Total mensual incompleto: faltan seguros y otros gastos.':'Sin cálculo hipotecario: falta una referencia de tasa o es una compra de contado.'} ${x.aporte_orientativo_30?'El aporte del 30 % es una hipótesis elegida expresamente, no un límite legal.':''} Condiciones por confirmar.`;
+      $('resultado-simulacion').textContent=`Meses para la inicial: ${x.meses_inicial} (${x.origen_meses_inicial==='ENTREGA_INMUEBLE'?'fijados por la entrega declarada del inmueble':'según tu deseo; entrega del inmueble por confirmar'}). Inicial hipotética: ${money(x.inicial.cuota_inicial)}. Recursos: ${money(x.inicial.recursos_aplicables)}. Saldo: ${money(x.inicial.saldo_inicial)}. Aporte orientativo: ${money(x.inicial.aporte_mensual_orientativo)} al mes. Faltante previsto: ${money(x.inicial.faltante)}. ${x.credito?'Cuota estimada de capital e intereses: '+money(x.credito.cuota_capital_intereses)+' al mes. Total mensual incompleto: faltan seguros y otros gastos.':'Sin cálculo hipotecario: falta una referencia de tasa o es una compra de contado.'} ${x.aporte_orientativo_30?'El aporte del 30 % es una hipótesis elegida expresamente, no un límite legal.':''} ${x.origen_porcentaje_inicial==='EXIGIDO_PROYECTO'?'Inicial según lo exigido por el proyecto.':''} ${x.origen_separacion==='EXIGIDO_PROYECTO'?'Separación según lo exigido por el proyecto.':''} Condiciones por confirmar.`;
       estado('Escenario calculado para esta visita.');
     }catch(err){estado(`No se pudo simular: ${err.message}`);}
   };

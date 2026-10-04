@@ -8,6 +8,22 @@ def obtener_catalogo_publico():
     ).order_by('id')
 
 
+MESES_ES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
+            'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre']
+
+
+def texto_origen(inmueble, modalidad):
+    empresa = (getattr(inmueble, 'empresa', '') or '').strip()
+    fecha = getattr(inmueble, 'fecha_entrega_constructora', None)
+    if modalidad == 'SOBRE_PLANOS':
+        return f'Proyecto de {empresa}' if empresa else None
+    if empresa and fecha:
+        return f'Construido por {empresa}, entregado en {MESES_ES[fecha.month - 1]} de {fecha.year}'
+    if empresa:
+        return f'Comercializado por {empresa}'
+    return None
+
+
 def ficha(inmueble):
     modalidad = getattr(inmueble, 'modalidad_entrega', 'TERMINADO') or 'TERMINADO'
     meses = getattr(inmueble, 'meses_entrega', None)
@@ -30,5 +46,9 @@ def ficha(inmueble):
         'actualizado': inmueble.fecha_actualizacion.isoformat() if inmueble.fecha_actualizacion else None,
         'url': f'/inmuebles/{inmueble.pk}/',
         'modalidad_entrega': modalidad, 'meses_entrega': meses, 'entrega_texto': entrega_texto,
+        'empresa': (inmueble.empresa or '').strip() or None,
+        'origen_texto': texto_origen(inmueble, modalidad),
+        'porcentaje_inicial_exigido': str(inmueble.porcentaje_inicial_exigido) if inmueble.porcentaje_inicial_exigido is not None else None,
+        'valor_separacion': str(inmueble.valor_separacion) if inmueble.valor_separacion is not None else None,
         'pendientes_catalogo': pendientes,
     }

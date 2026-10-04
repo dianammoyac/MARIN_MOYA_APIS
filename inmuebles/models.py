@@ -68,9 +68,14 @@ class Inmueble(models.Model):
     piso = models.IntegerField(null=True, blank=True)
     ano_construccion = models.IntegerField(null=True, blank=True)
 
-    # Entrega (para diferenciar proyecto terminado de sobre planos en el perfilador)
+    # Entrega (para diferenciar proyecto terminado de sobre planos en el perfilador).
+    # Solo los sobre planos tienen meses, % exigido y separación; las terminadas, fecha de entrega.
     modalidad_entrega = models.CharField(max_length=15, choices=MODALIDAD_ENTREGA, default='TERMINADO')
     meses_entrega = models.PositiveIntegerField(null=True, blank=True)
+    fecha_entrega_constructora = models.DateField(null=True, blank=True)
+    porcentaje_inicial_exigido = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+    valor_separacion = models.DecimalField(max_digits=14, decimal_places=2, null=True, blank=True)
+    empresa = models.CharField(max_length=120, blank=True)
 
     # Valores
     precio = models.DecimalField(max_digits=14, decimal_places=2)
@@ -102,10 +107,24 @@ class Inmueble(models.Model):
         verbose_name_plural = "Inmuebles"
 
     def clean(self):
-        if self.modalidad_entrega == 'SOBRE_PLANOS' and not self.meses_entrega:
-            raise ValidationError({'meses_entrega': 'Indique en cuántos meses está la entrega del proyecto sobre planos.'})
-        if self.modalidad_entrega == 'TERMINADO' and self.meses_entrega:
-            raise ValidationError({'meses_entrega': 'Un proyecto terminado se entrega de inmediato; deje los meses vacíos.'})
+        errores = {}
+        if self.estado == 'USADO' and self.modalidad_entrega == 'SOBRE_PLANOS':
+            errores['modalidad_entrega'] = 'Un inmueble usado no puede publicarse como sobre planos.'
+        if self.modalidad_entrega == 'SOBRE_PLANOS':
+            if not self.meses_entrega:
+                errores['meses_entrega'] = 'Indique en cuántos meses está la entrega del proyecto sobre planos.'
+            if self.fecha_entrega_constructora:
+                errores['fecha_entrega_constructora'] = 'La fecha de entrega por constructora solo aplica a proyectos terminados.'
+            if self.porcentaje_inicial_exigido is not None and not 0 < self.porcentaje_inicial_exigido <= 100:
+                errores['porcentaje_inicial_exigido'] = 'Indique un porcentaje entre 0 y 100.'
+            if self.valor_separacion is not None and self.valor_separacion < 0:
+                errores['valor_separacion'] = 'La separación no puede ser negativa.'
+        else:
+            for campo in ('meses_entrega', 'porcentaje_inicial_exigido', 'valor_separacion'):
+                if getattr(self, campo) not in (None, ''):
+                    errores[campo] = 'Un proyecto terminado se entrega de inmediato; este dato solo aplica a sobre planos.'
+        if errores:
+            raise ValidationError(errores)
 
     def __str__(self):
         return f"{self.codigo} - {self.titulo}"
