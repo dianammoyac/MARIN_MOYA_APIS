@@ -281,6 +281,12 @@ class CatalogoYMotorTests(TestCase):
         self.assertIn('Porcentaje de cuota inicial pendiente de publicar', incompleto['pendientes_catalogo'])
         self.assertIn('Valor de separación pendiente de publicar', incompleto['pendientes_catalogo'])
 
+    def test_preguntas_empiezan_descartando_ubicacion_proposito_y_presupuesto(self):
+        from .servicios.preguntas import PREGUNTAS, VERSION, siguiente
+        self.assertEqual(VERSION, '5')
+        self.assertEqual(list(PREGUNTAS)[:3], ['ciudad', 'proposito', 'presupuesto'])
+        self.assertEqual(siguiente({}), 'ciudad')
+
     def test_vivir_no_genera_pendiente_generico_de_proposito(self):
         vivienda(1)
         perfil = normalizar_respuestas({'proposito': respuesta('VIVIR')}, {})

@@ -1,25 +1,27 @@
 from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 from .ubicaciones import obtener_ubicaciones
 
-VERSION = '4'
+VERSION = '5'
 ESTADOS = ('RESPONDIDA', 'SIN_PREFERENCIA', 'NO_SE', 'PREFIERO_DESPUES', 'OMITIDA')
 FUENTES = ('CLIENTE', 'ACOMPANAMIENTO')
 
+# Las preguntas se hacen en este orden para ir descartando: primero dónde,
+# luego para qué y con cuánto, y después el detalle del inmueble y el dinero.
 # Los pesos informativos NO son los pesos de compatibilidad.
 PREGUNTAS = {
+    'ciudad': {'texto': '¿En qué departamento y ciudad desea buscar?', 'tipo': 'ubicacion', 'peso': 10, 'obligatoria': True, 'alternativas': ['SIN_PREFERENCIA', 'NO_SE']},
     'proposito': {'texto': '¿Busca vivienda para vivir, invertir o ambas?', 'tipo': 'opcion', 'opciones': ['VIVIR', 'INVERTIR', 'AMBAS'], 'peso': 10, 'obligatoria': True, 'alternativas': []},
+    'presupuesto': {'texto': '¿Cuál es su presupuesto máximo?', 'tipo': 'dinero', 'peso': 12, 'obligatoria': True, 'alternativas': []},
     'objetivo_inversion': {'texto': '¿Qué busca principalmente con esta inversión?', 'tipo': 'opcion', 'opciones': ['INGRESOS_ARRIENDO', 'RENTA_CORTA', 'VALORIZACION', 'REVENTA', 'DIVERSIFICACION'], 'peso': 8, 'obligatoria': True, 'alternativas': ['NO_SE']},
     'horizonte_inversion': {'texto': '¿Por cuánto tiempo considera mantener la inversión?', 'tipo': 'opcion', 'opciones': ['MENOS_3', 'DE_3_A_7', 'MAS_7'], 'peso': 6, 'obligatoria': True, 'alternativas': ['NO_SE']},
     'prioridad_inversion': {'texto': '¿Qué prioriza al elegir una inversión inmobiliaria?', 'tipo': 'opcion', 'opciones': ['MENOR_INVERSION', 'UBICACION', 'ESPACIO', 'AUN_NO_SE'], 'peso': 5, 'obligatoria': True, 'alternativas': ['NO_SE']},
     'experiencia_inversion': {'texto': '¿Es su primera inversión inmobiliaria?', 'tipo': 'opcion', 'opciones': ['PRIMERA', 'YA_INVIERTO'], 'peso': 3, 'obligatoria': False, 'alternativas': ['NO_SE', 'PREFIERO_DESPUES', 'OMITIDA']},
     'gestion_inversion': {'texto': '¿Cómo piensa administrar la propiedad?', 'tipo': 'opcion', 'opciones': ['DIRECTA', 'DELEGADA', 'POR_DEFINIR'], 'peso': 3, 'obligatoria': False, 'alternativas': ['NO_SE', 'PREFIERO_DESPUES', 'OMITIDA']},
-    'ciudad': {'texto': '¿En qué departamento y ciudad desea buscar?', 'tipo': 'ubicacion', 'peso': 10, 'obligatoria': True, 'alternativas': ['SIN_PREFERENCIA', 'NO_SE']},
     'entrega': {'texto': '¿En cuántos meses desea que le entreguen el inmueble? (0 = entrega inmediata)', 'tipo': 'numero', 'peso': 6, 'obligatoria': True, 'alternativas': ['NO_SE']},
     'habitaciones': {'texto': '¿Cuántas habitaciones necesita?', 'tipo': 'numero', 'peso': 10, 'obligatoria': True, 'alternativas': ['NO_SE']},
     'familia': {'texto': 'Si aún no sabe cuántas habitaciones necesita, ¿cómo está conformado su hogar?', 'tipo': 'familia', 'peso': 8, 'obligatoria': True, 'alternativas': ['NO_SE']},
     'area_m2': {'texto': '¿Qué área mínima busca? (m²)', 'tipo': 'numero', 'peso': 8, 'obligatoria': True, 'alternativas': ['NO_SE']},
     'parqueadero': {'texto': '¿Necesita parqueadero?', 'tipo': 'opcion', 'opciones': ['SI', 'NO'], 'peso': 6, 'obligatoria': True, 'alternativas': ['SIN_PREFERENCIA', 'NO_SE']},
-    'presupuesto': {'texto': '¿Cuál es su presupuesto máximo?', 'tipo': 'dinero', 'peso': 12, 'obligatoria': True, 'alternativas': []},
     'pago': {'texto': '¿Cómo piensa pagar?', 'tipo': 'opcion', 'opciones': ['CONTADO', 'CREDITO'], 'peso': 8, 'obligatoria': True, 'alternativas': ['NO_SE']},
     'recursos': {'texto': '¿Con cuánto cuenta hoy para la compra o cuota inicial?', 'tipo': 'dinero_perfil', 'peso': 8, 'obligatoria': True, 'alternativas': ['NO_SE']},
     'fuentes_recursos': {'texto': '¿Dónde se encuentran esos recursos? Escriba el monto en cada opción', 'tipo': 'montos', 'peso': 5, 'obligatoria': True, 'alternativas': ['NO_SE']},
