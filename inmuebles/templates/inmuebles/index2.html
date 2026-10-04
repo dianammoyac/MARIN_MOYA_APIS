@@ -186,7 +186,134 @@
     .prop-price { font-family: 'Playfair Display', serif; font-size: 22px; }
     .prop-price-usd { font-size: 11px; color: var(--dorado); margin-top: 2px; display: block; }
     .footer-top { display: grid; grid-template-columns: 1.6fr 1fr 1fr; gap: 60px; padding: 70px 64px; background: #080f0f; color: white; }
-    @media (max-width: 960px) { .hero, .strip, .port-grid, .cats-grid { grid-template-columns: 1fr; } .cats-inner { padding: 80px 28px; } }
+    @media (max-width: 960px) {
+      nav, nav.scrolled { padding: 16px 28px; }
+      .nav-right { gap: 20px; }
+      .nav-links { gap: 18px; }
+      .hero { height: auto; min-height: 100vh; grid-template-columns: minmax(0, 1fr) minmax(280px, .85fr); padding: 132px 28px 90px; gap: 28px; }
+      .hero-number { font-size: 300px; right: -25px; }
+      .strip-item { padding: 36px 22px; }
+      #portafolio { padding: 88px 28px !important; }
+      .prop-card { flex-basis: calc(50% - .5px); min-width: 0; }
+      .cats-inner { padding: 80px 28px; }
+      #servicios, #contacto { padding: 80px 28px !important; }
+      #servicios > div:first-child, #contacto > div:first-child { gap: 44px !important; }
+      .footer-top { gap: 32px; padding: 56px 28px; }
+    }
+
+    .nav-toggle { display: none; }
+    @media (max-width: 850px) {
+      nav, nav.scrolled { padding: 14px 20px; }
+      .nav-logo { position: relative; z-index: 502; font-size: 17px; letter-spacing: 3px; }
+      .nav-toggle {
+        display: inline-flex; width: 44px; height: 44px; flex: 0 0 44px;
+        align-items: center; justify-content: center; flex-direction: column; gap: 5px;
+        border: 1px solid rgba(198,161,91,.65); background: transparent; color: var(--dorado);
+        position: relative; z-index: 502; cursor: pointer;
+      }
+      .nav-toggle span { display: block; width: 19px; height: 1px; background: currentColor; transition: transform .2s, opacity .2s; }
+      .nav-toggle[aria-expanded="true"] span:first-child { transform: translateY(3px) rotate(45deg); }
+      .nav-toggle[aria-expanded="true"] span:last-child { transform: translateY(-3px) rotate(-45deg); }
+      .nav-right {
+        display: none; position: absolute; top: 0; left: 0; right: 0; z-index: 501;
+        padding: 78px 22px 26px; background: var(--verde); border-bottom: 1px solid rgba(198,161,91,.3);
+        align-items: stretch; flex-direction: column; gap: 20px; box-shadow: 0 15px 30px rgba(0,0,0,.18);
+      }
+      nav.scrolled .nav-right { background: var(--blanco); }
+      .nav-right.open { display: flex; }
+      .nav-links { flex-direction: column; gap: 0; }
+      .nav-links li { border-bottom: 1px solid rgba(198,161,91,.16); }
+      .nav-links a { display: block; padding: 14px 2px; color: rgba(255,255,255,.85); }
+      nav.scrolled .nav-links a { color: var(--verde); }
+      .nav-login { margin: 0 !important; padding: 4px 2px; }
+      .nav-btn { display: block; text-align: center; padding: 14px 18px; }
+      .nav-sep { display: none; }
+
+      .hero { min-height: 0; height: auto; grid-template-columns: minmax(0, 1fr); padding: 112px 20px 70px; gap: 38px; }
+      .hero-left { max-width: none; }
+      .hero-eyebrow { font-size: 9px; letter-spacing: 3px; margin-bottom: 18px; }
+      .hero h1 { font-size: clamp(43px, 12vw, 64px); line-height: 1.02; }
+      .hero-sub { font-size: 15px; margin: 22px 0 28px; line-height: 1.65; }
+      .hero-actions { align-items: flex-start; flex-direction: column; gap: 17px; }
+      .btn-gold { max-width: 100%; text-align: center; padding: 15px 20px; letter-spacing: 1.5px; }
+      .scroll-hint { display: none; }
+      .hero-right { height: auto; min-width: 0; }
+      .hero-panel { width: 100%; max-width: 440px; padding: 28px 24px; }
+      .hero-number { right: -12px; bottom: -20px; font-size: clamp(170px, 52vw, 260px); }
+
+      .strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .strip-item { padding: 26px 12px; border-bottom: 1px solid var(--borde); }
+      .strip-item:nth-child(2) { border-right: none; }
+      .strip-item:nth-child(3), .strip-item:nth-child(4) { border-bottom: none; }
+      .strip-item > div:first-child { font-size: 34px !important; }
+      .strip-item > div:last-child { font-size: 9px !important; letter-spacing: 1.3px !important; }
+
+      #portafolio { padding: 66px 20px !important; }
+      #portafolio > div:first-child { align-items: flex-start !important; flex-direction: column; gap: 20px; margin-bottom: 30px !important; }
+      .s-kicker { font-size: 9px; letter-spacing: 3px; margin-bottom: 15px; }
+      .s-title { font-size: clamp(32px, 9vw, 44px); }
+      .port-wrapper { margin-top: 30px; }
+      .port-grid { width: 100%; }
+      .prop-card { flex: 0 0 100%; min-width: 0; }
+      .prop-img-wrap { height: clamp(190px, 58vw, 270px); }
+      .prop-body { padding: 22px; }
+      .prop-price { font-size: 19px; }
+      .carousel-nav-port { padding: 0 6px; }
+      .c-btn { width: 38px; height: 38px; }
+
+      .cta-pub-inner { padding: 72px 20px; }
+      .cta-pub-title { font-size: clamp(39px, 11vw, 56px); }
+      .cta-pub-sub { margin-bottom: 30px; }
+      .cta-pub-actions { align-items: stretch; flex-direction: column; gap: 12px; }
+      .cta-pub-actions a { text-align: center; padding: 15px 18px !important; }
+
+      .cats-inner { padding: 66px 20px; }
+      .cats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: 32px; }
+      .cat-item { padding: 20px 16px; gap: 10px; }
+      .cat-icon { font-size: 24px; }
+      .cat-name { font-size: 17px; }
+      .cat-desc { font-size: 12px; }
+      .cat-arrow { opacity: 1; }
+
+      #servicios { padding: 66px 20px !important; }
+      #servicios > div:first-child { grid-template-columns: minmax(0, 1fr) !important; gap: 36px !important; }
+      #servicios > div:first-child > div:last-child { height: 300px !important; }
+      #servicios > div:first-child > div:last-child > div:first-child { font-size: 84px !important; }
+      #servicios > div:first-child > div:last-child > div:last-child { right: -8px !important; bottom: -8px !important; width: 72px !important; height: 72px !important; }
+
+      #contacto { padding: 66px 20px !important; }
+      #contacto > div:first-child { grid-template-columns: minmax(0, 1fr) !important; gap: 34px !important; }
+      #contacto > div:first-child > div > div:last-child { margin-top: 28px !important; }
+      #contacto input, #contacto textarea { width: 100%; min-width: 0; font: inherit; }
+      #contacto button { width: 100%; min-height: 50px; }
+
+      .footer-top { grid-template-columns: minmax(0, 1fr) !important; gap: 30px; padding: 46px 20px; }
+      body { overflow-x: clip; }
+      * { cursor: auto; }
+      a, button, select { cursor: pointer; }
+    }
+
+    @media (min-width: 851px) and (max-width: 960px) {
+      .nav-right { gap: 14px; }
+      .nav-links { gap: 13px; }
+      .nav-links a { font-size: 10px; letter-spacing: 1.2px; }
+      .nav-btn { padding: 9px 12px; font-size: 9px; letter-spacing: 1px; }
+      .hero h1 { font-size: clamp(46px, 6vw, 64px); }
+      .hero-panel { width: min(100%, 320px); padding: 28px 24px; }
+      .cats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      #servicios > div:first-child { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important; gap: 34px !important; }
+      #contacto > div:first-child { gap: 40px !important; }
+      .footer-top { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+
+    @media (max-width: 380px) {
+      .hero { padding-left: 16px; padding-right: 16px; }
+      nav, nav.scrolled { padding-left: 16px; padding-right: 16px; }
+      .hero-panel { padding: 24px 18px; }
+      .cats-inner, #portafolio, #servicios, #contacto { padding-left: 16px !important; padding-right: 16px !important; }
+      .cat-item { padding: 17px 12px; }
+      .cat-name { font-size: 16px; }
+    }
   </style>
 </head>
 <body style="cursor: none;">
@@ -195,7 +322,11 @@
 <nav id="navbar">
   <a href="{% url 'index2' %}" class="nav-logo">Raizenta</a>
 
-  <div class="nav-right">
+  <button class="nav-toggle" id="navToggle" type="button" aria-label="Abrir menú" aria-expanded="false" aria-controls="navRight">
+    <span></span><span></span>
+  </button>
+
+  <div class="nav-right" id="navRight">
     <ul class="nav-links">
       <li><a href="#portafolio">Portafolio</a></li>
       <li><a href="#categorias">Categorías</a></li>
@@ -500,6 +631,22 @@
     el.addEventListener('mouseenter', () => cursor.classList.add('grow'));
     el.addEventListener('mouseleave', () => cursor.classList.remove('grow'));
   });
+  const navToggle = document.getElementById('navToggle');
+  const navRight = document.getElementById('navRight');
+  function cerrarMenu() {
+    navRight.classList.remove('open');
+    navToggle.setAttribute('aria-expanded', 'false');
+    navToggle.setAttribute('aria-label', 'Abrir menú');
+  }
+  navToggle.addEventListener('click', () => {
+    const abierto = navToggle.getAttribute('aria-expanded') !== 'true';
+    navRight.classList.toggle('open', abierto);
+    navToggle.setAttribute('aria-expanded', String(abierto));
+    navToggle.setAttribute('aria-label', abierto ? 'Cerrar menú' : 'Abrir menú');
+  });
+  navRight.querySelectorAll('a').forEach(link => link.addEventListener('click', cerrarMenu));
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') cerrarMenu(); });
+  window.addEventListener('resize', () => { if (window.innerWidth > 850) cerrarMenu(); });
   window.addEventListener('scroll', () => {
     document.getElementById('navbar').classList.toggle('scrolled', window.scrollY > 60);
   });
@@ -544,7 +691,7 @@
     if(!cards.length) return;
     
     const total = cards.length;
-    const show = window.innerWidth > 960 ? 3 : 1;
+    const show = window.innerWidth > 960 ? 3 : window.innerWidth > 700 ? 2 : 1;
     const max = Math.max(0, total - show);
 
     pIdx += dir;
