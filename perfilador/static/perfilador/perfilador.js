@@ -331,7 +331,7 @@
         $('form-simular').elements.recursos.value=valor('recursos')||'';
         $('form-simular').elements.aporte_mensual.value=valor('aporte_mensual')||'';
         document.querySelectorAll('.sim-moneda').forEach(el=>el.textContent=`(${monedaPerfil()})`);
-        $('meses-fijados').textContent=o.modalidad_entrega==='SOBRE_PLANOS'&&o.meses_entrega!=null?`Meses fijados por la entrega declarada: ${o.meses_entrega} para completar la cuota inicial.`:'Entrega inmediata: la cuota inicial debe cubrirse con los recursos actuales (0 meses para aportar).';
+        $('meses-fijados').textContent=o.modalidad_entrega==='SOBRE_PLANOS'&&o.meses_entrega!=null?`Entrega declarada en ${o.meses_entrega} meses. Al calcular se usan los meses restantes en vivo (la fecha de entrega queda fija).`:'Entrega inmediata: la cuota inicial debe cubrirse con los recursos actuales (0 meses para aportar).';
         $('usar-guia-contenedor').hidden=!(respuestas.aporte_mensual?.estado==='NO_SE' && valor('ingresos')!=null);
         $('simulador').hidden=false;$('simulador').scrollIntoView({behavior:'smooth'});
       };acciones.append(sim);
@@ -359,7 +359,25 @@
     estado('Calculando el escenario…');
     try{const r=await pedir('simular/','POST',datos),x=r.resultado;
       const money=v=>formatear(v,x.moneda_perfil,x.cambio);
-      $('resultado-simulacion').textContent=`Meses para la inicial: ${x.meses_inicial} (${x.origen_meses_inicial==='ENTREGA_INMUEBLE'?'fijados por la entrega declarada del inmueble':'según tu deseo; entrega del inmueble por confirmar'}). Inicial hipotética: ${money(x.inicial.cuota_inicial)}. Recursos: ${money(x.inicial.recursos_aplicables)}. Saldo: ${money(x.inicial.saldo_inicial)}. Aporte orientativo: ${money(x.inicial.aporte_mensual_orientativo)} al mes. Faltante previsto: ${money(x.inicial.faltante)}. ${x.credito?'Cuota estimada de capital e intereses: '+money(x.credito.cuota_capital_intereses)+' al mes. Total mensual incompleto: faltan seguros y otros gastos.':'Sin cálculo hipotecario: falta una referencia de tasa o es una compra de contado.'} ${x.aporte_orientativo_30?'El aporte del 30 % es una hipótesis elegida expresamente, no un límite legal.':''} ${x.origen_porcentaje_inicial==='EXIGIDO_PROYECTO'?'Inicial según lo exigido por el proyecto.':''} ${x.origen_separacion==='EXIGIDO_PROYECTO'?'Separación según lo exigido por el proyecto.':''} Condiciones por confirmar.`;
+      const origenMeses=x.origen_meses_inicial==='REMANENTE_EN_VIVO'?'meses restantes en vivo según la entrega declarada':x.origen_meses_inicial==='ENTREGA_INMUEBLE'?'fijados por la entrega declarada del inmueble':'según tu deseo; entrega del inmueble por confirmar';
+      const box=$('resultado-simulacion');box.replaceChildren();
+      const titulo=document.createElement('h4');titulo.textContent='Mini-cotización del plan de compra';box.append(titulo);
+      const tabla=document.createElement('table');tabla.className='tabla';
+      const fila=(c,v)=>{const tr=document.createElement('tr');const a=document.createElement('td');a.textContent=c;const b=document.createElement('td');b.textContent=v;tr.append(a,b);tabla.append(tr);};
+      fila('Meses para la inicial',`${x.meses_inicial} (${origenMeses})`);
+      fila('Inicial hipotética',money(x.inicial.cuota_inicial)+(x.origen_porcentaje_inicial==='EXIGIDO_PROYECTO'?' (exigida por el proyecto)':''));
+      fila('(−) Separación',money(x.inicial.separacion_incluida_en_inicial)+(x.origen_separacion==='EXIGIDO_PROYECTO'?' (exigida por el proyecto)':''));
+      fila('(−) Recursos disponibles',money(x.inicial.recursos_aplicables));
+      fila('(=) Por reunir',money(x.inicial.por_reunir));
+      fila('Cuota mensual requerida',money(x.inicial.cuota_mensual)+(x.meses_inicial==='0'?' (pago único)':` durante ${x.meses_inicial} meses`));
+      fila('Faltante mensual con tu aporte',money(x.inicial.faltante_mensual));
+      fila('Faltante previsto total',money(x.inicial.faltante));
+      if(x.credito)fila('Cuota capital e intereses',money(x.credito.cuota_capital_intereses)+' al mes (sin seguros ni gastos)');
+      else fila('Crédito hipotecario','Sin cálculo: falta una referencia de tasa o es compra de contado.');
+      box.append(tabla);
+      const nota=document.createElement('p');nota.className='nota';
+      nota.textContent=`${x.aporte_orientativo_30?'El aporte del 30 % es una hipótesis elegida expresamente, no un límite legal. ':''}No es una aprobación bancaria. Seguros, gastos y condiciones requieren confirmación.`;
+      box.append(nota);
       estado('Escenario calculado para esta visita.');
     }catch(err){estado(`No se pudo simular: ${err.message}`);}
   };

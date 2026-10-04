@@ -1,4 +1,5 @@
 from inmuebles.models import Inmueble
+from .financiacion import MESES_ES, meses_restantes, sumar_meses, texto_mes_ano
 
 
 def obtener_catalogo_publico():
@@ -6,10 +7,6 @@ def obtener_catalogo_publico():
     return Inmueble.objects.filter(
         tipo__in=['CASA', 'APARTAMENTO'], operacion='VENTA', estatus='DISPONIBLE'
     ).order_by('id')
-
-
-MESES_ES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
-            'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre']
 
 
 def texto_origen(inmueble, modalidad):
@@ -27,10 +24,19 @@ def texto_origen(inmueble, modalidad):
 def ficha(inmueble):
     modalidad = getattr(inmueble, 'modalidad_entrega', 'TERMINADO') or 'TERMINADO'
     meses = getattr(inmueble, 'meses_entrega', None)
+    fecha_fija = entrega_fija = restantes = None
     if modalidad == 'SOBRE_PLANOS' and meses is None:
         entrega_texto = 'Entrega por confirmar con la constructora'
     elif modalidad == 'SOBRE_PLANOS':
-        entrega_texto = f'Sobre planos: entrega declarada en {int(meses)} meses'
+        entrega_fija = sumar_meses(inmueble.fecha_publicacion, int(meses))
+        fecha_fija = entrega_fija.isoformat()
+        restantes = meses_restantes(inmueble.fecha_publicacion, int(meses))
+        if restantes > 0:
+            entrega_texto = (f'Sobre planos: entrega declarada en {int(meses)} meses '
+                             f'({texto_mes_ano(entrega_fija)}); quedan {restantes}')
+        else:
+            entrega_texto = (f'Sobre planos: la entrega declarada ({texto_mes_ano(entrega_fija)}) ya llegó; '
+                             'la inicial debe cubrirse con los recursos actuales')
     else:
         entrega_texto = 'Entrega inmediata (proyecto terminado)'
     pendientes = ['Condición de cuota inicial', 'Inclusiones y gastos de compra']
@@ -46,6 +52,7 @@ def ficha(inmueble):
         'actualizado': inmueble.fecha_actualizacion.isoformat() if inmueble.fecha_actualizacion else None,
         'url': f'/inmuebles/{inmueble.pk}/',
         'modalidad_entrega': modalidad, 'meses_entrega': meses, 'entrega_texto': entrega_texto,
+        'fecha_entrega_fija': fecha_fija, 'meses_restantes': restantes,
         'empresa': (inmueble.empresa or '').strip() or None,
         'origen_texto': texto_origen(inmueble, modalidad),
         'porcentaje_inicial_exigido': str(inmueble.porcentaje_inicial_exigido) if inmueble.porcentaje_inicial_exigido is not None else None,

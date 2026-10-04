@@ -299,17 +299,37 @@ class CatalogoYMotorTests(TestCase):
         r1 = calcular_escenario(respuestas, dict(entrada), listo)
         self.assertEqual((r1['meses_inicial'], r1['origen_meses_inicial']), ('0', 'ENTREGA_INMUEBLE'))
         r2 = calcular_escenario(respuestas, dict(entrada), planos)
-        self.assertEqual((r2['meses_inicial'], r2['origen_meses_inicial']), ('12', 'ENTREGA_INMUEBLE'))
+        self.assertEqual((r2['meses_inicial'], r2['origen_meses_inicial']), ('12', 'REMANENTE_EN_VIVO'))
+        self.assertTrue(r2['fecha_entrega_fija'])
         r3 = calcular_escenario(respuestas, dict(entrada), sin_dato)
         self.assertEqual((r3['meses_inicial'], r3['origen_meses_inicial']), ('6', 'DESEO_CLIENTE_POR_CONFIRMAR'))
+
+    def test_simulador_usa_meses_restantes_en_vivo(self):
+        from datetime import timedelta
+        from django.utils import timezone
+        from inmuebles.models import Inmueble
+        from .views_publicas import calcular_escenario
+        respuestas = normalizar_respuestas(base_perfil(), {})
+        entrada = {'porcentaje_inicial': 30, 'recursos': '60000000', 'aporte_mensual': '4000000'}
+        planos = vivienda(1, modalidad_entrega='SOBRE_PLANOS', meses_entrega=12)
+        Inmueble.objects.filter(pk=planos.pk).update(
+            fecha_publicacion=timezone.localdate() - timedelta(days=210))
+        planos.refresh_from_db()
+        resultado = calcular_escenario(respuestas, dict(entrada), planos)
+        self.assertEqual(resultado['origen_meses_inicial'], 'REMANENTE_EN_VIVO')
+        self.assertLess(int(resultado['meses_inicial']), 12)
 
 
 class FinanzasTests(TestCase):
     def test_caso_referencia(self):
         plan = inicial(500000000, 30, 60000000, 24, 4000000)
-        self.assertEqual((plan['cuota_inicial'], plan['saldo_inicial'], plan['aporte_mensual_orientativo']), ('150000000', '90000000', '3750000'))
+        self.assertEqual((plan['cuota_inicial'], plan['saldo_inicial'], plan['cuota_mensual'], plan['por_reunir']),
+                         ('150000000', '90000000', '3750000', '90000000'))
+        self.assertEqual((plan['faltante'], plan['faltante_mensual'], plan['estado']),
+                         ('0', '0', 'ALCANZABLE_EN_ESCENARIO'))
         plan_12 = inicial(500000000, 30, 60000000, 12, 4000000)
         self.assertEqual((plan_12['recursos_previstos'], plan_12['faltante']), ('108000000', '42000000'))
+        self.assertEqual((plan_12['cuota_mensual'], plan_12['faltante_mensual']), ('7500000', '3500000'))
         cuota = credito(350000000, Decimal('.10'), 20)
         self.assertLessEqual(abs(Decimal(cuota['cuota_capital_intereses']) - 3278238), 2)
         self.assertFalse(cuota['total_completo'])
@@ -320,9 +340,21 @@ class FinanzasTests(TestCase):
                     hitos=[{'mes': 1, 'monto': 70000000}])
         self.assertEqual(x['cuota_inicial'], '150000000')
         self.assertEqual(x['faltante'], '0')
+        self.assertEqual((x['cuota_mensual'], x['faltante_mensual']), ('833333', '0'))
         self.assertTrue(x['alertas'])
         self.assertEqual(inicial(100, 20, 30, 0, 0)['faltante'], '0')
-        self.assertEqual(inicial(100, 20, 0, 0, 0)['aporte_mensual_orientativo'], '20')
+        self.assertEqual(inicial(100, 20, 0, 0, 0)['cuota_mensual'], '20')
+
+    def test_cuenta_regresiva_desde_fecha_fija(self):
+        from datetime import date
+        from .servicios.financiacion import meses_restantes, sumar_meses
+        base = date(2026, 1, 15)
+        self.assertEqual(sumar_meses(base, 12).isoformat(), '2027-01-15')
+        self.assertEqual(sumar_meses(date(2026, 1, 31), 1).isoformat(), '2026-02-28')
+        self.assertEqual(meses_restantes(base, 12, hoy=date(2026, 6, 15)), 7)
+        self.assertEqual(meses_restantes(base, 12, hoy=date(2027, 1, 15)), 0)
+        self.assertEqual(meses_restantes(base, 12, hoy=date(2027, 6, 1)), 0)
+        self.assertIsNone(meses_restantes(base, None, hoy=base))
 
     def test_casos_limite_credito(self):
         self.assertEqual(credito(1200, 0, 1)['cuota_capital_intereses'], '100')

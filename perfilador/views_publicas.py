@@ -16,7 +16,7 @@ from django.views.decorators.http import require_http_methods
 from .models import EvaluacionPerfil, Perfilacion, ReferenciaFinanciera, SolicitudAsesoria
 from .servicios.catalogo import obtener_catalogo_publico
 from .servicios.evaluacion import evaluar_perfil
-from .servicios.financiacion import credito, decimal_campo, inicial
+from .servicios.financiacion import credito, decimal_campo, inicial, meses_restantes, sumar_meses
 from .servicios.moneda import a_cop, obtener_cambio_vigente
 from .servicios.preguntas import PREGUNTAS, VERSION, normalizar_respuestas, pendientes_obligatorias, valor
 from .views import datos, error, limite
@@ -94,9 +94,11 @@ def calcular_escenario(respuestas, entrada, inmueble):
         raise ValueError('Indique recursos y aporte mensual para simular la cuota inicial.')
     modalidad = getattr(inmueble, 'modalidad_entrega', 'TERMINADO') or 'TERMINADO'
     meses_inmueble = getattr(inmueble, 'meses_entrega', None)
+    entrega_fija = None
     if modalidad == 'SOBRE_PLANOS' and meses_inmueble is not None:
-        meses = int(meses_inmueble)
-        origen_meses = 'ENTREGA_INMUEBLE'
+        entrega_fija = sumar_meses(inmueble.fecha_publicacion, int(meses_inmueble))
+        meses = meses_restantes(inmueble.fecha_publicacion, int(meses_inmueble))
+        origen_meses = 'REMANENTE_EN_VIVO'
     elif modalidad == 'TERMINADO':
         meses = 0
         origen_meses = 'ENTREGA_INMUEBLE'
@@ -142,6 +144,7 @@ def calcular_escenario(respuestas, entrada, inmueble):
         prestamo['capacidad_pago'] = 'PENDIENTE_VERIFICACION'
     return {'inicial': plan, 'credito': prestamo, 'producto': pago or 'NO_DECLARADO',
             'meses_inicial': str(meses), 'origen_meses_inicial': origen_meses,
+            'fecha_entrega_fija': entrega_fija.isoformat() if entrega_fija else None,
             'origen_porcentaje_inicial': origen_porcentaje, 'origen_separacion': origen_separacion,
             'precio_referencia': str(inmueble.precio), 'moneda_precio': inmueble.moneda,
             'precio_referencia_cop': str(precio_cop), 'moneda_perfil': moneda_perfil,

@@ -1,6 +1,15 @@
+import calendar
+from datetime import date
 from decimal import Decimal, InvalidOperation, localcontext, ROUND_HALF_UP
 
 PESO = Decimal('1')
+
+MESES_ES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
+            'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre']
+
+
+def texto_mes_ano(fecha):
+    return f'{MESES_ES[fecha.month - 1]} de {fecha.year}'
 
 
 def decimal_campo(valor, nombre, maximo=Decimal('1000000000000')):
@@ -20,6 +29,7 @@ def pesos(valor):
 
 
 def inicial(precio, porcentaje, recursos, meses, aporte, separacion=0, hitos=None):
+    """Cuota mensual = (inicial - separación - recursos) / meses; el aporte declarado es capacidad."""
     precio = decimal_campo(precio, 'precio')
     porcentaje = decimal_campo(porcentaje, 'porcentaje', Decimal('100'))
     recursos = decimal_campo(recursos, 'recursos')
@@ -28,12 +38,17 @@ def inicial(precio, porcentaje, recursos, meses, aporte, separacion=0, hitos=Non
     separacion = decimal_campo(separacion, 'separacion')
     if meses != int(meses):
         raise ValueError('meses: indique un entero.')
+    meses = int(meses)
     cuota = precio * porcentaje / 100
     if separacion > cuota:
         raise ValueError('separacion: no puede superar la cuota inicial.')
     saldo = max(Decimal('0'), cuota - recursos)
     disponibles = min(recursos, cuota)
-    previstos = disponibles + aporte * meses
+    por_reunir = max(Decimal('0'), cuota - disponibles - separacion)
+    cuota_mensual = por_reunir / meses if meses else por_reunir
+    previstos = disponibles + separacion + aporte * meses
+    faltante = max(Decimal('0'), cuota - previstos)
+    faltante_mensual = max(Decimal('0'), cuota_mensual - aporte) if meses else faltante
     alertas = []
     if separacion > disponibles:
         alertas.append({'mes': 0, 'faltante': pesos(separacion - disponibles), 'motivo': 'Separación inmediata'})
@@ -44,15 +59,36 @@ def inicial(precio, porcentaje, recursos, meses, aporte, separacion=0, hitos=Non
             if mes != int(mes):
                 raise ValueError('hito.mes: indique un entero.')
             acumulado += decimal_campo(hito['monto'], 'hito.monto')
-            disponible = disponibles + aporte * mes
+            disponible = disponibles + aporte * int(mes)
             if acumulado > disponible:
                 alertas.append({'mes': int(mes), 'faltante': pesos(acumulado - disponible), 'motivo': 'Hito de pago'})
     return {'cuota_inicial': pesos(cuota), 'recursos_aplicables': pesos(disponibles),
-            'saldo_inicial': pesos(saldo), 'aporte_mensual_orientativo': pesos(saldo / meses) if meses else pesos(saldo),
-            'recursos_previstos': pesos(previstos), 'faltante': pesos(max(Decimal('0'), cuota - previstos)),
+            'saldo_inicial': pesos(saldo), 'cuota_mensual': pesos(cuota_mensual),
+            'por_reunir': pesos(por_reunir),
+            'recursos_previstos': pesos(previstos), 'faltante': pesos(faltante),
+            'faltante_mensual': pesos(faltante_mensual),
             'alertas': alertas, 'separacion_incluida_en_inicial': pesos(separacion),
             'calendario': 'HITOS' if hitos else 'UNIFORME_HIPOTETICO',
             'estado': 'ALCANZABLE_EN_ESCENARIO' if previstos >= cuota and not alertas else 'POR_REVISAR'}
+
+
+def sumar_meses(fecha, cantidad):
+    """Suma meses calendario con tope de fin de mes."""
+    total = fecha.year * 12 + (fecha.month - 1) + int(cantidad)
+    ano, mes = divmod(total, 12)
+    return date(ano, mes + 1, min(fecha.day, calendar.monthrange(ano, mes + 1)[1]))
+
+
+def meses_restantes(desde, meses_totales, hoy=None):
+    """Meses completos que quedan hasta la fecha fija (desde + meses_totales); mínimo 0."""
+    if meses_totales is None:
+        return None
+    hoy = hoy or date.today()
+    entrega = sumar_meses(desde, int(meses_totales))
+    diferencia = (entrega.year - hoy.year) * 12 + (entrega.month - hoy.month)
+    if entrega.day < hoy.day:
+        diferencia -= 1
+    return max(0, diferencia)
 
 
 def credito(capital, tasa_ea, anos, administracion=None, seguros=None, cuota_comoda=None):
