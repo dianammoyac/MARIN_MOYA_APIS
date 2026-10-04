@@ -3,6 +3,7 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, get_object_or_404, redirect
 from rest_framework import viewsets
+from rest_framework.permissions import IsAuthenticatedOrReadOnly
 
 from .forms import InmuebleForm
 from .forms_auth import LoginForm, RegistroForm
@@ -13,6 +14,18 @@ from .serializers import InmuebleSerializer
 class InmuebleViewSet(viewsets.ModelViewSet):
     queryset = Inmueble.objects.all().order_by('-id')
     serializer_class = InmuebleSerializer
+    permission_classes = [IsAuthenticatedOrReadOnly]
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        if self.request.method in ('GET', 'HEAD', 'OPTIONS'):
+            return queryset
+        if self.request.user.is_superuser:
+            return queryset
+        return queryset.filter(usuario=self.request.user)
+
+    def perform_create(self, serializer):
+        serializer.save(usuario=self.request.user)
 
 
 def index2_view(request):

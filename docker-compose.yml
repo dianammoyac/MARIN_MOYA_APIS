@@ -1,13 +1,11 @@
-version: '3.8'
-
 services:
   db:
     image: mysql:8.0
     container_name: marin_moya_db
     restart: always
     environment:
-      MYSQL_DATABASE: bd_marinmoya_inversiones
-      MYSQL_ROOT_PASSWORD: root_password
+      MYSQL_DATABASE: ${DB_NAME:-bd_marinmoya_inversiones}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Configura MYSQL_ROOT_PASSWORD}
     volumes:
       - mysql_data:/var/lib/mysql
     ports:
@@ -16,17 +14,21 @@ services:
   web:
     build: .
     container_name: marin_moya_app
-    command: python manage.py runserver 0.0.0.0:8000
+    command: sh -c "python manage.py collectstatic --noinput && gunicorn MARIN_MOYA_APIS.wsgi:application --bind 0.0.0.0:8000 --workers 2 --access-logfile - --error-logfile -"
     volumes:
       - .:/app
     ports:
       - "8000:8000"
     environment:
-      - DB_NAME=bd_marinmoya_inversiones
-      - DB_USER=root
-      - DB_PASSWORD=root_password
+      - DB_NAME=${DB_NAME:-bd_marinmoya_inversiones}
+      - DB_USER=${DB_USER:-root}
+      - DB_PASSWORD=${DB_PASSWORD:?Configura DB_PASSWORD}
       - DB_HOST=db
       - DB_PORT=3306
+      - DJANGO_DEBUG=${DJANGO_DEBUG:-1}
+      - DJANGO_SECRET_KEY=${DJANGO_SECRET_KEY:?Configura DJANGO_SECRET_KEY}
+      - DJANGO_ALLOWED_HOSTS=${DJANGO_ALLOWED_HOSTS:-localhost,127.0.0.1}
+      - DJANGO_CSRF_TRUSTED_ORIGINS=${DJANGO_CSRF_TRUSTED_ORIGINS:-https://raizenta.com,https://www.raizenta.com}
     depends_on:
       - db
 

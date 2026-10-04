@@ -2,11 +2,14 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+from django.views.static import serve as servir_media
 from django.views.generic import RedirectView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include('inmuebles.urls')),
+    path('api/perfilador/', include('perfilador.urls_api')),
+    path('perfilador/', include('perfilador.urls')),
     path('', RedirectView.as_view(url='/index2/', permanent=False)),
     path('', include('inmuebles.urls_front')),
 ]
@@ -15,3 +18,6 @@ urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+else:
+    # Conserva las fotos existentes tras desactivar DEBUG hasta migrar /media/ a Nginx.
+    urlpatterns += [path('media/<path:path>', servir_media, {'document_root': settings.MEDIA_ROOT})]

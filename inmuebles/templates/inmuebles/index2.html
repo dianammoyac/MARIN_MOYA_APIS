@@ -5,7 +5,7 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Diseño Premium - Marín Moya</title>
+  <title>Raizenta — Encuentra tu hogar</title>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,700;1,400;1,500&family=Jost:wght@300;400;500&display=swap" rel="stylesheet"/>
   <style>
     :root {
@@ -193,7 +193,7 @@
 <div id="cursor"></div>
 
 <nav id="navbar">
-  <a href="{% url 'index2' %}" class="nav-logo">Marín Moya</a>
+  <a href="{% url 'index2' %}" class="nav-logo">Raizenta</a>
 
   <div class="nav-right">
     <ul class="nav-links">
@@ -233,8 +233,8 @@
     </p>
 
     <div class="hero-actions">
-      <a href="{% url 'inmuebles_listado' %}" class="btn-gold">Explorar portafolio</a>
-      <a href="#contacto" class="btn-ghost">Hablar con un asesor</a>
+      <a href="{% url 'perfilador:inicio' %}" class="btn-gold">Encuentra tu hogar ideal</a>
+      <a href="{% url 'inmuebles_listado' %}" class="btn-ghost">Explorar portafolio</a>
     </div>
 
     <div class="scroll-hint">Desplazar</div>
@@ -354,9 +354,9 @@
     </h2>
     <p class="cta-pub-sub">
       {% if user.is_authenticated %}
-        Sigue haciendo crecer tu inventario con las herramientas profesionales de Marín Moya Inversiones.
+        Sigue haciendo crecer tu inventario con las herramientas profesionales de Raizenta Inversiones.
       {% else %}
-        Regístrate en el portal, cargá tus propiedades y gestioná tu inventario con las herramientas profesionales de Marín Moya Inversiones.
+        Regístrate en el portal, cargá tus propiedades y gestioná tu inventario con las herramientas profesionales de Raizenta Inversiones.
       {% endif %}
     </p>
     <div class="cta-pub-actions">
@@ -474,7 +474,7 @@
 
 <footer class="footer-top">
     <div>
-      <div style="font-family:'Playfair Display'; font-size:22px; letter-spacing:3px; margin-bottom:6px;">MARÍN MOYA</div>
+      <div style="font-family:'Playfair Display'; font-size:22px; letter-spacing:3px; margin-bottom:6px;">RAIZENTA</div>
       <p style="font-size:13px; color:rgba(255,255,255,.35); line-height:1.8;">Portal inmobiliario líder en gestión de activos de alta valorización en Colombia.</p>
     </div>
     <div>

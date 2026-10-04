@@ -6,6 +6,7 @@ class InmuebleSerializer(serializers.ModelSerializer):
     class Meta:
         model = Inmueble
         fields = '__all__'
+        read_only_fields = ('usuario', 'codigo', 'fecha_publicacion', 'fecha_actualizacion')
 
     def validate_precio(self, value):
         if value <= 0:

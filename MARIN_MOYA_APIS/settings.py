@@ -3,18 +3,20 @@ import os
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = 'django-insecure-*ib+7z6d+9^ta!m68tp&_dh%b0clwfsuq+xzysgqq$_$8kz&3*'
+DEBUG = os.environ.get('DJANGO_DEBUG', '1') == '1'
+SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'clave-local-solo-desarrollo')
 
-DEBUG = True
-
-ALLOWED_HOSTS = [
-    '3.208.22.207',
-    '54.243.200.132',
-    'raizenta.com',
-    'www.raizenta.com',
-    'localhost',
-    '127.0.0.1',
-]
+ALLOWED_HOSTS = [host.strip() for host in os.environ.get(
+    'DJANGO_ALLOWED_HOSTS',
+    '3.208.22.207,54.243.200.132,raizenta.com,www.raizenta.com,localhost,127.0.0.1',
+).split(',') if host.strip()]
+CSRF_TRUSTED_ORIGINS = [origin.strip() for origin in os.environ.get(
+    'DJANGO_CSRF_TRUSTED_ORIGINS', 'https://raizenta.com,https://www.raizenta.com',
+).split(',') if origin.strip()]
+SESSION_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_SECURE = not DEBUG
+SECURE_SSL_REDIRECT = not DEBUG
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https') if not DEBUG else None
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -28,6 +30,7 @@ INSTALLED_APPS = [
     'django.contrib.humanize',
 
     'inmuebles',
+    'perfilador',
 ]
 
 MIDDLEWARE = [
@@ -39,6 +42,8 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+if not DEBUG:
+    MIDDLEWARE.insert(1, 'whitenoise.middleware.WhiteNoiseMiddleware')
 
 ROOT_URLCONF = 'MARIN_MOYA_APIS.urls'
 
@@ -60,14 +65,17 @@ TEMPLATES = [
 WSGI_APPLICATION = 'MARIN_MOYA_APIS.wsgi.application'
 
 DATABASES = {
-    'default': {
+    'default': ({
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': os.environ.get('DJANGO_SQLITE_NAME', str(BASE_DIR / 'db.sqlite3')),
+    } if os.environ.get('DJANGO_USE_SQLITE') == '1' and DEBUG else {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': os.environ.get('DB_NAME', 'bd_marinmoya_inversiones'),
-        'USER': os.environ.get('DB_USER', 'root'),
-        'PASSWORD': os.environ.get('DB_PASSWORD', 'root_password'),
+        'USER': os.environ.get('DB_USER') or 'root',
+        'PASSWORD': os.environ.get('DB_PASSWORD') or 'root_password',
         'HOST': os.environ.get('DB_HOST', 'db'),
         'PORT': os.environ.get('DB_PORT', '3306'),
-    }
+    })
 }
 
 AUTH_PASSWORD_VALIDATORS = [
@@ -92,13 +100,26 @@ USE_I18N = True
 USE_TZ = True
 
 STATIC_URL = 'static/'
-STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATIC_ROOT = Path(os.environ.get('DJANGO_STATIC_ROOT', str(BASE_DIR / 'staticfiles')))
+STORAGES = {
+    'default': {'BACKEND': 'django.core.files.storage.FileSystemStorage'},
+    'staticfiles': {'BACKEND': (
+        'django.contrib.staticfiles.storage.StaticFilesStorage'
+        if DEBUG else 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+    )},
+}
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-LOGIN_URL = '/'
+LOGIN_URL = '/login/'
 LOGIN_REDIRECT_URL = '/mis-inmuebles/'
 LOGOUT_REDIRECT_URL = '/inmuebles/'
+PERFILADOR_LIMITES = {
+    'crear': int(os.environ.get('PERFILADOR_LIMITE_CREAR', '20')),
+    'evaluar': int(os.environ.get('PERFILADOR_LIMITE_EVALUAR', '60')),
+    'simular': int(os.environ.get('PERFILADOR_LIMITE_SIMULAR', '60')),
+    'solicitar': int(os.environ.get('PERFILADOR_LIMITE_SOLICITAR', '10')),
+}

@@ -3,7 +3,8 @@ from . import views
 from .views_admin import admin_dashboard, update_user_role
 
 urlpatterns = [
-    path("", views.login_view, name="login"),
+    path("", views.index2_view, name="inicio"),
+    path("login/", views.login_view, name="login"),
     path("index2/", views.index2_view, name="index2"),
     path("register/", views.register_view, name="register"),
     path("logout/", views.logout_view, name="logout"),
