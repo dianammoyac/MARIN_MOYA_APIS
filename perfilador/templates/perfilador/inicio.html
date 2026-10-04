@@ -1,0 +1,93 @@
+{% load static %}
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Encuentra tu hogar ideal — Raizenta</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;1,400&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{% static 'perfilador/perfilador.css' %}">
+  <style>.campo-dinero{border:1px solid var(--borde);background:#fff}.campo-dinero label{margin:0;padding:12px 12px 4px}.campo-dinero input{border:none!important;margin-top:4px}.campo-dinero input:focus-visible{outline-offset:-3px}.vista-moneda{margin:0;padding:0 12px 12px;font-weight:500}.resumen-fuentes{font-weight:500;margin:14px 0 0}.grupo-opciones{display:flex;flex-direction:column;gap:10px;margin-top:8px}.opcion-fila{display:flex;align-items:center;gap:12px;border:1px solid var(--borde);background:#fff;padding:12px 14px;cursor:pointer}.opcion-fila:hover{border-color:var(--dorado)}.opcion-fila input{accent-color:var(--dorado);width:18px;height:18px;flex-shrink:0}.opcion-fila label{margin:0;font-weight:400;cursor:pointer}</style>
+  <style>.resumen-perfil{border-bottom:1px solid var(--borde);padding-bottom:22px;margin-bottom:30px}.resumen-perfil h2{margin-bottom:8px}.resumen-perfil dl{display:grid;grid-template-columns:minmax(110px,38%) minmax(0,1fr);gap:12px 16px;margin:20px 0 0;font-size:14px}.resumen-perfil dt{color:var(--gris)}.resumen-perfil dd{margin:0;font-weight:500;overflow-wrap:anywhere}.resumen-perfil .nota{margin:0}@media(max-width:420px){.resumen-perfil dl{grid-template-columns:1fr;gap:3px}.resumen-perfil dd{margin-bottom:10px}}</style>
+  <style>.datos-opcionales{border-bottom:1px solid var(--borde);padding-bottom:22px;margin-bottom:28px}.datos-opcionales h2{font-size:23px;margin:8px 0}.datos-opcionales .nota{margin:4px 0 12px}.datos-opcionales button{margin-top:8px}</style>
+  <script src="{% static 'perfilador/perfilador.js' %}?v=12" defer></script>
+</head>
+<body>
+  <header class="barra"><a class="marca" href="{% url 'index2' %}">RAIZENTA <small>INVERSIONES</small></a>
+    <nav aria-label="Navegación principal"><a href="{% url 'index2' %}">Inicio</a><a href="{% url 'inmuebles_listado' %}">Portafolio</a></nav></header>
+  <main>
+    <section class="presentacion"><span class="sobre">ORIENTACIÓN PARA COMPRA DE VIVIENDA</span>
+      <h1>Una decisión que encaje <em>contigo.</em></h1>
+      <p>Cuéntanos si buscas un hogar, una inversión o ambas cosas. Algunas respuestas son necesarias para orientar la búsqueda; cuando no lo sepas, puedes decirlo.</p>
+      <p class="nota">Orientación preliminar. La afinidad no indica probabilidad de compra ni aprobación bancaria.</p>
+    </section>
+    <section class="contenido" aria-label="Perfilador">
+      <div id="estado" class="estado" role="status" aria-live="polite">Preparando tu recorrido…</div>
+      <div class="columnas">
+        <section class="tarjeta" aria-labelledby="titulo-pregunta">
+          <section class="datos-opcionales" aria-labelledby="titulo-datos-opcionales">
+            <span class="sobre">OPCIONAL · EN CUALQUIER MOMENTO</span>
+            <h2 id="titulo-datos-opcionales">Personaliza tu perfil</h2>
+            <p class="nota">Puedes ingresar tu nombre y celular ahora o más adelante. No son necesarios para ver las recomendaciones.</p>
+            <form id="form-datos-opcionales" autocomplete="off">
+              <label for="nombre-perfil">Nombre</label>
+              <input id="nombre-perfil" name="nombre" type="text" maxlength="120" placeholder="Ej.: Diana Moya" autocomplete="off">
+              <label for="celular-perfil">Celular</label>
+              <input id="celular-perfil" name="celular" type="tel" inputmode="tel" maxlength="40" placeholder="Ej.: 300 123 4567" autocomplete="off">
+              <button type="submit" class="secundario">Ingresar datos</button>
+              <p id="estado-datos-opcionales" class="nota" role="status" aria-live="polite"></p>
+            </form>
+          </section>
+          <span class="sobre" id="progreso"></span><h2 id="titulo-pregunta">Cuéntanos sobre tu búsqueda</h2>
+          <form id="form-pregunta" hidden>
+            <div id="campo"></div>
+            <label class="marca-requisito" id="envoltorio-indispensable"><input type="checkbox" id="indispensable"> Es indispensable para mí</label>
+            <div class="opciones-respuesta"><button type="button" data-estado="SIN_PREFERENCIA">Sin preferencia de ciudad; puedo explorar opciones</button><button type="button" data-estado="NO_SE">No lo sé todavía</button><button type="button" data-estado="PREFIERO_DESPUES">Prefiero después</button><button type="button" data-estado="OMITIDA">Omitir</button></div>
+            <p id="error-campo" class="error" role="alert"></p>
+            <div class="acciones"><button type="button" id="anterior" class="secundario">← Anterior</button><button type="submit" class="principal">Guardar y continuar →</button></div>
+          </form>
+          <div id="completado" hidden>
+            <p class="nota">Ya tienes tu recomendación en el panel de resultados. Si quieres perfilar otra búsqueda, empieza de nuevo.</p>
+            <div class="acciones"><button id="revisar" type="button" class="secundario">← Revisar respuestas</button><button id="nuevo" type="button" class="principal">Empezar de nuevo →</button></div>
+          </div>
+        </section>
+        <section class="tarjeta resultados" id="resultados" aria-labelledby="titulo-resultados">
+          <section class="resumen-perfil" aria-labelledby="titulo-resumen-perfil">
+            <span class="sobre">TU BÚSQUEDA</span><h2 id="titulo-resumen-perfil">Resumen del perfil</h2>
+            <p class="nota" id="avance-perfil" role="status" aria-live="polite">Todavía no has respondido preguntas.</p>
+            <dl id="datos-perfil"></dl>
+          </section>
+          <span class="sobre">RESULTADOS SEGÚN TUS RESPUESTAS</span><h2 id="titulo-resultados">Opciones para ti</h2>
+          <p id="resumen">Responde lo que sepas para encontrar opciones.</p><div id="opciones"></div>
+          <div id="comparacion" hidden></div>
+          <div id="simulador" hidden>
+            <h3>Explore cómo cambiaría su plan de compra</h3><p id="simular-titulo"></p>
+            <form id="form-simular">
+              <div class="campos-grid"><label>Inicial hipotética (%)<input name="porcentaje_inicial" type="number" min="0" max="100" step="1" value="30" required></label>
+                <label>Meses para aportar<input name="meses_inicial" type="number" min="0" max="600" value="24" required></label>
+                <label>Recursos disponibles <span class="sim-moneda"></span><input name="recursos" type="number" min="0" step="1"></label>
+                <label>Aporte mensual <span class="sim-moneda"></span><input name="aporte_mensual" type="number" min="0" step="1"></label>
+                <label>Referencia vigente (opcional)<select name="referencia" id="referencia"><option value="">Sin referencia verificada</option></select></label>
+                <label>Tasa hipotética E.A. (decimal, si no elige referencia)<input name="tasa_ea" type="number" min="0" max="1" step="0.0001" placeholder="Ej.: 0.10"></label>
+                <label>Plazo de crédito (años)<input name="anos" type="number" min="1" max="50" value="20"></label></div>
+              <label class="marca-requisito" id="usar-guia-contenedor" hidden><input type="checkbox" name="usar_aporte_orientativo" id="usar-guia"> Explorar un aporte equivalente al 30 % de los ingresos declarados de mi hogar</label>
+              <p class="nota">El 30 % es solo un ejemplo para explorar, no una regla legal ni una aprobación de crédito. Otras obligaciones y gastos requieren análisis. La inicial, el plazo y la tasa son hipótesis.</p>
+              <button class="principal" type="submit">Calcular escenario</button>
+            </form><div id="resultado-simulacion" aria-live="polite"></div>
+          </div>
+          <div id="asesoria" hidden><h3>Continúa con una asesora</h3>
+            <form id="form-asesoria"><div class="campos-grid">
+              <label>Nombre<input name="nombre" autocomplete="name" required maxlength="120"></label>
+              <label>Correo (opcional)<input name="correo" type="email" autocomplete="email"></label>
+              <label>Teléfono (opcional)<input name="telefono" autocomplete="tel"></label>
+              <label>Prefiero que me contacten por<select name="preferencia_contacto"><option value="CORREO">Correo</option><option value="TELEFONO">Teléfono</option></select></label>
+              <label>Siguiente paso<select name="accion"><option value="ACOMPANAMIENTO">Recibir acompañamiento</option><option value="VISITA">Programar visita</option><option value="FINANCIACION">Revisar financiación</option><option value="CONDICIONES">Confirmar condiciones</option></select></label></div>
+              <label class="marca-requisito"><input name="consentimiento" type="checkbox" required> Autorizo usar mis datos para responder esta solicitud de asesoría.</label>
+              <button class="principal" type="submit">Solicitar asesoría</button>
+            </form><p id="confirmacion" role="status" aria-live="polite"></p>
+          </div>
+        </section>
+      </div>
+    </section>
+  </main>
+</body>
+</html>
