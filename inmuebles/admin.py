@@ -8,5 +8,5 @@ class InmuebleAdmin(admin.ModelAdmin):
                     'meses_entrega', 'empresa', 'ciudad', 'departamento', 'precio', 'estatus')
     list_filter = ('tipo', 'operacion', 'estado', 'modalidad_entrega', 'estatus', 'departamento')
     search_fields = ('codigo', 'titulo', 'ciudad', 'barrio')
-    list_editable = ('modalidad_entrega', 'meses_entrega')
+    list_editable = ('meses_entrega',)
     readonly_fields = ('codigo', 'fecha_publicacion', 'fecha_actualizacion')

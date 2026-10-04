@@ -508,15 +508,8 @@
               <input type="hidden" name="estado" id="estadoInput" value="{{ form.estado.value|default:'USADO' }}"/>
             </div>
 
-            <div class="field" style="margin-top: 24px;">
-              <label>Entrega del proyecto</label>
-              <div class="op-group">
-                <button type="button" class="op-btn" id="btnTerminada" onclick="selectModalidad(this, 'TERMINADO')">Terminada</button>
-                <button type="button" class="op-btn" id="btnPlanos" onclick="selectModalidad(this, 'SOBRE_PLANOS')">Sobre planos</button>
-              </div>
-              <input type="hidden" name="modalidad_entrega" id="modalidadInput" value="{{ form.modalidad_entrega.value|default:'TERMINADO' }}"/>
-            </div>
             <div id="bloque-planos" style="margin-top: 16px;">
+              <div class="field" style="margin-bottom: 14px;"><label>Entrega del proyecto: sobre planos</label></div>
               <div class="form-row three">
                 <div class="field"><label>Meses para la entrega *</label><input type="number" name="meses_entrega" id="mesesInput" min="1" max="120" step="1" value="{{ form.meses_entrega.value|default:'' }}"/></div>
                 <div class="field"><label>% inicial exigido (opcional)</label><input type="number" name="porcentaje_inicial_exigido" id="pctInput" min="0" max="100" step="0.01" value="{{ form.porcentaje_inicial_exigido.value|default:'' }}"/></div>
@@ -651,28 +644,11 @@
       group.querySelectorAll('.op-btn').forEach(b => b.classList.remove('active'));
       el.classList.add('active');
       document.getElementById('estadoInput').value = val;
-      if (val === 'USADO') {
-        selectModalidad(document.getElementById('btnTerminada'), 'TERMINADO');
-        document.getElementById('btnPlanos').disabled = true;
-      } else {
-        document.getElementById('btnPlanos').disabled = false;
-        if (val === 'EN_CONSTRUCCION') selectModalidad(document.getElementById('btnPlanos'), 'SOBRE_PLANOS');
-      }
-      actualizarEntrega();
-    }
-
-    function selectModalidad(el, val) {
-      if (el.disabled) return;
-      const group = el.closest('.op-group');
-      group.querySelectorAll('.op-btn').forEach(b => b.classList.remove('active'));
-      el.classList.add('active');
-      document.getElementById('modalidadInput').value = val;
       actualizarEntrega();
     }
 
     function actualizarEntrega() {
-      const mod = document.getElementById('modalidadInput').value;
-      const planos = mod === 'SOBRE_PLANOS';
+      const planos = document.getElementById('estadoInput').value === 'EN_CONSTRUCCION';
       document.getElementById('bloque-planos').style.display = planos ? '' : 'none';
       document.getElementById('bloque-fecha').style.display = planos ? 'none' : '';
       document.getElementById('mesesInput').required = planos;
@@ -699,13 +675,7 @@
       aviso.style.display = viejo ? '' : 'none';
     }
     document.getElementById('fechaInput').addEventListener('change', avisarNuevo);
-    (function initEntrega() {
-      const mod = document.getElementById('modalidadInput').value || 'TERMINADO';
-      const btn = mod === 'SOBRE_PLANOS' ? document.getElementById('btnPlanos') : document.getElementById('btnTerminada');
-      btn.classList.add('active');
-      if (document.getElementById('estadoInput').value === 'USADO') document.getElementById('btnPlanos').disabled = true;
-      actualizarEntrega();
-    })();
+    actualizarEntrega();
 
     function increment(id) {
       const el = document.getElementById(id);
