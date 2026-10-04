@@ -142,7 +142,10 @@ def calcular_escenario(respuestas, entrada, inmueble):
             if referencia.porcentaje_maximo is not None and capital * 100 > precio_cop * referencia.porcentaje_maximo:
                 prestamo['pendientes'].append('Crédito necesario supera el máximo orientativo de la referencia')
         prestamo['capacidad_pago'] = 'PENDIENTE_VERIFICACION'
+    resto_pct = Decimal('100') - decimal_campo(porcentaje, 'porcentaje_inicial', Decimal('100'))
+    saldo_financiar = precio_cop * resto_pct / 100
     return {'inicial': plan, 'credito': prestamo, 'producto': pago or 'NO_DECLARADO',
+            'saldo_a_financiar': str(saldo_financiar), 'porcentaje_restante': str(resto_pct),
             'meses_inicial': str(meses), 'origen_meses_inicial': origen_meses,
             'fecha_entrega_fija': entrega_fija.isoformat() if entrega_fija else None,
             'origen_porcentaje_inicial': origen_porcentaje, 'origen_separacion': origen_separacion,

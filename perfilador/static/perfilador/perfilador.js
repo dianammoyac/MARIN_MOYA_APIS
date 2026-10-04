@@ -371,8 +371,9 @@
       fila('(=) Por reunir',money(x.inicial.por_reunir));
       fila('Cuota mensual requerida',money(x.inicial.cuota_mensual)+(x.meses_inicial==='0'?' (pago único)':` durante ${x.meses_inicial} meses`));
       fila('Faltante mensual con tu aporte',money(x.inicial.faltante_mensual));
-      fila('Faltante previsto total',money(x.inicial.faltante));
-      if(x.credito)fila('Cuota capital e intereses',money(x.credito.cuota_capital_intereses)+' al mes (sin seguros ni gastos)');
+      fila('Faltante de la inicial a la entrega',money(x.inicial.faltante));
+      if(Number(x.porcentaje_restante)>0)fila(`Saldo a financiar a la entrega (${x.porcentaje_restante} %)`,money(x.saldo_a_financiar));
+      if(x.credito)fila('Cuota estimada banco',money(x.credito.cuota_capital_intereses)+' al mes (sin seguros ni gastos)');
       else fila('Crédito hipotecario','Sin cálculo: falta una referencia de tasa o es compra de contado.');
       box.append(tabla);
       const nota=document.createElement('p');nota.className='nota';

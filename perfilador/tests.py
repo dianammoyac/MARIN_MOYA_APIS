@@ -301,6 +301,7 @@ class CatalogoYMotorTests(TestCase):
         r2 = calcular_escenario(respuestas, dict(entrada), planos)
         self.assertEqual((r2['meses_inicial'], r2['origen_meses_inicial']), ('12', 'REMANENTE_EN_VIVO'))
         self.assertTrue(r2['fecha_entrega_fija'])
+        self.assertEqual((r2['porcentaje_restante'], r2['saldo_a_financiar']), ('70', '350000000'))
         r3 = calcular_escenario(respuestas, dict(entrada), sin_dato)
         self.assertEqual((r3['meses_inicial'], r3['origen_meses_inicial']), ('6', 'DESEO_CLIENTE_POR_CONFIRMAR'))
 
