@@ -304,14 +304,28 @@
   function dibujar(){
     $('opciones').replaceChildren();$('comparacion').hidden=$('simulador').hidden=$('asesoria').hidden=true;
     if(resultado.estado==='CATALOGO_VACIO'){$('resumen').textContent='Ahora no hay apartamentos o casas disponibles en venta. Puedes empezar otra búsqueda o volver más adelante.';return;}
+    if(resultado.estado==='SIN_COINCIDENCIAS_UBICACION'){
+      const lugar=resultado.ubicacion_deseada;
+      $('resumen').textContent=`No encontramos apartamentos o casas disponibles en ${lugar?.ciudad}, ${lugar?.departamento}. No vamos a recomendarte propiedades de ciudades lejanas como si coincidieran. Prueba ampliar la búsqueda a todo ${lugar?.departamento} o elegir otra ciudad.`;
+      return;
+    }
     if(resultado.estado==='SIN_COINCIDENCIAS'){$('resumen').textContent=`No hay coincidencias con tus requisitos indispensables (${resultado.excluidas_requisitos} opciones excluidas). Puedes revisar una preferencia.`;return;}
     const cambio=resultado.cambio;
-    $('resumen').textContent=`Encontramos ${resultado.total_opciones} viviendas de ${resultado.total_catalogo} disponibles. Cobertura: ${resultado.cobertura} %. ${resultado.pendientes_cliente.length?'Información pendiente: '+resultado.pendientes_cliente.join('; ')+'.':''}${monedaPerfil()==='USD'&&!cambio?' Sin una tasa COP/USD verificada no podemos comparar el presupuesto ni convertir precios.':''}`;
+    if(resultado.estado==='ALTERNATIVAS_UBICACION'){
+      const lugar=resultado.ubicacion_deseada;
+      $('resumen').textContent=`No encontramos opciones exactas en ${lugar?.ciudad}. Estas ${resultado.alternativas_mismo_departamento} alternativas están en otros municipios de ${lugar?.departamento}; no contamos con distancias o tiempos de viaje, así que verifica si la ubicación te sirve. Cobertura: ${resultado.cobertura} %.`;
+    }else{
+      const resumenUbicacion=resultado.ubicacion_deseada?.ciudad
+        ? `Encontramos ${resultado.coincidencias_ubicacion} opciones en ${resultado.ubicacion_deseada.ciudad}${resultado.alternativas_mismo_departamento?` y ${resultado.alternativas_mismo_departamento} alternativas en otros municipios de ${resultado.ubicacion_deseada.departamento} (distancia por verificar)`:''}.`
+        : `Encontramos ${resultado.total_opciones} viviendas de ${resultado.total_catalogo} disponibles.`;
+      $('resumen').textContent=`${resumenUbicacion} Cobertura: ${resultado.cobertura} %. ${resultado.pendientes_cliente.length?'Información pendiente: '+resultado.pendientes_cliente.join('; ')+'.':''}${monedaPerfil()==='USD'&&!cambio?' Sin una tasa COP/USD verificada no podemos comparar el presupuesto ni convertir precios.':''}`;
+    }
     resultado.opciones.forEach((o,i)=>{
-      const card=document.createElement('article');card.className='resultado'+(i===0?' destacada':'');
+      const card=document.createElement('article');card.className='resultado'+(o.id===resultado.principal?' destacada':'');
       const linea=(contenido,clase)=>{const p=document.createElement('p');p.textContent=contenido;if(clase)p.className=clase;card.append(p);};
       if(o.imagen){const imagen=document.createElement('img');imagen.src=o.imagen;imagen.alt=`Imagen de ${o.titulo}`;imagen.loading='lazy';card.append(imagen);}
-      linea(i===0?'RECOMENDACIÓN PRINCIPAL':o.id===resultado.alternativa?'ALTERNATIVA DESTACADA':'OPCIÓN COMPATIBLE','etiqueta');
+      const esAlternativaUbicacion=o.tipo_coincidencia_ubicacion==='ALTERNATIVA_DEPARTAMENTO';
+      linea(esAlternativaUbicacion?'ALTERNATIVA EN OTRO MUNICIPIO · UBICACIÓN POR REVISAR':o.id===resultado.principal?'RECOMENDACIÓN EN TU CIUDAD':o.id===resultado.alternativa?'ALTERNATIVA EN TU CIUDAD':'OPCIÓN EN TU CIUDAD','etiqueta');
       const titulo=document.createElement('h3');titulo.textContent=o.titulo;card.append(titulo);
       linea(`${o.tipo} · ${o.ciudad} (${o.departamento}) · ${o.barrio}`);
       linea(`${precioOpcion(o,cambio)} · ${o.area_m2} m² · ${o.habitaciones} habitaciones · ${o.parqueaderos} parqueaderos`);
@@ -320,7 +334,13 @@
       if(o.porcentaje_inicial_exigido!=null)linea(`Inicial exigida por el proyecto: ${o.porcentaje_inicial_exigido} %${o.valor_separacion!=null?` · Separación: ${formatear(o.valor_separacion,o.moneda,cambio)}`:''}`);
       linea(`Afinidad orientativa: ${o.afinidad==null?'No calculable':o.afinidad+' %'} · Cobertura: ${resultado.cobertura} %`);
       linea(`Por qué encaja: ${o.razones.filter(r=>r.puntuacion===1).map(r=>r.razon).join('; ') || 'Aún faltan datos comparables.'}`);
-      linea(`Por revisar: ${[...o.pendientes,...o.pendientes_catalogo,...o.razones.filter(r=>r.puntuacion<1).map(r=>r.razon)].join('; ')}`,'pendiente');
+      const razonesCercanas=o.razones.filter(r=>r.puntuacion>=0.65&&r.puntuacion<1&&!(esAlternativaUbicacion&&r.criterio==='ciudad')).map(r=>r.razon);
+      const diferencias=o.razones.filter(r=>r.puntuacion<0.65&&!(esAlternativaUbicacion&&r.criterio==='ciudad')).map(r=>r.razon);
+      const pendientes=[...o.pendientes,...o.pendientes_catalogo];
+      if(esAlternativaUbicacion)linea(`Ubicación por revisar: está en ${o.ciudad}, en ${o.departamento}; confirma si el trayecto hasta ${resultado.ubicacion_deseada?.ciudad} te funciona. No tenemos distancia geográfica verificada.`,'pendiente');
+      if(razonesCercanas.length)linea(`Por revisar (se acerca a lo que buscas): ${razonesCercanas.join('; ')}`,'pendiente');
+      if(diferencias.length)linea(`Diferencias importantes con tu búsqueda: ${diferencias.join('; ')}`,'pendiente');
+      if(pendientes.length)linea(`Datos por confirmar: ${pendientes.join('; ')}`,'pendiente');
       const acciones=document.createElement('div');acciones.className='acciones';
       const detalle=document.createElement('a');detalle.href=o.url;detalle.textContent='Ver inmueble ↗';acciones.append(detalle);
       const sim=document.createElement('button');sim.type='button';sim.className='secundario';sim.textContent='Simular compra';sim.onclick=()=>{

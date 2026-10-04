@@ -111,6 +111,33 @@ class CatalogoYMotorTests(TestCase):
         p=normalizar_respuestas({'ciudad':{'estado':'SIN_PREFERENCIA'}},p)
         self.assertEqual(evaluar_perfil(p)['total_opciones'],3)
 
+    def test_no_recomienda_otro_departamento_si_no_hay_ciudad_solicitada(self):
+        vivienda(1, ciudad='Armenia', departamento='Quindío')
+        p = normalizar_respuestas({'ciudad': respuesta({'departamento': 'Cundinamarca', 'ciudad': 'Girardot'})}, {})
+        resultado = evaluar_perfil(p)
+        self.assertEqual(resultado['estado'], 'SIN_COINCIDENCIAS_UBICACION')
+        self.assertEqual(resultado['opciones'], [])
+        self.assertIsNone(resultado['principal'])
+        self.assertEqual(resultado['total_catalogo'], 1)
+
+    def test_otra_ciudad_del_mismo_departamento_es_alternativa_no_recomendacion(self):
+        bogota = vivienda(1, ciudad='Bogotá', departamento='Cundinamarca')
+        p = normalizar_respuestas({'ciudad': respuesta({'departamento': 'Cundinamarca', 'ciudad': 'Girardot'})}, {})
+        resultado = evaluar_perfil(p)
+        self.assertEqual(resultado['estado'], 'ALTERNATIVAS_UBICACION')
+        self.assertEqual(resultado['principal'], None)
+        self.assertEqual(resultado['opciones'][0]['id'], bogota.pk)
+        self.assertEqual(resultado['opciones'][0]['tipo_coincidencia_ubicacion'], 'ALTERNATIVA_DEPARTAMENTO')
+
+    def test_ciudad_exacta_es_principal_y_ciudad_remota_no_se_muestra(self):
+        girardot = vivienda(1, ciudad='Girardot', departamento='Cundinamarca')
+        vivienda(2, ciudad='Armenia', departamento='Quindío')
+        p = normalizar_respuestas({'ciudad': respuesta({'departamento': 'Cundinamarca', 'ciudad': 'Girardot'})}, {})
+        resultado = evaluar_perfil(p)
+        self.assertEqual(resultado['estado'], 'PRELIMINAR')
+        self.assertEqual(resultado['principal'], girardot.pk)
+        self.assertEqual([o['id'] for o in resultado['opciones']], [girardot.pk])
+
     def test_inversion_no_promete_renta_ni_valorizacion(self):
         vivienda(1)
         p=normalizar_respuestas(base_perfil('INVERTIR'),{})
