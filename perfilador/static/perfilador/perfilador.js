@@ -416,8 +416,6 @@
       }else{
         fila('(−) Recursos disponibles aparte de la separación',money(x.inicial.recursos_aplicables));
       }
-      if(Number(x.inicial.faltante_separacion)>0)fila('Faltante inmediato para completar la separación',money(x.inicial.faltante_separacion));
-      fila('(=) Por reunir',money(x.inicial.por_reunir));
       fila('Cuota mensual requerida',money(x.inicial.cuota_mensual)+(x.meses_inicial==='0'?' (pago único)':` durante ${x.meses_inicial} meses`));
       fila('Faltante mensual con tu aporte',money(x.inicial.faltante_mensual));
       fila('Faltante de la inicial a la entrega',money(x.inicial.faltante));
