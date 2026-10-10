@@ -227,7 +227,8 @@ def simular(request, identificador):
         aporte = entrada.get('aporte_mensual', valor(p.respuestas, 'aporte_mensual'))
         uso_guia = False
         if aporte is None and entrada.get('usar_aporte_orientativo') is True:
-            ingresos = valor(p.respuestas, 'ingresos')
+            financiero = valor(p.respuestas, 'perfil_financiero')
+            ingresos = financiero['ingresos_total'] if financiero else valor(p.respuestas, 'ingresos')
             if ingresos is None:
                 return error('Declare los ingresos del hogar antes de explorar el ejemplo del 30 %.')
             aporte = str(Decimal(ingresos) * Decimal('0.30'))
@@ -235,7 +236,9 @@ def simular(request, identificador):
         if recursos is None or aporte is None:
             return error('Indique recursos y aporte mensual para simular la cuota inicial.')
         recursos_cop = decimal_campo(a_cop(recursos, moneda_perfil, referencia_cambio), 'recursos')
-        aporte_cop = a_cop(aporte, moneda_perfil, referencia_cambio)
+        aporte_cop = (decimal_campo(aporte, 'aporte_mensual')
+                      if uso_guia and valor(p.respuestas, 'perfil_financiero')
+                      else a_cop(aporte, moneda_perfil, referencia_cambio))
         meses = entrada.get('meses_inicial', 0)
         separacion_cop = decimal_campo(a_cop(entrada.get('separacion', 0), moneda_perfil, referencia_cambio), 'separacion')
         incluye_separacion = entrada.get('separacion_incluida_en_recursos')

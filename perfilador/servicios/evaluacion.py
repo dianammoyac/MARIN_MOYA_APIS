@@ -46,6 +46,7 @@ def evaluar_perfil(respuestas, catalogo=None):
     ubicacion_exacta = bool(coincidencias_exactas) if coincidencias_exactas is not None else None
     solo_alternativas_ubicacion = bool(opciones) and coincidencias_exactas is not None and not coincidencias_exactas
     sin_alternativas_ubicacion = not opciones and excluidas == 0 and coincidencias_exactas is not None
+    financiero = valor(respuestas, 'perfil_financiero')
     return {
         'estado': 'CATALOGO_VACIO' if not total else 'SIN_COINCIDENCIAS_UBICACION' if sin_alternativas_ubicacion else 'ALTERNATIVAS_UBICACION' if solo_alternativas_ubicacion else 'SIN_COINCIDENCIAS' if not opciones else 'PRELIMINAR',
         'total_catalogo': total, 'total_opciones': len(opciones), 'excluidas_requisitos': excluidas,
@@ -54,6 +55,9 @@ def evaluar_perfil(respuestas, catalogo=None):
         'ubicacion_deseada': {'ciudad': ciudad_deseada, 'departamento': departamento_deseado} if ciudad_deseada else None,
         'cobertura': cobertura(respuestas), 'siguiente_pregunta': siguiente(respuestas),
         'pendientes_cliente': pendientes_cliente, 'opciones': opciones,
+        'resumen_financiero': {'aportantes': 1 if financiero['modalidad'] == 'SOLO' else 2,
+                              'ingresos_total': financiero['ingresos_total'],
+                              'obligaciones_total': financiero['obligaciones_total']} if financiero else None,
         'principal': next((o['id'] for o in opciones if o.get('tipo_coincidencia_ubicacion') != 'ALTERNATIVA_DEPARTAMENTO'), opciones[0]['id'] if opciones and coincidencias_exactas is None else None),
         'alternativa': next((o['id'] for o in opciones[1:] if o.get('tipo_coincidencia_ubicacion') != 'ALTERNATIVA_DEPARTAMENTO' and (o['precio'] != opciones[0]['precio'] or o['ciudad'] != opciones[0]['ciudad'])), None) if opciones else None,
         'pesos': PESOS_INVERSION if valor(respuestas, 'proposito') == 'INVERTIR' else PESOS_AMBAS if valor(respuestas, 'proposito') == 'AMBAS' else PESOS,

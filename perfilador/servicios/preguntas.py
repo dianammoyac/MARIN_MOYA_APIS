@@ -1,17 +1,18 @@
 from decimal import Decimal, InvalidOperation, ROUND_HALF_UP
 from .ubicaciones import obtener_ubicaciones
 
-VERSION = '5'
+VERSION = '6'
 ESTADOS = ('RESPONDIDA', 'SIN_PREFERENCIA', 'NO_SE', 'PREFIERO_DESPUES', 'OMITIDA')
 FUENTES = ('CLIENTE', 'ACOMPANAMIENTO')
 
 # Las preguntas se hacen en este orden para ir descartando: primero dónde,
-# luego para qué y con cuánto, y después el detalle del inmueble y el dinero.
+# luego para qué y quiénes comprarán, y después el detalle del inmueble y el dinero.
 # Los pesos informativos NO son los pesos de compatibilidad.
 PREGUNTAS = {
     'ciudad': {'texto': '¿En qué departamento y ciudad desea buscar?', 'tipo': 'ubicacion', 'peso': 10, 'obligatoria': True, 'alternativas': ['SIN_PREFERENCIA', 'NO_SE']},
     'proposito': {'texto': '¿Busca vivienda para vivir, invertir o ambas?', 'tipo': 'opcion', 'opciones': ['VIVIR', 'INVERTIR', 'AMBAS'], 'peso': 10, 'obligatoria': True, 'alternativas': []},
-    'presupuesto': {'texto': '¿Cuál es su presupuesto máximo?', 'tipo': 'dinero', 'peso': 12, 'obligatoria': True, 'alternativas': []},
+    'perfil_financiero': {'texto': '¿Quiénes comprarán y cuáles son sus ingresos mensuales?', 'tipo': 'perfil_financiero', 'peso': 12, 'obligatoria': True, 'alternativas': ['NO_SE']},
+    'presupuesto': {'texto': '¿Tiene un precio máximo para su búsqueda? (opcional)', 'tipo': 'dinero', 'peso': 12, 'obligatoria': False, 'alternativas': ['NO_SE', 'PREFIERO_DESPUES']},
     'objetivo_inversion': {'texto': '¿Qué busca principalmente con esta inversión?', 'tipo': 'opcion', 'opciones': ['INGRESOS_ARRIENDO', 'RENTA_CORTA', 'VALORIZACION', 'REVENTA', 'DIVERSIFICACION'], 'peso': 8, 'obligatoria': True, 'alternativas': ['NO_SE']},
     'horizonte_inversion': {'texto': '¿Por cuánto tiempo considera mantener la inversión?', 'tipo': 'opcion', 'opciones': ['MENOS_3', 'DE_3_A_7', 'MAS_7'], 'peso': 6, 'obligatoria': True, 'alternativas': ['NO_SE']},
     'prioridad_inversion': {'texto': '¿Qué prioriza al elegir una inversión inmobiliaria?', 'tipo': 'opcion', 'opciones': ['MENOR_INVERSION', 'UBICACION', 'ESPACIO', 'AUN_NO_SE'], 'peso': 5, 'obligatoria': True, 'alternativas': ['NO_SE']},
@@ -39,7 +40,8 @@ def valor(respuestas, clave):
 def aplicables(respuestas):
     proposito = valor(respuestas, 'proposito')
     recursos = valor(respuestas, 'recursos')
-    mostrar_ayuda = respuestas.get('aporte_mensual', {}).get('estado') == 'NO_SE'
+    mostrar_ayuda = (respuestas.get('aporte_mensual', {}).get('estado') == 'NO_SE'
+                    and valor(respuestas, 'perfil_financiero') is None)
     return {clave: pregunta for clave, pregunta in PREGUNTAS.items()
             if (clave != 'familia' or (proposito in ('VIVIR', 'AMBAS') and respuestas.get('habitaciones', {}).get('estado') == 'NO_SE'))
             and (clave not in ('objetivo_inversion', 'horizonte_inversion', 'prioridad_inversion', 'experiencia_inversion', 'gestion_inversion') or proposito in ('INVERTIR', 'AMBAS'))
@@ -113,6 +115,48 @@ def normalizar_respuestas(datos, actuales):
                 if sum(composicion.values()) < 1:
                     raise ValueError('familia: indique al menos una persona.')
                 dato['valor'] = composicion
+            elif tipo == 'perfil_financiero':
+                if not isinstance(bruto, dict) or not {'modalidad', 'ocupacion_titular', 'actividad_titular',
+                        'ingresos_titular', 'obligaciones_titular'}.issubset(bruto):
+                    raise ValueError('perfil_financiero: indique quién compra, su ocupación, ingresos y obligaciones.')
+                modalidad = bruto['modalidad']
+                if modalidad not in ('SOLO', 'PAREJA', 'FAMILIAR', 'OTRA'):
+                    raise ValueError('perfil_financiero: seleccione quiénes comprarán.')
+                con_aportante = modalidad != 'SOLO'
+                campos_aportante = {'ocupacion_aportante', 'actividad_aportante',
+                                    'ingresos_aportante', 'obligaciones_aportante'}
+                campos_base = {'modalidad', 'ocupacion_titular', 'actividad_titular',
+                               'ingresos_titular', 'obligaciones_titular'}
+                campos_necesarios = campos_base | campos_aportante if con_aportante else campos_base
+                if set(bruto) not in (campos_necesarios, campos_necesarios | {'ingresos_total', 'obligaciones_total'}):
+                    raise ValueError('perfil_financiero: complete únicamente los datos de quienes aportan.')
+                ocupaciones = {'EMPLEADO', 'INDEPENDIENTE', 'PENSIONADO', 'OTRO', 'SIN_INGRESOS'}
+                detalle = {'modalidad': modalidad}
+                aportantes = ('titular', 'aportante') if con_aportante else ('titular',)
+                ingresos_total = Decimal('0')
+                obligaciones_total = Decimal('0')
+                for persona in aportantes:
+                    ocupacion = bruto[f'ocupacion_{persona}']
+                    actividad = bruto[f'actividad_{persona}']
+                    if (not isinstance(ocupacion, str) or ocupacion not in ocupaciones
+                            or not isinstance(actividad, str) or len(actividad.strip()) > 100
+                            or (ocupacion != 'SIN_INGRESOS' and not actividad.strip())):
+                        raise ValueError(f'perfil_financiero.{persona}: indique ocupación y actividad válidas.')
+                    ingresos = numero_positivo(bruto[f'ingresos_{persona}'], f'ingresos_{persona}')
+                    obligaciones = numero_positivo(bruto[f'obligaciones_{persona}'], f'obligaciones_{persona}')
+                    if ocupacion == 'SIN_INGRESOS' and ingresos:
+                        raise ValueError(f'perfil_financiero.{persona}: sin ingresos debe declarar cero.')
+                    detalle.update({f'ocupacion_{persona}': ocupacion,
+                                    f'actividad_{persona}': actividad.strip(),
+                                    f'ingresos_{persona}': str(ingresos),
+                                    f'obligaciones_{persona}': str(obligaciones)})
+                    ingresos_total += ingresos
+                    obligaciones_total += obligaciones
+                if ingresos_total == 0:
+                    raise ValueError('perfil_financiero: declare algún ingreso o elija «No lo sé».')
+                detalle.update({'ingresos_total': str(ingresos_total),
+                                'obligaciones_total': str(obligaciones_total)})
+                dato['valor'] = detalle
             elif tipo == 'montos':
                 if isinstance(bruto, dict) and set(bruto) == {'montos', 'porcentajes', 'moneda', 'total'}:
                     bruto = bruto['montos']
@@ -157,7 +201,7 @@ def normalizar_respuestas(datos, actuales):
         resultado[clave] = dato
     moneda_nueva = valor(resultado, 'presupuesto')
     moneda_nueva = moneda_nueva.get('moneda') if isinstance(moneda_nueva, dict) else None
-    if moneda_anterior and moneda_nueva and moneda_nueva != moneda_anterior:
+    if moneda_anterior and 'presupuesto' in datos and moneda_nueva != moneda_anterior:
         for clave in ('recursos', 'fuentes_recursos', 'aporte_mensual', 'ingresos', 'obligaciones'):
             if clave not in datos:
                 resultado.pop(clave, None)

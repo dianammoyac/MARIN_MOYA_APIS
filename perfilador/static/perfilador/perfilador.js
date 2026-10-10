@@ -20,7 +20,7 @@
     proposito:'Propósito', objetivo_inversion:'Objetivo de inversión', horizonte_inversion:'Horizonte de inversión',
     prioridad_inversion:'Prioridad de inversión', experiencia_inversion:'Experiencia', gestion_inversion:'Administración',
     ciudad:'Ubicación', entrega:'Entrega deseada', habitaciones:'Habitaciones', familia:'Hogar', area_m2:'Área mínima',
-    parqueadero:'Parqueadero', presupuesto:'Presupuesto máximo', pago:'Forma de pago', recursos:'Recursos actuales',
+    parqueadero:'Parqueadero', perfil_financiero:'Quiénes compran e ingresos', presupuesto:'Precio máximo orientativo', pago:'Forma de pago', recursos:'Recursos actuales',
     fuentes_recursos:'Origen de recursos', aporte_mensual:'Aporte mensual adicional', ingresos:'Ingresos del hogar',
     obligaciones:'Otras obligaciones'
   };
@@ -31,7 +31,10 @@
     MAS_7:'Más de 7 años', MENOR_INVERSION:'Menor valor de compra', UBICACION:'Ubicación', ESPACIO:'Área',
     AUN_NO_SE:'Aún por definir', PRIMERA:'Primera inversión', YA_INVIERTO:'Ya ha invertido',
     DIRECTA:'Administración directa', DELEGADA:'Administración delegada', POR_DEFINIR:'Por definir',
-    CONTADO:'Recursos propios', CREDITO:'Crédito hipotecario', SI:'Sí', NO:'No'
+    CONTADO:'Recursos propios', CREDITO:'Crédito hipotecario', SI:'Sí', NO:'No',
+    PAREJA:'Pareja', FAMILIAR:'Familiar', OTRA:'Otra persona',
+    EMPLEADO:'Empleado/a', INDEPENDIENTE:'Independiente', PENSIONADO:'Pensionado/a',
+    OTRO:'Otra actividad', SIN_INGRESOS:'Sin ingresos actualmente'
   };
   function textoResumen(clave, respuesta){
     if(respuesta.estado!=='RESPONDIDA'){
@@ -41,6 +44,11 @@
     const dato=respuesta.valor;
     if(clave==='ciudad')return dato.ciudad?`${dato.ciudad}, ${dato.departamento}`:`Cualquier ciudad de ${dato.departamento}`;
     if(clave==='familia')return `${dato.adultos} adultos, ${dato.menores} menores, ${dato.adultos_mayores} adultos mayores`;
+    if(clave==='perfil_financiero'){
+      const titular=`Titular: ${nombresOpciones[dato.ocupacion_titular]||dato.ocupacion_titular} (${dato.actividad_titular||'sin actividad registrada'}), ${mostrarIngresado(dato.ingresos_titular,'COP')}/mes`;
+      const adicional=dato.modalidad==='SOLO'?'':` · ${nombresOpciones[dato.modalidad]||dato.modalidad}: ${nombresOpciones[dato.ocupacion_aportante]||dato.ocupacion_aportante} (${dato.actividad_aportante||'sin actividad registrada'}), ${mostrarIngresado(dato.ingresos_aportante,'COP')}/mes`;
+      return `${titular}${adicional} · Total mensual: ${mostrarIngresado(dato.ingresos_total,'COP')} · Obligaciones: ${mostrarIngresado(dato.obligaciones_total,'COP')}`;
+    }
     if(clave==='presupuesto')return mostrarIngresado(dato.monto,dato.moneda);
     if(clave==='fuentes_recursos')return ['cesantias','cdt','cuenta','otros'].map((k,i)=>
       `${['Cesantías','CDT','Cuenta','Otros'][i]}: ${mostrarIngresado(dato.montos[k],dato.moneda)} (${dato.porcentajes[k]} %)`
@@ -82,7 +90,7 @@
       (k !== 'familia' || ['VIVIR','AMBAS'].includes(proposito) && respuestas.habitaciones?.estado==='NO_SE') &&
       (!['objetivo_inversion','horizonte_inversion','prioridad_inversion','experiencia_inversion','gestion_inversion'].includes(k) || ['INVERTIR','AMBAS'].includes(proposito)) &&
       (k !== 'fuentes_recursos' || Number(valor('recursos')) > 0 && valor('recursos') !== null) &&
-      (!['ingresos','obligaciones'].includes(k) || respuestas.aporte_mensual?.estado === 'NO_SE'));
+      (!['ingresos','obligaciones'].includes(k) || respuestas.aporte_mensual?.estado === 'NO_SE' && valor('perfil_financiero') === null));
   }
   function pendientes() {return listaAplicable().filter(k => preguntas[k].obligatoria && !['RESPONDIDA','SIN_PREFERENCIA','NO_SE'].includes(respuestas[k]?.estado));}
   function actualizarLista() {
@@ -165,6 +173,33 @@
       // Firefox puede restaurar el valor del departamento sin emitir change.
       setTimeout(()=>{if(dep.isConnected)sincronizar(true);},150);
       const nota=document.createElement('p');nota.className='nota';nota.textContent='Puedes elegir cualquier departamento y ciudad de Colombia, aunque hoy no haya inmuebles publicados allí. Deja abierta la ciudad para explorar un departamento entero, o usa «Sin preferencia» para todo el país.';campo.append(nota);
+    }else if(pregunta.tipo==='perfil_financiero'){
+      const nota=document.createElement('p');nota.className='nota';nota.textContent='No pedimos nombres ni documentos del acompañante. Sus ingresos se suman solo para orientar la búsqueda; un banco debe revisar la capacidad de crédito.';campo.append(nota);
+      const modalidad=document.createElement('select');modalidad.name='modalidad';modalidad.id='modalidad-compra';
+      [['SOLO','Compraré solo/a'],['PAREJA','Con mi pareja'],['FAMILIAR','Con un familiar'],['OTRA','Con otra persona']].forEach(([k,v])=>modalidad.add(new Option(v,k)));
+      modalidad.value=previo?.modalidad||'SOLO';campo.append(etiquetar('¿Con quién realizará la compra?',modalidad));
+      const ocupaciones=[['','Seleccione su situación'],['EMPLEADO','Empleado/a'],['INDEPENDIENTE','Independiente'],['PENSIONADO','Pensionado/a'],['OTRO','Otra actividad'],['SIN_INGRESOS','Sin ingresos actualmente']];
+      const agregarPersona=(persona,titulo)=>{
+        const bloque=document.createElement('fieldset');bloque.className='perfil-aportante';bloque.dataset.persona=persona;
+        const leyenda=document.createElement('legend');leyenda.textContent=titulo;bloque.append(leyenda);
+        const ocupacion=document.createElement('select');ocupacion.name=`ocupacion_${persona}`;ocupaciones.forEach(([k,v])=>ocupacion.add(new Option(v,k)));ocupacion.value=previo?.[`ocupacion_${persona}`]||'';bloque.append(etiquetar('Situación laboral',ocupacion));
+        const actividad=document.createElement('input');actividad.name=`actividad_${persona}`;actividad.type='text';actividad.maxLength=100;actividad.placeholder='Ej.: docente, comerciante, pensionado';actividad.value=previo?.[`actividad_${persona}`]||'';bloque.append(etiquetar('¿A qué se dedica?',actividad));
+        [['ingresos','Ingreso mensual en COP'],['obligaciones','Pagos mensuales de otras deudas en COP']].forEach(([clave,etiqueta])=>{
+          const input=document.createElement('input');input.name=`${clave}_${persona}`;input.type='number';input.min='0';input.step='1';input.inputMode='numeric';input.value=previo?.[`${clave}_${persona}`]??'';input.placeholder=clave==='obligaciones'?'Escribe 0 si no tienes':'';bloque.append(etiquetar(etiqueta,input));
+        });
+        campo.append(bloque);return bloque;
+      };
+      const titular=agregarPersona('titular','Persona principal');
+      const aportante=agregarPersona('aportante','Persona que compra contigo');
+      const sincronizar=()=>{
+        const dos=modalidad.value!=='SOLO';aportante.hidden=!dos;
+        [titular,aportante].forEach((bloque,i)=>{
+          const persona=i?'aportante':'titular';const activo=i===0||dos;
+          bloque.querySelectorAll('select,input').forEach(el=>el.required=activo&&(el.name!==`actividad_${persona}`||bloque.querySelector(`[name=ocupacion_${persona}]`).value!=='SIN_INGRESOS'));
+        });
+      };
+      [titular,aportante].forEach((bloque,i)=>bloque.querySelector(`[name=ocupacion_${i?'aportante':'titular'}]`).onchange=sincronizar);
+      modalidad.onchange=sincronizar;sincronizar();
     }else if(pregunta.tipo==='familia'){
       [['adultos','Personas adultas'],['menores','Niños, niñas o adolescentes'],['adultos_mayores','Adultos mayores']].forEach(([key,label])=>campo.append(etiquetar(label,entradaNumerica(key,previo?.[key] ?? (key==='adultos'?1:0),20))));
     }else if(pregunta.tipo==='montos'){
@@ -236,6 +271,11 @@
       return {departamento:$('departamento').value,ciudad:$('valor').value};
     }
     if(tipo==='familia')return Object.fromEntries(['adultos','menores','adultos_mayores'].map(k=>[k,$(`campo`).querySelector(`[name=${k}]`).value]));
+    if(tipo==='perfil_financiero'){
+      const campos=['modalidad','ocupacion_titular','actividad_titular','ingresos_titular','obligaciones_titular'];
+      if($('modalidad-compra').value!=='SOLO')campos.push('ocupacion_aportante','actividad_aportante','ingresos_aportante','obligaciones_aportante');
+      return Object.fromEntries(campos.map(k=>[k,$('campo').querySelector(`[name=${k}]`).value]));
+    }
     if(tipo==='montos')return Object.fromEntries(['cesantias','cdt','cuenta','otros'].map(k=>{const v=$('campo').querySelector(`[name=${k}]`).value.replace(/\D/g,'');return [k,v===''?'0':v];}));
     if(tipo==='opcion' && clave==='objetivo_inversion')return $('campo').querySelector('input[name=respuesta]:checked')?.value || '';
     if(tipo==='dinero')return {monto:$('valor').value,moneda:$('moneda').value};
@@ -320,6 +360,11 @@
         : `Encontramos ${resultado.total_opciones} viviendas de ${resultado.total_catalogo} disponibles.`;
       $('resumen').textContent=`${resumenUbicacion} Cobertura: ${resultado.cobertura} %. ${resultado.pendientes_cliente.length?'Información pendiente: '+resultado.pendientes_cliente.join('; ')+'.':''}${monedaPerfil()==='USD'&&!cambio?' Sin una tasa COP/USD verificada no podemos comparar el presupuesto ni convertir precios.':''}`;
     }
+    if(resultado.resumen_financiero){
+      const f=resultado.resumen_financiero;
+      $('resumen').textContent+=` Ingresos mensuales declarados de ${f.aportantes} ${f.aportantes===1?'persona':'personas'}: ${mostrarIngresado(f.ingresos_total,'COP')}; obligaciones: ${mostrarIngresado(f.obligaciones_total,'COP')}. Se suman para explorar opciones, no indican aprobación bancaria.`;
+    }
+    if(valor('presupuesto')===null)$('resumen').textContent+=' Sin precio máximo declarado, el valor de cada inmueble requiere revisión; estos ingresos no permiten determinar cuánto prestará un banco.';
     resultado.opciones.forEach((o,i)=>{
       const card=document.createElement('article');card.className='resultado'+(o.id===resultado.principal?' destacada':'');
       const linea=(contenido,clase)=>{const p=document.createElement('p');p.textContent=contenido;if(clase)p.className=clase;card.append(p);};
@@ -360,7 +405,7 @@
         $('form-simular').elements.aporte_mensual.value=valor('aporte_mensual')||'';
         document.querySelectorAll('.sim-moneda').forEach(el=>el.textContent=`(${monedaPerfil()})`);
         $('meses-fijados').textContent=o.modalidad_entrega==='SOBRE_PLANOS'&&o.meses_entrega!=null?`Entrega declarada en ${o.meses_entrega} meses. Al calcular se usan los meses restantes en vivo (la fecha de entrega queda fija).`:'Entrega inmediata: la cuota inicial debe cubrirse con los recursos actuales (0 meses para aportar).';
-        $('usar-guia-contenedor').hidden=!(respuestas.aporte_mensual?.estado==='NO_SE' && valor('ingresos')!=null);
+        $('usar-guia-contenedor').hidden=!(respuestas.aporte_mensual?.estado==='NO_SE' && (valor('perfil_financiero')!=null||valor('ingresos')!=null));
         $('simulador').hidden=false;$('simulador').scrollIntoView({behavior:'smooth'});
       };acciones.append(sim);
       const comparar=document.createElement('label');comparar.textContent=' Comparar';const ch=document.createElement('input');ch.type='checkbox';ch.className='comparar';ch.value=o.id;comparar.prepend(ch);acciones.append(comparar);card.append(acciones);$('opciones').append(card);
@@ -394,7 +439,7 @@
     delete datos.meses_inicial;
     datos.usar_aporte_orientativo=f.has('usar_aporte_orientativo');
     if(datos.usar_aporte_orientativo && !datos.aporte_mensual)delete datos.aporte_mensual;
-    if(!datos.tasa_ea||datos.referencia)delete datos.tasa_ea;if(!datos.referencia)delete datos.referencia;
+    if(!datos.tasa_ea_porcentaje||datos.referencia)delete datos.tasa_ea_porcentaje;if(!datos.referencia)delete datos.referencia;
     if(!datos.recursos)delete datos.recursos;if(!datos.aporte_mensual)delete datos.aporte_mensual;if(!datos.separacion){delete datos.separacion;delete datos.separacion_incluida_en_recursos;}if(!datos.porcentaje_inicial)delete datos.porcentaje_inicial;
     estado('Calculando el escenario…');
     try{const r=await pedir('simular/','POST',datos),x=r.resultado;
@@ -405,6 +450,10 @@
       const tabla=document.createElement('table');tabla.className='tabla';
       const fila=(c,v)=>{const tr=document.createElement('tr');const a=document.createElement('td');a.textContent=c;const b=document.createElement('td');b.textContent=v;tr.append(a,b);tabla.append(tr);};
       fila('Meses para la inicial',`${x.meses_inicial} (${origenMeses})`);
+      if(x.resumen_financiero){
+        fila(`Ingresos declarados (${x.resumen_financiero.aportantes} ${x.resumen_financiero.aportantes===1?'persona':'personas'})`,mostrarIngresado(x.resumen_financiero.ingresos_total,'COP')+' al mes');
+        fila('Obligaciones declaradas',mostrarIngresado(x.resumen_financiero.obligaciones_total,'COP')+' al mes');
+      }
       fila(x.origen_porcentaje_inicial==='EXIGIDO_PROYECTO'?'Inicial exigida por el proyecto':'Inicial hipotética',money(x.inicial.cuota_inicial));
       fila('(−) Separación (cuota 0)',money(x.inicial.separacion_incluida_en_inicial)+(x.origen_separacion==='EXIGIDO_PROYECTO'?' (exigida por el proyecto)':''));
       if(Number(x.inicial.recursos_declarados)===0){

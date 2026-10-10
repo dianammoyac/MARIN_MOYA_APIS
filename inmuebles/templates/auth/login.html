@@ -276,6 +276,10 @@
 
     .field input::placeholder { color: rgba(0,0,0,.25); }
     .field input:focus { border-bottom-color: var(--dorado); }
+    .input-wrap { position: relative; width: 100%; }
+    .input-wrap input { width: 100%; padding-right: 48px; }
+    .pwd-toggle { position: absolute; right: 0; bottom: 1px; width: 44px; height: 42px; display: grid; place-items: center; border: 0; background: transparent; color: var(--verde); cursor: pointer; }
+    .pwd-toggle:focus-visible { outline: 2px solid var(--dorado); outline-offset: -2px; }
 
     /* password row */
     .field-row {
@@ -462,14 +466,19 @@
               <label for="id_password">Contraseña</label>
               <a href="#" class="forgot-link">¿Olvidaste tu contraseña?</a>
             </div>
-            <input
-              type="password"
-              id="id_password"
-              name="password"
-              placeholder="••••••••"
-              autocomplete="current-password"
-              required
-            />
+            <div class="input-wrap">
+              <input
+                type="password"
+                id="id_password"
+                name="password"
+                placeholder="••••••••"
+                autocomplete="current-password"
+                required
+              />
+              <button type="button" class="pwd-toggle" aria-controls="id_password" aria-pressed="false" aria-label="Mostrar contraseña" title="Mostrar contraseña" onclick="togglePwd('id_password', this)">
+                <svg aria-hidden="true" width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M2 10s3-5 8-5 8 5 8 5-3 5-8 5-8-5-8-5Z"/><circle cx="10" cy="10" r="2.5"/></svg>
+              </button>
+            </div>
           </div>
 
           <button type="submit" class="btn-submit">Iniciar sesión</button>
@@ -503,6 +512,14 @@
       el.addEventListener('mouseenter', () => cursor.classList.add('grow'));
       el.addEventListener('mouseleave', () => cursor.classList.remove('grow'));
     });
+    function togglePwd(id, btn) {
+      const input = document.getElementById(id);
+      const mostrar = input.type === 'password';
+      input.type = mostrar ? 'text' : 'password';
+      btn.setAttribute('aria-pressed', String(mostrar));
+      btn.setAttribute('aria-label', mostrar ? 'Ocultar contraseña' : 'Mostrar contraseña');
+      btn.title = mostrar ? 'Ocultar contraseña' : 'Mostrar contraseña';
+    }
   </script>
 
 </body>

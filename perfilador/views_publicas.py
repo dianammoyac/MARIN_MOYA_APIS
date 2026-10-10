@@ -79,7 +79,7 @@ def calcular_escenario(respuestas, entrada, inmueble):
         origen_porcentaje = 'HIPOTESIS'
     if porcentaje is None:
         raise ValueError('porcentaje_inicial: indique un porcentaje hipotético.')
-    moneda_perfil = valor(respuestas, 'presupuesto')['moneda']
+    moneda_perfil = (valor(respuestas, 'presupuesto') or {}).get('moneda', 'COP')
     cambio = obtener_cambio_vigente() if moneda_perfil == 'USD' or inmueble.moneda == 'USD' else None
     if (moneda_perfil == 'USD' or inmueble.moneda == 'USD') and not cambio:
         raise ValueError('Falta una referencia COP/USD vigente para esta simulación.')
@@ -88,13 +88,17 @@ def calcular_escenario(respuestas, entrada, inmueble):
     aporte = entrada.get('aporte_mensual', valor(respuestas, 'aporte_mensual'))
     uso_guia = False
     if aporte is None and entrada.get('usar_aporte_orientativo') is True:
-        ingresos = valor(respuestas, 'ingresos')
+        financiero = valor(respuestas, 'perfil_financiero')
+        ingresos = financiero['ingresos_total'] if financiero else valor(respuestas, 'ingresos')
         if ingresos is None:
             raise ValueError('Declare ingresos del hogar para explorar el ejemplo del 30 %.')
         aporte = str(Decimal(ingresos) * Decimal('0.30'))
         uso_guia = True
     if recursos is None or aporte is None:
         raise ValueError('Indique recursos y aporte mensual para simular la cuota inicial.')
+    aporte_cop = (decimal_campo(aporte, 'aporte_mensual')
+                  if uso_guia and valor(respuestas, 'perfil_financiero')
+                  else a_cop(aporte, moneda_perfil, cambio))
     modalidad = getattr(inmueble, 'modalidad_entrega', 'TERMINADO') or 'TERMINADO'
     meses_inmueble = getattr(inmueble, 'meses_entrega', None)
     entrega_fija = None
@@ -132,7 +136,7 @@ def calcular_escenario(respuestas, entrada, inmueble):
     if separacion_cop > 0 and recursos_cop == 0:
         incluye_separacion = 'SI'
     plan = inicial(precio_cop, porcentaje, recursos_cop,
-                   meses, a_cop(aporte, moneda_perfil, cambio),
+                   meses, aporte_cop,
                    separacion_cop, separacion_incluida_en_recursos=(incluye_separacion == 'SI'))
     pago = valor(respuestas, 'pago')
     if pago == 'CONTADO' and decimal_campo(porcentaje, 'porcentaje_inicial', Decimal('100')) != 100:
@@ -143,8 +147,17 @@ def calcular_escenario(respuestas, entrada, inmueble):
         referencia = get_object_or_404(ReferenciaFinanciera, pk=entrada['referencia'], activa=True)
         if referencia.vence < timezone.localdate():
             raise ValueError('La referencia financiera está vencida.')
-    if pago != 'CONTADO' and (entrada.get('tasa_ea') is not None or referencia):
-        tasa = referencia.tasa_ea if referencia else decimal_campo(entrada['tasa_ea'], 'tasa_ea', Decimal('1'))
+    if pago != 'CONTADO' and (entrada.get('tasa_ea_porcentaje') is not None or entrada.get('tasa_ea') is not None or referencia):
+        if referencia:
+            tasa = referencia.tasa_ea
+        elif entrada.get('tasa_ea_porcentaje') is not None:
+            porcentaje_tasa = decimal_campo(entrada['tasa_ea_porcentaje'], 'tasa_ea_porcentaje', Decimal('100'))
+            if porcentaje_tasa != porcentaje_tasa.quantize(Decimal('0.01')):
+                raise ValueError('tasa_ea_porcentaje: use máximo dos decimales.')
+            tasa = porcentaje_tasa / 100
+        else:
+            # Compatibilidad con integraciones anteriores que envían la tasa en formato decimal.
+            tasa = decimal_campo(entrada['tasa_ea'], 'tasa_ea', Decimal('1'))
         anos = decimal_campo(entrada.get('anos', 20), 'anos', Decimal('50'))
         if referencia and not referencia.plazo_minimo <= anos <= referencia.plazo_maximo:
             raise ValueError('anos: plazo fuera de la referencia seleccionada.')
@@ -161,6 +174,7 @@ def calcular_escenario(respuestas, entrada, inmueble):
         prestamo['capacidad_pago'] = 'PENDIENTE_VERIFICACION'
     resto_pct = Decimal('100') - decimal_campo(porcentaje, 'porcentaje_inicial', Decimal('100'))
     saldo_financiar = precio_cop * resto_pct / 100
+    financiero = valor(respuestas, 'perfil_financiero')
     return {'inicial': plan, 'credito': prestamo, 'producto': pago or 'NO_DECLARADO',
             'saldo_a_financiar': str(saldo_financiar), 'porcentaje_restante': str(resto_pct),
             'meses_inicial': str(meses), 'origen_meses_inicial': origen_meses,
@@ -169,7 +183,11 @@ def calcular_escenario(respuestas, entrada, inmueble):
             'precio_referencia': str(inmueble.precio), 'moneda_precio': inmueble.moneda,
             'precio_referencia_cop': str(precio_cop), 'moneda_perfil': moneda_perfil,
             'cambio': {'cop_por_usd': str(cambio.cop_por_usd), 'fecha': cambio.fecha.isoformat(), 'fuente': cambio.fuente} if cambio else None,
-            'aporte_orientativo_30': uso_guia, 'obligaciones_declaradas': valor(respuestas, 'obligaciones'),
+            'aporte_orientativo_30': uso_guia,
+            'resumen_financiero': {'aportantes': 1 if financiero['modalidad'] == 'SOLO' else 2,
+                                  'ingresos_total': financiero['ingresos_total'],
+                                  'obligaciones_total': financiero['obligaciones_total']} if financiero else None,
+            'obligaciones_declaradas': financiero['obligaciones_total'] if financiero else valor(respuestas, 'obligaciones'),
             'porcentaje_inicial': str(porcentaje), 'condicion_inicial': 'HIPOTESIS_NO_CONFIRMADA',
             'aviso': 'No es una aprobación bancaria. Seguros, gastos y condiciones requieren confirmación.'}
 

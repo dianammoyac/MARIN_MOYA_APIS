@@ -35,6 +35,9 @@ def base_perfil(proposito='VIVIR', moneda='COP'):
         'proposito': respuesta(proposito), 'ciudad': {'estado': 'SIN_PREFERENCIA'},
         'entrega': {'estado': 'NO_SE'}, 'habitaciones': {'estado': 'NO_SE'},
         'area_m2': {'estado': 'NO_SE'}, 'parqueadero': {'estado': 'SIN_PREFERENCIA'},
+        'perfil_financiero': respuesta({'modalidad': 'SOLO', 'ocupacion_titular': 'EMPLEADO',
+                                       'actividad_titular': 'Docente', 'ingresos_titular': '10000000',
+                                       'obligaciones_titular': '2000000'}),
         'presupuesto': respuesta({'monto': '600000000' if moneda == 'COP' else '150000', 'moneda': moneda}),
         'pago': {'estado': 'NO_SE'}, 'recursos': respuesta('0'),
         'aporte_mensual': {'estado': 'NO_SE'},
@@ -160,6 +163,13 @@ class CatalogoYMotorTests(TestCase):
         self.assertNotIn('aporte_mensual',nuevo)
         self.assertIn('recursos',pendientes_obligatorias(nuevo))
 
+    def test_omitir_precio_maximo_descarta_montos_con_moneda_anterior(self):
+        p = normalizar_respuestas(base_perfil(moneda='USD'), {})
+        nuevo = normalizar_respuestas({'presupuesto': {'estado': 'NO_SE'}}, p)
+        self.assertNotIn('recursos', nuevo)
+        self.assertNotIn('aporte_mensual', nuevo)
+        self.assertIn('perfil_financiero', nuevo)
+
     def test_precio_inmueble_usd_se_convierte_con_tasa_verificada(self):
         casa=vivienda(1, precio=Decimal('100000'), moneda='USD')
         perfil=normalizar_respuestas(base_perfil('AMBAS'),{})
@@ -281,11 +291,46 @@ class CatalogoYMotorTests(TestCase):
         self.assertIn('Porcentaje de cuota inicial pendiente de publicar', incompleto['pendientes_catalogo'])
         self.assertIn('Valor de separación pendiente de publicar', incompleto['pendientes_catalogo'])
 
-    def test_preguntas_empiezan_descartando_ubicacion_proposito_y_presupuesto(self):
+    def test_preguntas_empiezan_con_ubicacion_proposito_y_perfil_financiero(self):
         from .servicios.preguntas import PREGUNTAS, VERSION, siguiente
-        self.assertEqual(VERSION, '5')
-        self.assertEqual(list(PREGUNTAS)[:3], ['ciudad', 'proposito', 'presupuesto'])
+        self.assertEqual(VERSION, '6')
+        self.assertEqual(list(PREGUNTAS)[:3], ['ciudad', 'proposito', 'perfil_financiero'])
+        self.assertFalse(PREGUNTAS['presupuesto']['obligatoria'])
         self.assertEqual(siguiente({}), 'ciudad')
+
+    def test_ingresos_de_pareja_se_suman_sin_aceptar_totales_del_cliente(self):
+        financiero = {'modalidad': 'PAREJA', 'ocupacion_titular': 'EMPLEADO',
+                      'actividad_titular': 'Docente', 'ingresos_titular': '6000000',
+                      'obligaciones_titular': '1000000', 'ocupacion_aportante': 'INDEPENDIENTE',
+                      'actividad_aportante': 'Comerciante', 'ingresos_aportante': '4000000',
+                      'obligaciones_aportante': '500000'}
+        respuestas = normalizar_respuestas({'perfil_financiero': respuesta(financiero)}, {})
+        resumen = respuestas['perfil_financiero']['valor']
+        self.assertEqual((resumen['ingresos_total'], resumen['obligaciones_total']), ('10000000', '1500000'))
+        self.assertEqual(normalizar_respuestas(respuestas, {})['perfil_financiero']['valor'], resumen)
+        falseado = {**respuestas, 'perfil_financiero': respuesta({**resumen, 'ingresos_total': '50000000'})}
+        self.assertEqual(normalizar_respuestas(falseado, {})['perfil_financiero']['valor']['ingresos_total'], '10000000')
+        with self.assertRaisesRegex(ValueError, 'ingresos_aportante'):
+            normalizar_respuestas({'perfil_financiero': respuesta({**financiero, 'ingresos_aportante': '-5'})}, {})
+
+    def test_sin_perfil_financiero_se_conserva_ayuda_de_ingresos_si_no_conoce_aporte(self):
+        perfil = normalizar_respuestas({'perfil_financiero': {'estado': 'NO_SE'},
+                                        'aporte_mensual': {'estado': 'NO_SE'}}, {})
+        self.assertIn('ingresos', aplicables(perfil))
+        self.assertIn('obligaciones', aplicables(perfil))
+
+    def test_ejemplo_treinta_por_ciento_suma_ingresos_cop_aun_con_presupuesto_usd(self):
+        from .views_publicas import calcular_escenario
+        ReferenciaCambio.objects.create(cop_por_usd=Decimal('4000'), fecha=date.today(),
+                                        fuente='https://example.org/trm')
+        perfil = normalizar_respuestas(base_perfil(moneda='USD'), {})
+        casa = vivienda(1, precio=Decimal('100000'), moneda='USD',
+                        estado='EN_CONSTRUCCION', modalidad_entrega='SOBRE_PLANOS', meses_entrega=12)
+        resultado = calcular_escenario(perfil, {
+            'porcentaje_inicial': '30', 'recursos': '0', 'usar_aporte_orientativo': True,
+        }, casa)
+        self.assertEqual(resultado['resumen_financiero']['ingresos_total'], '10000000')
+        self.assertEqual(resultado['inicial']['recursos_previstos'], '36000000')
 
     def test_vivir_no_genera_pendiente_generico_de_proposito(self):
         vivienda(1)
@@ -464,6 +509,34 @@ class ApiTests(TestCase):
     def enviar(self, cliente, ruta, cuerpo, csrf, metodo='post'):
         return getattr(cliente, metodo)(ruta, data=json.dumps(cuerpo), content_type='application/json', HTTP_X_CSRFTOKEN=csrf)
 
+    def test_perfil_financiero_permite_orientacion_sin_precio_maximo(self):
+        from .servicios.preguntas import VERSION
+        casa = vivienda(1)
+        perfil = base_perfil()
+        perfil.pop('presupuesto')
+        perfil['perfil_financiero'] = respuesta({
+            'modalidad': 'PAREJA', 'ocupacion_titular': 'EMPLEADO',
+            'actividad_titular': 'Docente', 'ingresos_titular': '6000000',
+            'obligaciones_titular': '1000000', 'ocupacion_aportante': 'EMPLEADO',
+            'actividad_aportante': 'Ingeniera', 'ingresos_aportante': '4000000',
+            'obligaciones_aportante': '500000',
+        })
+        perfil['pago'] = respuesta('CREDITO')
+        perfil['aporte_mensual'] = {'estado': 'NO_SE'}
+        respuestas = normalizar_respuestas(perfil, {})
+        consulta = self.enviar(self.a, '/api/perfilador/evaluar/', {'version': VERSION, 'respuestas': respuestas}, self.csrf_a)
+        self.assertEqual(consulta.status_code, 200, consulta.content)
+        self.assertEqual(consulta.json()['resumen_financiero']['ingresos_total'], '10000000')
+        self.assertNotIn('presupuesto', {r['criterio'] for r in consulta.json()['opciones'][0]['razones']})
+        escenario = self.enviar(self.a, '/api/perfilador/simular/', {
+            'version': VERSION, 'respuestas': respuestas, 'inmueble': casa.pk,
+            'porcentaje_inicial': '30', 'recursos': '0', 'usar_aporte_orientativo': True,
+        }, self.csrf_a)
+        self.assertEqual(escenario.status_code, 200, escenario.content)
+        self.assertTrue(escenario.json()['resultado']['aporte_orientativo_30'])
+        self.assertEqual(escenario.json()['resultado']['resumen_financiero']['aportantes'], 2)
+        self.assertFalse(Perfilacion.objects.exists())
+
     def test_simulacion_publica_exige_aclarar_si_recursos_incluyen_separacion(self):
         from .servicios.preguntas import VERSION
         casa = vivienda(1, estado='EN_CONSTRUCCION', modalidad_entrega='SOBRE_PLANOS',
@@ -507,6 +580,25 @@ class ApiTests(TestCase):
         contradictorio = self.enviar(self.a, ruta, {**entrada, 'separacion_incluida_en_recursos': 'NO'}, self.csrf_a)
         self.assertEqual(contradictorio.status_code, 200, contradictorio.content)
         self.assertEqual(contradictorio.json()['resultado']['inicial'], plan)
+
+    def test_tasa_efectiva_anual_se_introduce_en_porcentaje(self):
+        from .servicios.preguntas import VERSION
+        casa = vivienda(1)
+        entrada = {'version': VERSION, 'respuestas': normalizar_respuestas(base_perfil(), {}),
+                   'inmueble': casa.pk, 'porcentaje_inicial': '30', 'recursos': '60000000',
+                   'aporte_mensual': '1000000', 'tasa_ea_porcentaje': '13.25', 'anos': 20}
+        ruta = '/api/perfilador/simular/'
+        resultado = self.enviar(self.a, ruta, entrada, self.csrf_a)
+        self.assertEqual(resultado.status_code, 200, resultado.content)
+        self.assertEqual(resultado.json()['resultado']['credito']['tasa_ea'], '0.1325')
+        for tasa in ('13.256', '101', '-1', 'NaN'):
+            respuesta_api = self.enviar(self.a, ruta, {**entrada, 'tasa_ea_porcentaje': tasa}, self.csrf_a)
+            self.assertEqual(respuesta_api.status_code, 400, (tasa, respuesta_api.content))
+        decimal_anterior = {k: v for k, v in entrada.items() if k != 'tasa_ea_porcentaje'}
+        decimal_anterior['tasa_ea'] = '0.13'
+        anterior = self.enviar(self.a, ruta, decimal_anterior, self.csrf_a)
+        self.assertEqual(anterior.status_code, 200, anterior.content)
+        self.assertEqual(anterior.json()['resultado']['credito']['tasa_ea'], '0.13')
 
     def crear(self):
         r = self.enviar(self.a, '/api/perfilador/perfilaciones/', {}, self.csrf_a)
@@ -581,8 +673,6 @@ class ApiTests(TestCase):
         casa=vivienda(1)
         ident=self.crear()
         datos=base_perfil()
-        datos['ingresos']=respuesta('10000000')
-        datos['obligaciones']=respuesta('2000000')
         self.assertEqual(self.enviar(self.a,f'/api/perfilador/perfilaciones/{ident}/respuestas/',
             {'revision':0,'respuestas':datos},self.csrf_a,'patch').status_code,200)
         url=f'/api/perfilador/perfilaciones/{ident}/'
