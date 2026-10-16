@@ -11,6 +11,11 @@ from .ubicaciones import coincide_ubicacion
 # proporción. Nunca se muestra ni se envía al cliente.
 MARGEN_PRECIO_ALTERNATIVA = Decimal('1.20')
 
+# Etiquetas en español de cada criterio incumplido para las cercanas.
+NO_CUMPLE = {'presupuesto': 'precio', 'entrega': 'plazo de entrega',
+             'habitaciones': 'habitaciones', 'area_m2': 'área',
+             'parqueadero': 'parqueadero', 'ciudad': 'ubicación'}
+
 
 def evaluar_perfil(respuestas, catalogo=None):
     catalogo = catalogo if catalogo is not None else obtener_catalogo_publico()
@@ -56,44 +61,65 @@ def evaluar_perfil(respuestas, catalogo=None):
         for opcion in alternativas_precio:
             opcion['tipo_coincidencia_ubicacion'] = 'EXACTA'
     alternativas_ids = {o['id'] for o in alternativas_precio}
-    opciones = exactas
+    cercanas = []
+    if ciudad_deseada:
+        cercanas = [o for o in resto if o['id'] not in alternativas_ids
+                    and coincide_ubicacion(inmueble_por_id[o['id']], departamento_deseado, ciudad_deseada)]
+    for opcion in cercanas:
+        opcion['tipo_coincidencia_ubicacion'] = 'CERCANA_CIUDAD'
+        opcion['no_cumple'] = [NO_CUMPLE[c] for c in opcion['incumplimientos'] if c in NO_CUMPLE]
+    opciones = exactas + cercanas
     coincidencias_exactas = None
+    mismo_departamento = []
     if ciudad_deseada:
         coincidencias_exactas = [o for o in exactas
                                  if coincide_ubicacion(inmueble_por_id[o['id']], departamento_deseado, ciudad_deseada)]
-        mostrar_ids = {o['id'] for o in coincidencias_exactas}
+        mostrar_ids = {o['id'] for o in coincidencias_exactas} | {o['id'] for o in cercanas}
         mismo_departamento = [o for o in resto if o['id'] not in mostrar_ids
                               and o['id'] not in alternativas_ids
                               and 'presupuesto' not in o['incumplimientos']
+                              and not coincide_ubicacion(inmueble_por_id[o['id']], departamento_deseado, ciudad_deseada)
                               and coincide_ubicacion(inmueble_por_id[o['id']], departamento_deseado, '')]
         for opcion in coincidencias_exactas:
             opcion['tipo_coincidencia_ubicacion'] = 'EXACTA'
         for opcion in mismo_departamento:
             opcion['tipo_coincidencia_ubicacion'] = 'ALTERNATIVA_DEPARTAMENTO'
-        opciones = coincidencias_exactas + mismo_departamento
+        opciones = coincidencias_exactas + cercanas + mismo_departamento
     opciones.sort(key=lambda item: (item.get('tipo_coincidencia_ubicacion') == 'ALTERNATIVA_DEPARTAMENTO',
+                                    item.get('tipo_coincidencia_ubicacion') == 'CERCANA_CIUDAD',
                                     item['afinidad'] is None, -(item['afinidad'] or 0), -item['peso_evaluable'],
                                     float(item['precio_comparacion_cop']) if item['precio_comparacion_cop'] is not None else float('inf'), item['id']))
     hay_alternativas_precio = bool(alternativas_precio)
-    solo_alternativas_ubicacion = bool(opciones) and coincidencias_exactas is not None and not coincidencias_exactas
-    sin_alternativas_ubicacion = (not opciones and not hay_alternativas_precio
+    hay_cercanas = bool(cercanas)
+    hay_dept = bool(mismo_departamento)
+    hay_exactas = bool(exactas)
+    solo_alternativas_ubicacion = hay_dept and not hay_exactas and not hay_cercanas and not hay_alternativas_precio
+    sin_alternativas_ubicacion = (not opciones and not hay_cercanas and not hay_dept
+                                  and not hay_alternativas_precio
                                   and excluidas == 0 and coincidencias_exactas is not None)
+    sin_exactas = not hay_exactas and (hay_cercanas or hay_dept)
     financiero = valor(respuestas, 'perfil_financiero')
+    exactas_ordenadas = [o for o in opciones if o['id'] in exactas_ids]
+    principal = exactas_ordenadas[0]['id'] if exactas_ordenadas else None
+    alternativa = next((o['id'] for o in exactas_ordenadas[1:]
+                        if o['precio'] != exactas_ordenadas[0]['precio']
+                        or o['ciudad'] != exactas_ordenadas[0]['ciudad']), None) if exactas_ordenadas else None
     return {
-        'estado': 'CATALOGO_VACIO' if not total else 'SIN_COINCIDENCIAS_UBICACION' if sin_alternativas_ubicacion else 'ALTERNATIVAS_UBICACION' if solo_alternativas_ubicacion else 'SIN_COINCIDENCIAS' if not opciones else 'PRELIMINAR',
+        'estado': 'CATALOGO_VACIO' if not total else 'SIN_COINCIDENCIAS_UBICACION' if sin_alternativas_ubicacion else 'ALTERNATIVAS_UBICACION' if solo_alternativas_ubicacion else 'SIN_COINCIDENCIA_EXACTA' if sin_exactas else 'SIN_COINCIDENCIAS' if not opciones else 'PRELIMINAR',
         'total_catalogo': total, 'total_opciones': len(opciones), 'excluidas_requisitos': excluidas,
         'hay_alternativas_precio': hay_alternativas_precio,
         'alternativas_precio': alternativas_precio,
+        'cercanas_ciudad': len(cercanas),
         'coincidencias_ubicacion': len(coincidencias_exactas) if coincidencias_exactas is not None else None,
-        'alternativas_mismo_departamento': len(opciones) - len(coincidencias_exactas) if coincidencias_exactas is not None else 0,
+        'alternativas_mismo_departamento': len(mismo_departamento),
         'ubicacion_deseada': {'ciudad': ciudad_deseada, 'departamento': departamento_deseado} if ciudad_deseada else None,
         'cobertura': cobertura(respuestas), 'siguiente_pregunta': siguiente(respuestas),
         'pendientes_cliente': pendientes_cliente, 'opciones': opciones,
         'resumen_financiero': {'aportantes': 1 if financiero['modalidad'] == 'SOLO' else 2,
                               'ingresos_total': financiero['ingresos_total'],
                               'obligaciones_total': financiero['obligaciones_total']} if financiero else None,
-        'principal': next((o['id'] for o in opciones if o.get('tipo_coincidencia_ubicacion') != 'ALTERNATIVA_DEPARTAMENTO'), opciones[0]['id'] if opciones and coincidencias_exactas is None else None),
-        'alternativa': next((o['id'] for o in opciones[1:] if o.get('tipo_coincidencia_ubicacion') != 'ALTERNATIVA_DEPARTAMENTO' and (o['precio'] != opciones[0]['precio'] or o['ciudad'] != opciones[0]['ciudad'])), None) if opciones else None,
+        'principal': principal,
+        'alternativa': alternativa,
         'pesos': PESOS_INVERSION if valor(respuestas, 'proposito') == 'INVERTIR' else PESOS_AMBAS if valor(respuestas, 'proposito') == 'AMBAS' else PESOS,
         'cambio': {'cop_por_usd': str(cambio.cop_por_usd), 'fecha': cambio.fecha.isoformat(), 'fuente': cambio.fuente} if cambio else None,
         'fecha_corte': timezone.now().isoformat(),

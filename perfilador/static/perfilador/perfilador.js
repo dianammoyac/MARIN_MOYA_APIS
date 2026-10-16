@@ -344,6 +344,7 @@
     const cambio=resultado.cambio;
     const opcionPorId=id=>[...resultado.opciones,...(resultado.alternativas_precio||[])].find(o=>o.id===id);
     const moneyDif=o=>o.exceso_presupuesto!=null?formatear(o.exceso_presupuesto,monedaPerfil(),cambio):'';
+    function etiquetaPrincipal(o){if(o.tipo_coincidencia_ubicacion==='ALTERNATIVA_DEPARTAMENTO')return 'ALTERNATIVA EN OTRO MUNICIPIO · UBICACIÓN POR REVISAR';if(o.tipo_coincidencia_ubicacion==='CERCANA_CIUDAD')return `EN TU CIUDAD · NO CUMPLE: ${(o.no_cumple||[]).join(', ')}`;if(o.id===resultado.principal)return 'RECOMENDACIÓN EN TU CIUDAD';if(o.id===resultado.alternativa)return 'ALTERNATIVA EN TU CIUDAD';return 'OPCIÓN EN TU CIUDAD';}
     if(resultado.estado==='CATALOGO_VACIO'){$('resumen').textContent='Ahora no hay apartamentos o casas disponibles en venta. Puedes empezar otra búsqueda o volver más adelante.';return;}
     if(resultado.estado==='SIN_COINCIDENCIAS_UBICACION'){
       const lugar=resultado.ubicacion_deseada;
@@ -358,10 +359,27 @@
         resultado.alternativas_precio.forEach(o=>$('opciones').append(tarjeta(o,'ALTERNATIVA POR PRECIO · SUPERA TU PRESUPUESTO',false)));
       };aviso.append(boton);$('opciones').append(aviso);
     };
+    const cerrarResultados=()=>{
+      const comparar=document.createElement('button');comparar.type='button';comparar.className='secundario';comparar.textContent='Comparar dos opciones seleccionadas';comparar.onclick=mostrarComparacion;$('opciones').append(comparar);
+      if(datosCliente.nombre)$('form-asesoria').elements.nombre.value=datosCliente.nombre;
+      if(datosCliente.celular){$('form-asesoria').elements.telefono.value=datosCliente.celular;$('form-asesoria').elements.preferencia_contacto.value='TELEFONO';}
+      $('asesoria').hidden=false;
+    };
     if(resultado.estado==='SIN_COINCIDENCIAS'){
       $('resumen').textContent='No encontramos inmuebles que cumplan todas las condiciones de tu búsqueda.';
       if(resultado.hay_alternativas_precio)mostrarBotonAlternativas();
       $('asesoria').hidden=false;
+      return;
+    }
+    if(resultado.estado==='SIN_COINCIDENCIA_EXACTA'){
+      const lugar=resultado.ubicacion_deseada;
+      const partes=[];
+      if(resultado.cercanas_ciudad)partes.push(`${resultado.cercanas_ciudad} en ${lugar?.ciudad} que no cumplen todo lo pedido`);
+      if(resultado.alternativas_mismo_departamento)partes.push(`${resultado.alternativas_mismo_departamento} en otros municipios de ${lugar?.departamento}`);
+      $('resumen').textContent=`No hay coincidencias exactas${lugar?.ciudad?` en ${lugar.ciudad}`:''}${partes.length?`, pero encontramos: ${partes.join(' y ')}. Revisa las etiquetas de cada ficha.`:'.'} Cobertura: ${resultado.cobertura} %.`;
+      resultado.opciones.forEach(o=>$('opciones').append(tarjeta(o,etiquetaPrincipal(o),false)));
+      if(resultado.hay_alternativas_precio)mostrarBotonAlternativas();
+      cerrarResultados();
       return;
     }
     if(resultado.estado==='ALTERNATIVAS_UBICACION'){
@@ -378,7 +396,7 @@
       $('resumen').textContent+=` Ingresos mensuales declarados de ${f.aportantes} ${f.aportantes===1?'persona':'personas'}: ${mostrarIngresado(f.ingresos_total,'COP')}; obligaciones: ${mostrarIngresado(f.obligaciones_total,'COP')}. Se suman para explorar opciones, no indican aprobación bancaria.`;
     }
     if(valor('presupuesto')===null)$('resumen').textContent+=' Sin precio máximo declarado, el valor de cada inmueble requiere revisión; estos ingresos no permiten determinar cuánto prestará un banco.';
-    const tarjeta=(o,etiqueta,destacada)=>{
+    function tarjeta(o,etiqueta,destacada){
       const card=document.createElement('article');card.className='resultado'+(destacada?' destacada':'');
       const linea=(contenido,clase)=>{const p=document.createElement('p');p.textContent=contenido;if(clase)p.className=clase;card.append(p);};
       if(o.imagen){const imagen=document.createElement('img');imagen.src=o.imagen;imagen.alt=`Imagen de ${o.titulo}`;imagen.loading='lazy';card.append(imagen);}
@@ -425,7 +443,6 @@
       const comparar=document.createElement('label');comparar.textContent=' Comparar';const ch=document.createElement('input');ch.type='checkbox';ch.className='comparar';ch.value=o.id;comparar.prepend(ch);acciones.append(comparar);card.append(acciones);
       return card;
     };
-    const etiquetaPrincipal=o=>o.tipo_coincidencia_ubicacion==='ALTERNATIVA_DEPARTAMENTO'?'ALTERNATIVA EN OTRO MUNICIPIO · UBICACIÓN POR REVISAR':o.id===resultado.principal?'RECOMENDACIÓN EN TU CIUDAD':o.id===resultado.alternativa?'ALTERNATIVA EN TU CIUDAD':'OPCIÓN EN TU CIUDAD';
     resultado.opciones.forEach(o=>$('opciones').append(tarjeta(o,etiquetaPrincipal(o),o.id===resultado.principal)));
     if(resultado.hay_alternativas_precio)mostrarBotonAlternativas();
     const comparar=document.createElement('button');comparar.type='button';comparar.className='secundario';comparar.textContent='Comparar dos opciones seleccionadas';comparar.onclick=mostrarComparacion;$('opciones').append(comparar);
