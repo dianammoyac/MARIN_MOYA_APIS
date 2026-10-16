@@ -206,7 +206,7 @@ def simular(request, identificador):
         if ev.revision != p.revision:
             return error('Recalcule las recomendaciones para esta revisión del perfil.', 409)
         inmueble = get_object_or_404(obtener_catalogo_publico(), pk=entrada.get('inmueble'))
-        guardada = next((o for o in ev.resultados['opciones'] if o['id'] == inmueble.pk), None)
+        guardada = next((o for o in ev.resultados['opciones'] + ev.resultados.get('alternativas_precio', []) if o['id'] == inmueble.pk), None)
         if guardada is None:
             return error('Este inmueble no figura entre las opciones compatibles.', 400)
         if guardada['precio'] != str(inmueble.precio) or guardada['actualizado'] != inmueble.fecha_actualizacion.isoformat():

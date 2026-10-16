@@ -201,7 +201,9 @@ def simular(request):
         entrada = datos(request)
         respuestas = validar_respuestas(entrada, completas=True)
         inmueble = get_object_or_404(obtener_catalogo_publico(), pk=entrada.get('inmueble'))
-        if inmueble.pk not in {o['id'] for o in evaluar_perfil(respuestas)['opciones']}:
+        evaluacion_actual = evaluar_perfil(respuestas)
+        permitidos = {o['id'] for o in evaluacion_actual['opciones']} | {o['id'] for o in evaluacion_actual['alternativas_precio']}
+        if inmueble.pk not in permitidos:
             raise ValueError('Este inmueble no coincide con los requisitos declarados.')
         resultado = calcular_escenario(respuestas, entrada, inmueble)
     except (ValueError, TypeError) as exc:

@@ -82,10 +82,7 @@ def normalizar_respuestas(datos, actuales):
         fuente = entrada.get('fuente', 'CLIENTE')
         if fuente not in FUENTES:
             raise ValueError(f'{clave}: fuente inválida.')
-        indispensable = entrada.get('indispensable', False)
-        if type(indispensable) is not bool or (indispensable and clave not in {'ciudad', 'habitaciones', 'area_m2', 'parqueadero', 'presupuesto', 'entrega'}):
-            raise ValueError(f'{clave}: requisito indispensable inválido.')
-        dato = {'estado': estado, 'fuente': fuente, 'indispensable': indispensable if estado == 'RESPONDIDA' else False}
+        dato = {'estado': estado, 'fuente': fuente, 'indispensable': False}
         if estado == 'RESPONDIDA':
             bruto = entrada.get('valor')
             tipo = pregunta['tipo']

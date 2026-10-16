@@ -209,15 +209,52 @@ class CatalogoYMotorTests(TestCase):
         self.assertIsNone(resultado['opciones'][0]['afinidad'])
         self.assertIsNotNone(resultado['alternativa'])
 
-    def test_indispensable_excluye_y_preferencia_flexible_no(self):
+    def test_respuestas_declaradas_son_condicion_estricta(self):
         vivienda(1, ciudad='Bogotá', departamento='Cundinamarca')
         vivienda(2, ciudad='Armenia')
-        p = normalizar_respuestas({'ciudad': respuesta({'departamento': 'Cundinamarca', 'ciudad': 'Bogotá'}, True)}, {})
+        p = normalizar_respuestas({'ciudad': respuesta({'departamento': 'Cundinamarca', 'ciudad': 'Bogotá'})}, {})
         self.assertEqual(evaluar_perfil(p)['total_opciones'], 1)
         p = normalizar_respuestas({'ciudad': {'estado': 'SIN_PREFERENCIA'}}, p)
         self.assertEqual(evaluar_perfil(p)['total_opciones'], 2)
-        p = normalizar_respuestas({'ciudad': respuesta({'departamento': 'Risaralda', 'ciudad': 'Pereira'}, True)}, p)
-        self.assertEqual(evaluar_perfil(p)['estado'], 'SIN_COINCIDENCIAS')
+        p = normalizar_respuestas({'ciudad': respuesta({'departamento': 'Risaralda', 'ciudad': 'Pereira'})}, p)
+        self.assertEqual(evaluar_perfil(p)['estado'], 'SIN_COINCIDENCIAS_UBICACION')
+
+    def test_presupuesto_excluye_y_alternativas_solo_hasta_margen_interno(self):
+        exacta = vivienda(1, ciudad='Girardot', departamento='Cundinamarca', precio=Decimal('500000000'))
+        limite = vivienda(2, ciudad='Girardot', departamento='Cundinamarca', precio=Decimal('600000000'))
+        fuera = vivienda(3, ciudad='Girardot', departamento='Cundinamarca', precio=Decimal('850000000'))
+        p = normalizar_respuestas({'ciudad': respuesta({'departamento': 'Cundinamarca', 'ciudad': 'Girardot'}),
+                                   'presupuesto': respuesta({'monto': '500000000', 'moneda': 'COP'})}, {})
+        resultado = evaluar_perfil(p)
+        self.assertEqual(resultado['estado'], 'PRELIMINAR')
+        self.assertEqual([o['id'] for o in resultado['opciones']], [exacta.pk])
+        self.assertEqual(resultado['principal'], exacta.pk)
+        self.assertTrue(resultado['hay_alternativas_precio'])
+        self.assertEqual([o['id'] for o in resultado['alternativas_precio']], [limite.pk])
+        self.assertNotIn(fuera.pk, [o['id'] for o in resultado['opciones']])
+        self.assertEqual(Decimal(resultado['alternativas_precio'][0]['exceso_presupuesto']), Decimal('100000000'))
+
+    def test_sin_exactas_hay_boton_de_alternativas_y_simulacion_funciona(self):
+        limite = vivienda(1, ciudad='Girardot', departamento='Cundinamarca', precio=Decimal('600000000'))
+        p = normalizar_respuestas({'ciudad': respuesta({'departamento': 'Cundinamarca', 'ciudad': 'Girardot'}),
+                                   'presupuesto': respuesta({'monto': '500000000', 'moneda': 'COP'})}, {})
+        resultado = evaluar_perfil(p)
+        self.assertEqual(resultado['estado'], 'SIN_COINCIDENCIAS')
+        self.assertEqual(resultado['opciones'], [])
+        self.assertTrue(resultado['hay_alternativas_precio'])
+        self.assertEqual([o['id'] for o in resultado['alternativas_precio']], [limite.pk])
+
+    def test_entrega_usa_meses_restantes_en_vivo(self):
+        from inmuebles.models import Inmueble
+        from datetime import timedelta
+        from django.utils import timezone
+        casa = vivienda(1, modalidad_entrega='SOBRE_PLANOS', meses_entrega=12)
+        Inmueble.objects.filter(pk=casa.pk).update(
+            fecha_publicacion=timezone.localdate() - timedelta(days=330))
+        casa.refresh_from_db()
+        p = normalizar_respuestas({'entrega': respuesta('3'), 'proposito': respuesta('VIVIR')}, {})
+        razones = {r['criterio']: r for r in evaluar_perfil(p)['opciones'][0]['razones']}
+        self.assertEqual(razones['entrega']['puntuacion'], 1)
 
     def test_omitir_reduce_cobertura_y_permite_orden_diferente(self):
         vivienda(1, ciudad='Bogotá', departamento='Cundinamarca', precio=Decimal('300000000'))
@@ -259,15 +296,19 @@ class CatalogoYMotorTests(TestCase):
         self.assertIn('inmediata', razones['entrega']['razon'].lower())
 
     def test_entrega_en_meses_puntua_segun_plazo_declarado(self):
-        p = normalizar_respuestas({'entrega': respuesta('12'), 'proposito': respuesta('VIVIR')}, {})
+        from .servicios.compatibilidad import criterio
         pronto = vivienda(1, modalidad_entrega='SOBRE_PLANOS', meses_entrega=6)
         tarde = vivienda(2, modalidad_entrega='SOBRE_PLANOS', meses_entrega=24)
         listo = vivienda(3)
-        razones = {o['id']: {r['criterio']: r for r in o['razones']} for o in evaluar_perfil(p)['opciones']}
-        self.assertEqual(razones[pronto.id]['entrega']['puntuacion'], 1)
-        self.assertEqual(razones[listo.id]['entrega']['puntuacion'], 1)
-        self.assertAlmostEqual(razones[tarde.id]['entrega']['puntuacion'], 0.5)
-        self.assertIn('24 meses', razones[tarde.id]['entrega']['razon'])
+        self.assertEqual(criterio('entrega', '12', pronto)[0], 1)
+        self.assertEqual(criterio('entrega', '12', listo)[0], 1)
+        self.assertAlmostEqual(float(criterio('entrega', '12', tarde)[0]), 0.5)
+        self.assertIn('24 meses', criterio('entrega', '12', tarde)[1])
+        p = normalizar_respuestas({'entrega': respuesta('12'), 'proposito': respuesta('VIVIR')}, {})
+        ids = [o['id'] for o in evaluar_perfil(p)['opciones']]
+        self.assertIn(pronto.pk, ids)
+        self.assertIn(listo.pk, ids)
+        self.assertNotIn(tarde.pk, ids)
 
     def test_ficha_muestra_modalidad_y_meses_de_entrega(self):
         from .servicios.catalogo import ficha
@@ -558,6 +599,26 @@ class ApiTests(TestCase):
         self.assertEqual(inicial_incluida['separacion_desde_recursos'], '5000000')
         self.assertEqual(inicial_incluida['cuota_mensual'], '25000000')
         self.assertEqual(inicial_adicional['cuota_mensual'], '24000000')
+        self.assertFalse(Perfilacion.objects.exists())
+
+    def test_simular_acepta_alternativa_de_precio_y_rechaza_fuera_de_margen(self):
+        from .servicios.preguntas import VERSION
+        limite = vivienda(1, ciudad='Girardot', departamento='Cundinamarca', precio=Decimal('600000000'))
+        fuera = vivienda(2, ciudad='Girardot', departamento='Cundinamarca', precio=Decimal('850000000'))
+        perfil = base_perfil()
+        perfil['ciudad'] = respuesta({'departamento': 'Cundinamarca', 'ciudad': 'Girardot'})
+        perfil['presupuesto'] = respuesta({'monto': '500000000', 'moneda': 'COP'})
+        respuestas = normalizar_respuestas(perfil, {})
+        consulta = self.enviar(self.a, '/api/perfilador/evaluar/', {'version': VERSION, 'respuestas': respuestas}, self.csrf_a)
+        self.assertEqual(consulta.status_code, 200, consulta.content)
+        self.assertEqual(consulta.json()['estado'], 'SIN_COINCIDENCIAS')
+        self.assertTrue(consulta.json()['hay_alternativas_precio'])
+        base = {'version': VERSION, 'respuestas': respuestas, 'porcentaje_inicial': '30',
+                'recursos': '0', 'aporte_mensual': '2000000'}
+        ok = self.enviar(self.a, '/api/perfilador/simular/', {**base, 'inmueble': limite.pk}, self.csrf_a)
+        self.assertEqual(ok.status_code, 200, ok.content)
+        mal = self.enviar(self.a, '/api/perfilador/simular/', {**base, 'inmueble': fuera.pk}, self.csrf_a)
+        self.assertEqual(mal.status_code, 400)
         self.assertFalse(Perfilacion.objects.exists())
 
     def test_sin_recursos_no_exige_pregunta_y_muestra_separacion_pendiente(self):

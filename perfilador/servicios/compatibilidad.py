@@ -1,4 +1,5 @@
 from decimal import Decimal
+from .financiacion import meses_restantes
 from .preguntas import valor
 from .moneda import a_cop
 from .ubicaciones import coincide_ubicacion
@@ -60,7 +61,8 @@ def criterio(clave, preferencia, inmueble, cambio=None, respuestas=None):
         datos = {'modalidad': modalidad, 'meses_entrega': meses, 'deseo_meses': deseo}
         if modalidad == 'SOBRE_PLANOS' and meses is None:
             return None, 'Meses de entrega por confirmar con la constructora', None
-        reales = int(meses or 0)
+        reales = meses_restantes(inmueble.fecha_publicacion, int(meses or 0)) if modalidad == 'SOBRE_PLANOS' else int(meses or 0)
+        datos['meses_restantes'] = reales
         if deseo == 0:
             return Decimal('1'), 'Entrega inmediata disponible', datos
         if reales <= deseo:
@@ -82,8 +84,11 @@ def criterio(clave, preferencia, inmueble, cambio=None, respuestas=None):
     return None, 'Información comercial pendiente para comparar', None
 
 
+CRITERIOS_ESTRICTOS = ('ciudad', 'presupuesto', 'entrega', 'habitaciones', 'area_m2', 'parqueadero')
+
+
 def evaluar_inmueble(respuestas, inmueble, cambio=None):
-    razones, pendientes, excluyentes = [], [], []
+    razones, pendientes, excluyentes, incumplimientos = [], [], [], []
     puntos = Decimal('0')
     total = 0
     proposito = valor(respuestas, 'proposito')
@@ -93,7 +98,8 @@ def evaluar_inmueble(respuestas, inmueble, cambio=None):
         modalidad = getattr(inmueble, 'modalidad_entrega', 'TERMINADO') or 'TERMINADO'
         if modalidad == 'SOBRE_PLANOS':
             return {'afinidad': None, 'peso_evaluable': 0, 'razones': [], 'pendientes': [],
-                    'exclusiones': ['entrega: requiere entrega inmediata; inmueble sobre planos']}
+                    'exclusiones': ['entrega: requiere entrega inmediata; inmueble sobre planos'],
+                    'incumplimientos': ['entrega']}
     for clave, peso in pesos.items():
         preferencia = valor(respuestas, clave)
         inferencia_hogar = False
@@ -109,23 +115,15 @@ def evaluar_inmueble(respuestas, inmueble, cambio=None):
         if puntuacion is None:
             pendientes.append(f'{clave}: {razon}')
             continue
-        if respuestas[clave].get('indispensable') and puntuacion < 1:
-            excluyentes.append(f'{clave}: {razon}')
+        if clave in CRITERIOS_ESTRICTOS and not inferencia_hogar and float(puntuacion) < 1:
+            incumplimientos.append(clave)
         total += peso
         puntos += peso * puntuacion
         razones.append({'criterio': clave, 'puntuacion': float(puntuacion),
                         'razon': f'Orientación de habitaciones según integrantes del hogar (1 por cada 2 personas): {razon}' if inferencia_hogar else razon,
                         'datos': datos, 'orientativo': inferencia_hogar})
-    for clave in {'ciudad', 'habitaciones', 'area_m2', 'parqueadero', 'presupuesto'} - pesos.keys():
-        dato = respuestas.get(clave, {})
-        if dato.get('indispensable') and valor(respuestas, clave) is not None:
-            puntuacion, razon, _ = criterio(clave, valor(respuestas, clave), inmueble, cambio, respuestas)
-            if puntuacion is None:
-                pendientes.append(f'{clave}: {razon} (requisito indispensable por confirmar)')
-            elif puntuacion < 1:
-                excluyentes.append(f'{clave}: {razon}')
     return {
         'afinidad': round(float(100 * puntos / total)) if total else None,
         'peso_evaluable': total, 'razones': razones, 'pendientes': pendientes,
-        'exclusiones': excluyentes,
+        'exclusiones': excluyentes, 'incumplimientos': incumplimientos,
     }

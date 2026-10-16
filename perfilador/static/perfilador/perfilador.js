@@ -71,7 +71,7 @@
       const respuesta=respuestas[clave];
       const etiqueta=document.createElement('dt');etiqueta.textContent=nombresResumen[clave]||preguntas[clave]?.texto||clave;
       const contenido=document.createElement('dd');
-      contenido.textContent=textoResumen(clave,respuesta)+(respuesta.indispensable?' · Indispensable':'');
+      contenido.textContent=textoResumen(clave,respuesta);
       contenedor.append(etiqueta,contenido);
     });
   }
@@ -255,8 +255,6 @@
       campo.append(etiquetar('Tu respuesta',control));
       if(clave==='entrega'){const ya=document.createElement('button');ya.type='button';ya.className='secundario';ya.textContent='La necesito con entrega inmediata';ya.onclick=()=>guardar('RESPONDIDA','0');campo.append(ya);}
     }
-    $('indispensable').checked=!!respuestas[clave]?.indispensable;
-    $('envoltorio-indispensable').hidden=!['ciudad','habitaciones','area_m2','parqueadero','presupuesto','entrega'].includes(clave);
     document.querySelectorAll('[data-estado]').forEach(b=>{
       b.hidden=!pregunta.alternativas.includes(b.dataset.estado);
       if(clave==='ciudad' && b.dataset.estado==='SIN_PREFERENCIA')b.textContent='Sin preferencia de ciudad: quiero ver opciones en cualquier lugar';
@@ -292,7 +290,7 @@
         return;
       }
     }
-    const entrada={estado:estadoRespuesta,fuente:'CLIENTE',indispensable:estadoRespuesta==='RESPONDIDA' && $('indispensable').checked && !$('envoltorio-indispensable').hidden};
+    const entrada={estado:estadoRespuesta,fuente:'CLIENTE'};
     if(estadoRespuesta==='RESPONDIDA')entrada.valor=entradaValor;
     const botones=$('form-pregunta').querySelectorAll('button');botones.forEach(b=>b.disabled=true);estado('Guardando respuesta…');
     try{
@@ -343,14 +341,29 @@
   }
   function dibujar(){
     $('opciones').replaceChildren();$('comparacion').hidden=$('simulador').hidden=$('asesoria').hidden=true;
+    const cambio=resultado.cambio;
+    const opcionPorId=id=>[...resultado.opciones,...(resultado.alternativas_precio||[])].find(o=>o.id===id);
+    const moneyDif=o=>o.exceso_presupuesto!=null?formatear(o.exceso_presupuesto,monedaPerfil(),cambio):'';
     if(resultado.estado==='CATALOGO_VACIO'){$('resumen').textContent='Ahora no hay apartamentos o casas disponibles en venta. Puedes empezar otra búsqueda o volver más adelante.';return;}
     if(resultado.estado==='SIN_COINCIDENCIAS_UBICACION'){
       const lugar=resultado.ubicacion_deseada;
       $('resumen').textContent=`No encontramos apartamentos o casas disponibles en ${lugar?.ciudad}, ${lugar?.departamento}. No vamos a recomendarte propiedades de ciudades lejanas como si coincidieran. Prueba ampliar la búsqueda a todo ${lugar?.departamento} o elegir otra ciudad.`;
       return;
     }
-    if(resultado.estado==='SIN_COINCIDENCIAS'){$('resumen').textContent=`No hay coincidencias con tus requisitos indispensables (${resultado.excluidas_requisitos} opciones excluidas). Puedes revisar una preferencia.`;return;}
-    const cambio=resultado.cambio;
+    const mostrarBotonAlternativas=()=>{
+      const aviso=document.createElement('div');aviso.className='alternativas-precio';
+      const texto=document.createElement('p');texto.textContent=`No encontramos más opciones dentro de tu presupuesto, pero estas ${resultado.alternativas_precio.length} cumplen todo lo demás en tu ubicación. Míralas solo si quieres estirar el presupuesto.`;aviso.append(texto);
+      const boton=document.createElement('button');boton.type='button';boton.className='secundario';boton.textContent='Ver otras opciones que podrían adaptarse a ti';boton.onclick=()=>{
+        boton.disabled=true;
+        resultado.alternativas_precio.forEach(o=>$('opciones').append(tarjeta(o,'ALTERNATIVA POR PRECIO · SUPERA TU PRESUPUESTO',false)));
+      };aviso.append(boton);$('opciones').append(aviso);
+    };
+    if(resultado.estado==='SIN_COINCIDENCIAS'){
+      $('resumen').textContent='No encontramos inmuebles que cumplan todas las condiciones de tu búsqueda.';
+      if(resultado.hay_alternativas_precio)mostrarBotonAlternativas();
+      $('asesoria').hidden=false;
+      return;
+    }
     if(resultado.estado==='ALTERNATIVAS_UBICACION'){
       const lugar=resultado.ubicacion_deseada;
       $('resumen').textContent=`No encontramos opciones exactas en ${lugar?.ciudad}. Estas ${resultado.alternativas_mismo_departamento} alternativas están en otros municipios de ${lugar?.departamento}; no contamos con distancias o tiempos de viaje, así que verifica si la ubicación te sirve. Cobertura: ${resultado.cobertura} %.`;
@@ -365,12 +378,11 @@
       $('resumen').textContent+=` Ingresos mensuales declarados de ${f.aportantes} ${f.aportantes===1?'persona':'personas'}: ${mostrarIngresado(f.ingresos_total,'COP')}; obligaciones: ${mostrarIngresado(f.obligaciones_total,'COP')}. Se suman para explorar opciones, no indican aprobación bancaria.`;
     }
     if(valor('presupuesto')===null)$('resumen').textContent+=' Sin precio máximo declarado, el valor de cada inmueble requiere revisión; estos ingresos no permiten determinar cuánto prestará un banco.';
-    resultado.opciones.forEach((o,i)=>{
-      const card=document.createElement('article');card.className='resultado'+(o.id===resultado.principal?' destacada':'');
+    const tarjeta=(o,etiqueta,destacada)=>{
+      const card=document.createElement('article');card.className='resultado'+(destacada?' destacada':'');
       const linea=(contenido,clase)=>{const p=document.createElement('p');p.textContent=contenido;if(clase)p.className=clase;card.append(p);};
       if(o.imagen){const imagen=document.createElement('img');imagen.src=o.imagen;imagen.alt=`Imagen de ${o.titulo}`;imagen.loading='lazy';card.append(imagen);}
-      const esAlternativaUbicacion=o.tipo_coincidencia_ubicacion==='ALTERNATIVA_DEPARTAMENTO';
-      linea(esAlternativaUbicacion?'ALTERNATIVA EN OTRO MUNICIPIO · UBICACIÓN POR REVISAR':o.id===resultado.principal?'RECOMENDACIÓN EN TU CIUDAD':o.id===resultado.alternativa?'ALTERNATIVA EN TU CIUDAD':'OPCIÓN EN TU CIUDAD','etiqueta');
+      linea(etiqueta,'etiqueta');
       const titulo=document.createElement('h3');titulo.textContent=o.titulo;card.append(titulo);
       linea(`${o.tipo} · ${o.ciudad} (${o.departamento}) · ${o.barrio}`);
       linea(`${precioOpcion(o,cambio)} · ${o.area_m2} m² · ${o.habitaciones} habitaciones · ${o.parqueaderos} parqueaderos`);
@@ -379,9 +391,11 @@
       if(o.porcentaje_inicial_exigido!=null)linea(`Inicial exigida por el proyecto: ${o.porcentaje_inicial_exigido} %${o.valor_separacion!=null?` · Separación: ${formatear(o.valor_separacion,o.moneda,cambio)}`:''}`);
       linea(`Afinidad orientativa: ${o.afinidad==null?'No calculable':o.afinidad+' %'} · Cobertura: ${resultado.cobertura} %`);
       linea(`Por qué encaja: ${o.razones.filter(r=>r.puntuacion===1).map(r=>r.razon).join('; ') || 'Aún faltan datos comparables.'}`);
+      const esAlternativaUbicacion=o.tipo_coincidencia_ubicacion==='ALTERNATIVA_DEPARTAMENTO';
       const razonesCercanas=o.razones.filter(r=>r.puntuacion>=0.65&&r.puntuacion<1&&!(esAlternativaUbicacion&&r.criterio==='ciudad')).map(r=>r.razon);
       const diferencias=o.razones.filter(r=>r.puntuacion<0.65&&!(esAlternativaUbicacion&&r.criterio==='ciudad')).map(r=>r.razon);
       const pendientes=[...o.pendientes,...o.pendientes_catalogo];
+      if(o.es_alternativa_precio)linea(`Supera tu presupuesto máximo en ${moneyDif(o)}.`,'pendiente');
       if(esAlternativaUbicacion)linea(`Ubicación por revisar: está en ${o.ciudad}, en ${o.departamento}; confirma si el trayecto hasta ${resultado.ubicacion_deseada?.ciudad} te funciona. No tenemos distancia geográfica verificada.`,'pendiente');
       if(razonesCercanas.length)linea(`Por revisar (se acerca a lo que buscas): ${razonesCercanas.join('; ')}`,'pendiente');
       if(diferencias.length)linea(`Diferencias importantes con tu búsqueda: ${diferencias.join('; ')}`,'pendiente');
@@ -408,8 +422,12 @@
         $('usar-guia-contenedor').hidden=!(respuestas.aporte_mensual?.estado==='NO_SE' && (valor('perfil_financiero')!=null||valor('ingresos')!=null));
         $('simulador').hidden=false;$('simulador').scrollIntoView({behavior:'smooth'});
       };acciones.append(sim);
-      const comparar=document.createElement('label');comparar.textContent=' Comparar';const ch=document.createElement('input');ch.type='checkbox';ch.className='comparar';ch.value=o.id;comparar.prepend(ch);acciones.append(comparar);card.append(acciones);$('opciones').append(card);
-    });
+      const comparar=document.createElement('label');comparar.textContent=' Comparar';const ch=document.createElement('input');ch.type='checkbox';ch.className='comparar';ch.value=o.id;comparar.prepend(ch);acciones.append(comparar);card.append(acciones);
+      return card;
+    };
+    const etiquetaPrincipal=o=>o.tipo_coincidencia_ubicacion==='ALTERNATIVA_DEPARTAMENTO'?'ALTERNATIVA EN OTRO MUNICIPIO · UBICACIÓN POR REVISAR':o.id===resultado.principal?'RECOMENDACIÓN EN TU CIUDAD':o.id===resultado.alternativa?'ALTERNATIVA EN TU CIUDAD':'OPCIÓN EN TU CIUDAD';
+    resultado.opciones.forEach(o=>$('opciones').append(tarjeta(o,etiquetaPrincipal(o),o.id===resultado.principal)));
+    if(resultado.hay_alternativas_precio)mostrarBotonAlternativas();
     const comparar=document.createElement('button');comparar.type='button';comparar.className='secundario';comparar.textContent='Comparar dos opciones seleccionadas';comparar.onclick=mostrarComparacion;$('opciones').append(comparar);
     if(datosCliente.nombre)$('form-asesoria').elements.nombre.value=datosCliente.nombre;
     if(datosCliente.celular){$('form-asesoria').elements.telefono.value=datosCliente.celular;$('form-asesoria').elements.preferencia_contacto.value='TELEFONO';}
@@ -430,12 +448,13 @@
   function mostrarComparacion(){
     const ids=[...document.querySelectorAll('.comparar:checked')].map(x=>Number(x.value));
     if(ids.length!==2){estado('Selecciona exactamente dos opciones para comparar.');return;}
-    const opciones=ids.map(x=>resultado.opciones.find(o=>o.id===x));const div=$('comparacion');div.replaceChildren();
+    const todas=[...resultado.opciones,...(resultado.alternativas_precio||[])];
+    const opciones=ids.map(x=>todas.find(o=>o.id===x));const div=$('comparacion');div.replaceChildren();
     const h=document.createElement('h3');h.textContent='Comparación con las mismas respuestas';div.append(h);const tabla=document.createElement('table');tabla.className='tabla';
     [['Criterio',...opciones.map(o=>o.titulo)],['Precio',...opciones.map(o=>precioOpcion(o,resultado.cambio))],['Área',...opciones.map(o=>o.area_m2+' m²')],['Habitaciones',...opciones.map(o=>o.habitaciones)],['Ciudad',...opciones.map(o=>o.ciudad)],['Entrega',...opciones.map(o=>o.entrega_texto)],['Afinidad',...opciones.map(o=>o.afinidad==null?'No calculable':o.afinidad+' %')],['Pendientes',...opciones.map(o=>o.pendientes_catalogo.join('; '))]].forEach(fila=>{const tr=document.createElement('tr');fila.forEach(c=>{const celda=document.createElement('td');celda.textContent=c;tr.append(celda);});tabla.append(tr);});div.append(tabla);div.hidden=false;div.scrollIntoView({behavior:'smooth'});
   }
   $('form-simular').onsubmit=async e=>{
-    e.preventDefault();const f=new FormData(e.target);const datos={version:versionPreguntas,respuestas,inmueble:inmuebleElegido,precio_visto:resultado.opciones.find(o=>o.id===inmuebleElegido)?.precio,...Object.fromEntries(f.entries())};
+    e.preventDefault();const f=new FormData(e.target);const datos={version:versionPreguntas,respuestas,inmueble:inmuebleElegido,precio_visto:[...resultado.opciones,...(resultado.alternativas_precio||[])].find(o=>o.id===inmuebleElegido)?.precio,...Object.fromEntries(f.entries())};
     delete datos.meses_inicial;
     datos.usar_aporte_orientativo=f.has('usar_aporte_orientativo');
     if(datos.usar_aporte_orientativo && !datos.aporte_mensual)delete datos.aporte_mensual;
