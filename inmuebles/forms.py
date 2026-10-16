@@ -19,6 +19,10 @@ class InmuebleForm(forms.ModelForm):
 ]
         widgets = {
             "descripcion": forms.Textarea(attrs={"rows": 4}),
+            "imagen1": forms.FileInput(attrs={"accept": "image/*"}),
+            "imagen2": forms.FileInput(attrs={"accept": "image/*"}),
+            "imagen3": forms.FileInput(attrs={"accept": "image/*"}),
+            "imagen4": forms.FileInput(attrs={"accept": "image/*"}),
         }
 
     def clean(self):

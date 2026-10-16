@@ -28,6 +28,17 @@ class InmuebleViewSet(viewsets.ModelViewSet):
         serializer.save(usuario=self.request.user)
 
 
+def fotografias_formulario(form):
+    """Cada espacio conserva la foto actual hasta que se cargue un reemplazo válido."""
+    return [
+        {'campo': form[campo], 'actual': getattr(form.instance, campo), 'titulo': titulo}
+        for campo, titulo in (
+            ('imagen1', 'Imagen principal'), ('imagen2', 'Imagen 2'),
+            ('imagen3', 'Imagen 3'), ('imagen4', 'Imagen 4'),
+        )
+    ]
+
+
 def index2_view(request):
     inmuebles = Inmueble.objects.all().order_by('?')
     return render(request, "inmuebles/index2.html", {"inmuebles": inmuebles})
@@ -147,7 +158,7 @@ def inmuebles_crear(request):
     else:
         form = InmuebleForm()
 
-    return render(request, "inmuebles/form.html", {"form": form})
+    return render(request, "inmuebles/form.html", {"form": form, "fotografias": fotografias_formulario(form)})
 
 @login_required
 def inmuebles_editar(request, pk):
@@ -169,7 +180,7 @@ def inmuebles_editar(request, pk):
             return redirect("inmuebles_detalle", pk=inmueble.pk)
     else:
         form = InmuebleForm(instance=inmueble)
-    return render(request, "inmuebles/form.html", {"form": form, "editando": True})
+    return render(request, "inmuebles/form.html", {"form": form, "fotografias": fotografias_formulario(form), "editando": True})
 
 @login_required
 def inmuebles_eliminar(request, pk):

@@ -348,6 +348,16 @@
       display: flex; align-items: center; justify-content: center;
       position: relative; overflow: hidden;
     }
+    .foto-slot { min-width: 0; position: relative; }
+    .foto-vista { width: 100%; height: 180px; object-fit: cover; border: 1px solid var(--borde); background: var(--marfil); }
+    .foto-vacia { display: flex; align-items: center; justify-content: center; min-height: 180px; border: 1px dashed var(--borde); background: var(--marfil); color: var(--gris); font-size: 13px; }
+    .foto-vista[hidden], .foto-vacia[hidden] { display: none !important; }
+    .foto-slot input[type="file"] { position: absolute; width: 1px; height: 1px; padding: 0; border: 0; clip-path: inset(50%); overflow: hidden; }
+    .foto-slot .foto-accion { display: inline-block; align-self: flex-start; padding: 11px 18px; border: 1px solid var(--dorado); color: var(--verde); font-size: 13px; font-weight: 500; letter-spacing: .4px; text-transform: none; opacity: 1; cursor: pointer; }
+    .foto-slot input[type="file"]:focus-visible + .foto-accion { outline: 2px solid var(--verde); outline-offset: 3px; }
+    .foto-estado { color: var(--gris); font-size: 12px; line-height: 1.5; }
+    .foto-error { color: #b84040; font-size: 12px; line-height: 1.5; }
+    @media (max-width: 700px) { .form-row.fotos-grid { grid-template-columns: minmax(0, 1fr); } }
 
     /* ─── COUNTERS ─── */
     .counter-row { display: flex; align-items: center; gap: 12px; }
@@ -581,15 +591,24 @@
 
         <!-- SECCIÓN 4: FOTOGRAFÍAS -->
         <div class="form-section">
-          <div class="fs-header"><div class="fs-num">IV</div><div><div class="fs-title">Fotografías</div><div class="fs-sub">Seleccioná hasta 4 imágenes principales</div></div></div>
+          <div class="fs-header"><div class="fs-num">IV</div><div><div class="fs-title">Fotografías</div><div class="fs-sub">Las fotos existentes se conservan si no seleccionás una nueva. Cada espacio es opcional.</div></div></div>
           <div class="fs-body">
-            <div class="form-row">
-              <div class="field"><label>Imagen Principal</label><input type="file" name="imagen1" accept="image/*"/></div>
-              <div class="field"><label>Imagen 2</label><input type="file" name="imagen2" accept="image/*"/></div>
-            </div>
-            <div class="form-row">
-              <div class="field"><label>Imagen 3</label><input type="file" name="imagen3" accept="image/*"/></div>
-              <div class="field"><label>Imagen 4</label><input type="file" name="imagen4" accept="image/*"/></div>
+            <div class="form-row fotos-grid">
+              {% for foto in fotografias %}
+                <div class="field foto-slot" data-foto>
+                  <label for="{{ foto.campo.id_for_label }}">{{ foto.titulo }}</label>
+                  {% if foto.actual %}
+                    <img class="foto-vista foto-actual" src="{{ foto.actual.url }}" alt="{{ foto.titulo }} actual" loading="lazy">
+                  {% else %}
+                    <div class="foto-vacia">Espacio vacío · fotografía opcional</div>
+                  {% endif %}
+                  <img class="foto-vista foto-previa" alt="Vista previa de {{ foto.titulo|lower }}" hidden>
+                  {{ foto.campo }}
+                  <label for="{{ foto.campo.id_for_label }}" class="foto-accion">{% if foto.actual %}Reemplazar foto{% else %}Agregar imagen{% endif %}</label>
+                  <p class="foto-estado" role="status" aria-live="polite">{% if foto.actual %}Esta foto se conserva si no seleccionás otra.{% else %}Podés dejar este espacio vacío.{% endif %}</p>
+                  {% for error in foto.campo.errors %}<p class="foto-error" role="alert">{{ error }}</p>{% endfor %}
+                </div>
+              {% endfor %}
             </div>
           </div>
         </div>
@@ -689,5 +708,6 @@
       if (v > 0) { v--; el.value = v; valEl.textContent = v; }
     }
   </script>
+  <script src="{% static 'inmuebles/previsualizar_fotos.js' %}?v=1" defer></script>
 </body>
 </html>
