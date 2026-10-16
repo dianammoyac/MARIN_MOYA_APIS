@@ -227,32 +227,27 @@ class CatalogoYMotorTests(TestCase):
                                    'presupuesto': respuesta({'monto': '500000000', 'moneda': 'COP'})}, {})
         resultado = evaluar_perfil(p)
         self.assertEqual(resultado['estado'], 'PRELIMINAR')
-        self.assertEqual([o['id'] for o in resultado['opciones']], [exacta.pk, fuera.pk])
+        self.assertEqual([o['id'] for o in resultado['opciones']], [exacta.pk])
         self.assertEqual(resultado['principal'], exacta.pk)
-        cercana = next(o for o in resultado['opciones'] if o['id'] == fuera.pk)
-        self.assertEqual(cercana['tipo_coincidencia_ubicacion'], 'CERCANA_CIUDAD')
-        self.assertEqual(cercana['no_cumple'], ['precio'])
+        self.assertEqual(resultado['cercanas_ciudad'], 1)
+        self.assertNotIn(fuera.pk, [o['id'] for o in resultado['opciones']])
         self.assertTrue(resultado['hay_alternativas_precio'])
         self.assertEqual([o['id'] for o in resultado['alternativas_precio']], [limite.pk])
         self.assertEqual(Decimal(resultado['alternativas_precio'][0]['exceso_presupuesto']), Decimal('100000000'))
 
-    def test_en_ciudad_sin_exactas_muestra_cercanas_etiquetadas(self):
-        cara = vivienda(1, ciudad='Armenia', departamento='Quindío', precio=Decimal('850000000'))
-        lejos = vivienda(2, ciudad='Armenia', departamento='Quindío', precio=Decimal('800000000'),
-                         modalidad_entrega='SOBRE_PLANOS', meses_entrega=40)
+    def test_en_ciudad_sin_exactas_oculta_no_cumplidoras_y_cuenta(self):
+        vivienda(1, ciudad='Armenia', departamento='Quindío', precio=Decimal('850000000'))
+        vivienda(2, ciudad='Armenia', departamento='Quindío', precio=Decimal('800000000'),
+                 modalidad_entrega='SOBRE_PLANOS', meses_entrega=40)
         p = normalizar_respuestas({'ciudad': respuesta({'departamento': 'Quindío', 'ciudad': 'Armenia'}),
                                    'presupuesto': respuesta({'monto': '500000000', 'moneda': 'COP'}),
                                    'entrega': respuesta('12')}, {})
         resultado = evaluar_perfil(p)
         self.assertEqual(resultado['estado'], 'SIN_COINCIDENCIA_EXACTA')
         self.assertIsNone(resultado['principal'])
+        self.assertEqual(resultado['opciones'], [])
         self.assertEqual(resultado['cercanas_ciudad'], 2)
-        for opcion in resultado['opciones']:
-            self.assertEqual(opcion['tipo_coincidencia_ubicacion'], 'CERCANA_CIUDAD')
-            self.assertNotEqual(opcion['tipo_coincidencia_ubicacion'], 'ALTERNATIVA_DEPARTAMENTO')
-        por_id = {o['id']: o for o in resultado['opciones']}
-        self.assertIn('precio', por_id[cara.pk]['no_cumple'])
-        self.assertIn('plazo de entrega', por_id[lejos.pk]['no_cumple'])
+        self.assertFalse(resultado['hay_alternativas_precio'])
 
     def test_sin_exactas_hay_boton_de_alternativas_y_simulacion_funciona(self):
         limite = vivienda(1, ciudad='Girardot', departamento='Cundinamarca', precio=Decimal('600000000'))
@@ -330,8 +325,8 @@ class CatalogoYMotorTests(TestCase):
         por_id = {o['id']: o for o in resultado['opciones']}
         self.assertIn(pronto.pk, por_id)
         self.assertIn(listo.pk, por_id)
-        self.assertIn(tarde.pk, por_id)
-        self.assertEqual(por_id[tarde.pk]['tipo_coincidencia_ubicacion'], 'CERCANA_CIUDAD')
+        self.assertNotIn(tarde.pk, por_id)
+        self.assertEqual(resultado['cercanas_ciudad'], 1)
         self.assertEqual(resultado['estado'], 'PRELIMINAR')
         self.assertIn(resultado['principal'], (pronto.pk, listo.pk))
 

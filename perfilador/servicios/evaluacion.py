@@ -11,10 +11,6 @@ from .ubicaciones import coincide_ubicacion
 # proporción. Nunca se muestra ni se envía al cliente.
 MARGEN_PRECIO_ALTERNATIVA = Decimal('1.20')
 
-# Etiquetas en español de cada criterio incumplido para las cercanas.
-NO_CUMPLE = {'presupuesto': 'precio', 'entrega': 'plazo de entrega',
-             'habitaciones': 'habitaciones', 'area_m2': 'área',
-             'parqueadero': 'parqueadero', 'ciudad': 'ubicación'}
 
 
 def evaluar_perfil(respuestas, catalogo=None):
@@ -61,20 +57,19 @@ def evaluar_perfil(respuestas, catalogo=None):
         for opcion in alternativas_precio:
             opcion['tipo_coincidencia_ubicacion'] = 'EXACTA'
     alternativas_ids = {o['id'] for o in alternativas_precio}
-    cercanas = []
+    # Las que están en tu ciudad pero no cumplen todo NO se muestran:
+    # solo se cuenta cuántas hay para el mensaje. Ver botón de precio aparte.
+    cercanas = 0
     if ciudad_deseada:
-        cercanas = [o for o in resto if o['id'] not in alternativas_ids
-                    and coincide_ubicacion(inmueble_por_id[o['id']], departamento_deseado, ciudad_deseada)]
-    for opcion in cercanas:
-        opcion['tipo_coincidencia_ubicacion'] = 'CERCANA_CIUDAD'
-        opcion['no_cumple'] = [NO_CUMPLE[c] for c in opcion['incumplimientos'] if c in NO_CUMPLE]
-    opciones = exactas + cercanas
+        cercanas = sum(1 for o in resto if o['id'] not in alternativas_ids
+                       and coincide_ubicacion(inmueble_por_id[o['id']], departamento_deseado, ciudad_deseada))
+    opciones = exactas
     coincidencias_exactas = None
     mismo_departamento = []
     if ciudad_deseada:
         coincidencias_exactas = [o for o in exactas
                                  if coincide_ubicacion(inmueble_por_id[o['id']], departamento_deseado, ciudad_deseada)]
-        mostrar_ids = {o['id'] for o in coincidencias_exactas} | {o['id'] for o in cercanas}
+        mostrar_ids = {o['id'] for o in coincidencias_exactas}
         mismo_departamento = [o for o in resto if o['id'] not in mostrar_ids
                               and o['id'] not in alternativas_ids
                               and 'presupuesto' not in o['incumplimientos']
@@ -84,9 +79,8 @@ def evaluar_perfil(respuestas, catalogo=None):
             opcion['tipo_coincidencia_ubicacion'] = 'EXACTA'
         for opcion in mismo_departamento:
             opcion['tipo_coincidencia_ubicacion'] = 'ALTERNATIVA_DEPARTAMENTO'
-        opciones = coincidencias_exactas + cercanas + mismo_departamento
+        opciones = coincidencias_exactas + mismo_departamento
     opciones.sort(key=lambda item: (item.get('tipo_coincidencia_ubicacion') == 'ALTERNATIVA_DEPARTAMENTO',
-                                    item.get('tipo_coincidencia_ubicacion') == 'CERCANA_CIUDAD',
                                     item['afinidad'] is None, -(item['afinidad'] or 0), -item['peso_evaluable'],
                                     float(item['precio_comparacion_cop']) if item['precio_comparacion_cop'] is not None else float('inf'), item['id']))
     hay_alternativas_precio = bool(alternativas_precio)
@@ -109,7 +103,7 @@ def evaluar_perfil(respuestas, catalogo=None):
         'total_catalogo': total, 'total_opciones': len(opciones), 'excluidas_requisitos': excluidas,
         'hay_alternativas_precio': hay_alternativas_precio,
         'alternativas_precio': alternativas_precio,
-        'cercanas_ciudad': len(cercanas),
+        'cercanas_ciudad': cercanas,
         'coincidencias_ubicacion': len(coincidencias_exactas) if coincidencias_exactas is not None else None,
         'alternativas_mismo_departamento': len(mismo_departamento),
         'ubicacion_deseada': {'ciudad': ciudad_deseada, 'departamento': departamento_deseado} if ciudad_deseada else None,

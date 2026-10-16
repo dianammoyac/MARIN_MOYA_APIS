@@ -344,7 +344,7 @@
     const cambio=resultado.cambio;
     const opcionPorId=id=>[...resultado.opciones,...(resultado.alternativas_precio||[])].find(o=>o.id===id);
     const moneyDif=o=>o.exceso_presupuesto!=null?formatear(o.exceso_presupuesto,monedaPerfil(),cambio):'';
-    function etiquetaPrincipal(o){if(o.tipo_coincidencia_ubicacion==='ALTERNATIVA_DEPARTAMENTO')return 'ALTERNATIVA EN OTRO MUNICIPIO · UBICACIÓN POR REVISAR';if(o.tipo_coincidencia_ubicacion==='CERCANA_CIUDAD')return `EN TU CIUDAD · NO CUMPLE: ${(o.no_cumple||[]).join(', ')}`;if(o.id===resultado.principal)return 'RECOMENDACIÓN EN TU CIUDAD';if(o.id===resultado.alternativa)return 'ALTERNATIVA EN TU CIUDAD';return 'OPCIÓN EN TU CIUDAD';}
+    function etiquetaPrincipal(o){if(o.tipo_coincidencia_ubicacion==='ALTERNATIVA_DEPARTAMENTO')return 'ALTERNATIVA EN OTRO MUNICIPIO · UBICACIÓN POR REVISAR';if(o.id===resultado.principal)return 'RECOMENDACIÓN EN TU CIUDAD';if(o.id===resultado.alternativa)return 'ALTERNATIVA EN TU CIUDAD';return 'OPCIÓN EN TU CIUDAD';}
     if(resultado.estado==='CATALOGO_VACIO'){$('resumen').textContent='Ahora no hay apartamentos o casas disponibles en venta. Puedes empezar otra búsqueda o volver más adelante.';return;}
     if(resultado.estado==='SIN_COINCIDENCIAS_UBICACION'){
       const lugar=resultado.ubicacion_deseada;
@@ -374,9 +374,9 @@
     if(resultado.estado==='SIN_COINCIDENCIA_EXACTA'){
       const lugar=resultado.ubicacion_deseada;
       const partes=[];
-      if(resultado.cercanas_ciudad)partes.push(`${resultado.cercanas_ciudad} en ${lugar?.ciudad} que no cumplen todo lo pedido`);
+      if(resultado.cercanas_ciudad)partes.push(`${resultado.cercanas_ciudad} en ${lugar?.ciudad} que no cumplen todo lo pedido (no se muestran)`);
       if(resultado.alternativas_mismo_departamento)partes.push(`${resultado.alternativas_mismo_departamento} en otros municipios de ${lugar?.departamento}`);
-      $('resumen').textContent=`No hay coincidencias exactas${lugar?.ciudad?` en ${lugar.ciudad}`:''}${partes.length?`, pero encontramos: ${partes.join(' y ')}. Revisa las etiquetas de cada ficha.`:'.'} Cobertura: ${resultado.cobertura} %.`;
+      $('resumen').textContent=`No hay coincidencias exactas${lugar?.ciudad?` en ${lugar.ciudad}`:''}${partes.length?`, pero encontramos: ${partes.join(' y ')}`:'.'} Cobertura: ${resultado.cobertura} %.`;
       resultado.opciones.forEach(o=>$('opciones').append(tarjeta(o,etiquetaPrincipal(o),false)));
       if(resultado.hay_alternativas_precio)mostrarBotonAlternativas();
       cerrarResultados();
